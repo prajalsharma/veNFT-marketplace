@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mezo-primary: #F7931A;
+  --mezo-secondary: #1a1a2e;
+  --mezo-dark: #0f0f1a;
+  --mezo-accent: #00d4ff;
+}
+
+body {
+  background: var(--mezo-dark);
+  color: white;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mezo-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mezo-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d4750e;
+}
