@@ -1,7 +1,6 @@
 "use client";
 
 import { useReadContract, useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
-import { formatEther, parseEther } from "viem";
 import { useNetwork } from "./useNetwork";
 
 // ABI fragments for the contracts we need
@@ -20,6 +19,7 @@ const MARKETPLACE_ABI = [
     inputs: [{ name: "listingId", type: "uint256" }],
     outputs: [
       {
+        name: "listing",
         type: "tuple",
         components: [
           { name: "seller", type: "address" },
@@ -184,9 +184,19 @@ export interface Listing {
   discountBps: bigint;
 }
 
+// Type for the listing tuple returned by the contract
+interface ListingTuple {
+  seller: `0x${string}`;
+  nftContract: `0x${string}`;
+  tokenId: bigint;
+  price: bigint;
+  paymentToken: `0x${string}`;
+  active: boolean;
+  createdAt: bigint;
+}
+
 export function useMarketplace() {
   const { contracts } = useNetwork();
-  const { address } = useAccount();
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
@@ -199,7 +209,7 @@ export function useMarketplace() {
     abi: MARKETPLACE_ABI,
     functionName: "getListingCount",
     query: {
-      enabled: !!marketplaceAddress,
+      enabled: !!marketplaceAddress && marketplaceAddress !== "0x0000000000000000000000000000000000000000",
     },
   });
 
@@ -229,7 +239,7 @@ export function useMarketplace() {
       abi: MARKETPLACE_ABI,
       functionName: "buyListing",
       args: [BigInt(listingId)],
-      value: isNativePayment ? price : 0n,
+      value: isNativePayment ? price : BigInt(0),
     });
   };
 
@@ -294,25 +304,28 @@ export function useListing(listingId: number) {
   const marketplaceAddress = contracts.marketplace as `0x${string}` | undefined;
   const adapterAddress = contracts.adapter as `0x${string}` | undefined;
 
-  const { data: listing, isLoading } = useReadContract({
+  const { data: listingData, isLoading } = useReadContract({
     address: marketplaceAddress,
     abi: MARKETPLACE_ABI,
     functionName: "getListing",
     args: [BigInt(listingId)],
     query: {
-      enabled: !!marketplaceAddress,
+      enabled: !!marketplaceAddress && marketplaceAddress !== "0x0000000000000000000000000000000000000000",
     },
   });
 
-  const nftContract = listing?.[0] ? listing[0] : undefined;
-  const tokenId = listing?.[2];
+  // Cast the listing data to our expected type
+  const listing = listingData as ListingTuple | undefined;
+
+  const nftContract = listing?.nftContract;
+  const tokenId = listing?.tokenId;
 
   // Get intrinsic value
   const { data: intrinsicValue } = useReadContract({
     address: adapterAddress,
     abi: ADAPTER_ABI,
     functionName: "getIntrinsicValue",
-    args: nftContract && tokenId ? [nftContract as `0x${string}`, tokenId] : undefined,
+    args: nftContract && tokenId !== undefined ? [nftContract, tokenId] : undefined,
     query: {
       enabled: !!adapterAddress && !!nftContract && tokenId !== undefined,
     },
@@ -323,7 +336,7 @@ export function useListing(listingId: number) {
     address: adapterAddress,
     abi: ADAPTER_ABI,
     functionName: "getVotingPower",
-    args: nftContract && tokenId ? [nftContract as `0x${string}`, tokenId] : undefined,
+    args: nftContract && tokenId !== undefined ? [nftContract, tokenId] : undefined,
     query: {
       enabled: !!adapterAddress && !!nftContract && tokenId !== undefined,
     },
@@ -334,7 +347,7 @@ export function useListing(listingId: number) {
     address: adapterAddress,
     abi: ADAPTER_ABI,
     functionName: "getLockEnd",
-    args: nftContract && tokenId ? [nftContract as `0x${string}`, tokenId] : undefined,
+    args: nftContract && tokenId !== undefined ? [nftContract, tokenId] : undefined,
     query: {
       enabled: !!adapterAddress && !!nftContract && tokenId !== undefined,
     },
@@ -344,25 +357,25 @@ export function useListing(listingId: number) {
     return { listing: null, isLoading };
   }
 
-  const price = listing[3];
-  const iv = intrinsicValue || 0n;
-  const discountBps = iv > 0n ? ((iv - price) * 10000n) / iv : 0n;
+  const price = listing.price;
+  const iv = intrinsicValue || BigInt(0);
+  const discountBps = iv > BigInt(0) ? ((iv - price) * BigInt(10000)) / iv : BigInt(0);
 
   const isVeBTC = nftContract?.toLowerCase() === contracts.veBTC.toLowerCase();
 
   const fullListing: Listing = {
     listingId,
-    seller: listing[0],
-    nftContract: listing[1],
+    seller: listing.seller,
+    nftContract: listing.nftContract,
     collection: isVeBTC ? "veBTC" : "veMEZO",
-    tokenId: listing[2],
-    price: listing[3],
-    paymentToken: listing[4],
-    active: listing[5],
-    createdAt: listing[6],
-    intrinsicValue: intrinsicValue || 0n,
-    votingPower: votingPower || 0n,
-    lockEnd: lockEnd || 0n,
+    tokenId: listing.tokenId,
+    price: listing.price,
+    paymentToken: listing.paymentToken,
+    active: listing.active,
+    createdAt: listing.createdAt,
+    intrinsicValue: intrinsicValue || BigInt(0),
+    votingPower: votingPower || BigInt(0),
+    lockEnd: lockEnd || BigInt(0),
     discountBps,
   };
 
