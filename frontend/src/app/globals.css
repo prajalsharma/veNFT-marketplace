@@ -5,29 +5,175 @@
 :root {
   --mezo-primary: #F7931A;
   --mezo-secondary: #1a1a2e;
-  --mezo-dark: #0f0f1a;
+  --mezo-dark: #0a0a14;
+  --mezo-darker: #050508;
   --mezo-accent: #00d4ff;
+  --mezo-purple: #8b5cf6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--mezo-dark);
+  background: linear-gradient(180deg, var(--mezo-darker) 0%, var(--mezo-dark) 50%, var(--mezo-secondary) 100%);
+  background-attachment: fixed;
   color: white;
+  min-height: 100vh;
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-heavy {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #F7931A 0%, #ff6b00 50%, #F7931A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-orange {
+  box-shadow: 0 0 20px rgba(247, 147, 26, 0.4);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+}
+
+/* Hover card effect */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--mezo-secondary);
+  background: var(--mezo-dark);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--mezo-primary);
+  background: linear-gradient(180deg, var(--mezo-primary) 0%, #ff6b00 100%);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4750e;
+  background: var(--mezo-primary);
+}
+
+/* Focus states */
+*:focus-visible {
+  outline: 2px solid var(--mezo-primary);
+  outline-offset: 2px;
+}
+
+/* Button base */
+.btn-primary {
+  @apply bg-mezo-gradient px-6 py-3 rounded-2xl font-semibold text-black
+         transition-all duration-300 hover:shadow-glow hover:scale-105
+         active:scale-95;
+}
+
+.btn-secondary {
+  @apply glass px-6 py-3 rounded-2xl font-semibold text-white
+         transition-all duration-300 hover:bg-glass-medium
+         border border-white/10 hover:border-white/20;
+}
+
+/* Badge styles */
+.badge {
+  @apply px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
+}
+
+.badge-success {
+  @apply bg-mezo-success/20 text-mezo-success border border-mezo-success/30;
+}
+
+.badge-warning {
+  @apply bg-mezo-warning/20 text-mezo-warning border border-mezo-warning/30;
+}
+
+.badge-danger {
+  @apply bg-mezo-danger/20 text-mezo-danger border border-mezo-danger/30;
+}
+
+.badge-orange {
+  @apply bg-mezo-primary/20 text-mezo-primary border border-mezo-primary/30;
+}
+
+.badge-purple {
+  @apply bg-mezo-purple/20 text-mezo-purple border border-mezo-purple/30;
+}
+
+/* RainbowKit overrides */
+[data-rk] {
+  --rk-colors-accentColor: #F7931A !important;
+  --rk-colors-accentColorForeground: #000000 !important;
+  --rk-colors-modalBackground: #1a1a2e !important;
+  --rk-colors-modalBorder: rgba(255, 255, 255, 0.1) !important;
+  --rk-radii-modal: 1.5rem !important;
+}
+
+/* Number formatting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
