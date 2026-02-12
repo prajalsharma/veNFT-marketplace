@@ -4,6 +4,7 @@ import { RainbowKitProvider, darkTheme, Theme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { config } from "@/lib/wagmi";
+import { mezoTestnet } from "@/lib/chains";
 import "@rainbow-me/rainbowkit/styles.css";
 import { useState, useEffect } from "react";
 
@@ -94,6 +95,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           theme={mezoTheme}
           modalSize="compact"
           showRecentTransactions={true}
+          initialChain={mezoTestnet}
           appInfo={{
             appName: "Mezo veNFT Marketplace",
             learnMoreUrl: "https://mezo.org",
