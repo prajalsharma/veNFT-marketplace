@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useAccount } from "wagmi";
 import { useNetwork } from "@/hooks/useNetwork";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -9,6 +10,8 @@ import {
   TrendingUp, MousePointer2, Github, ExternalLink
 } from "lucide-react";
 import { useRef } from "react";
+
+const BestDealsCarousel = dynamic(() => import("@/components/BestDealsCarousel"), { ssr: false });
 
 const features = [
   {
@@ -206,6 +209,11 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          BEST DEALS CAROUSEL
+      ══════════════════════════════════════════════════════════ */}
+      <BestDealsCarousel />
 
       {/* ══════════════════════════════════════════════════════════
           CTA BAND

@@ -1,7 +1,7 @@
 "use client";
 
 import { useNetwork } from "@/hooks/useNetwork";
-import { useActivityFeed } from "@/hooks/useActivityFeed";
+import { useActivityContext } from "@/context/ActivityContext";
 import { motion } from "framer-motion";
 import {
   Tag,
@@ -28,7 +28,7 @@ function formatTime(timestamp: number | null): string {
 
 export default function ActivityClient() {
   const { network, contracts } = useNetwork();
-  const { events, isLoading, error, isDeployed } = useActivityFeed(100);
+  const { events, isLoading, error, isDeployed } = useActivityContext();
 
   return (
     <div className="min-h-screen pt-[88px] pb-24 px-6">

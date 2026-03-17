@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/Header";
 import { NetworkSwitcher } from "@/components/NetworkSwitcher";
+import { ActivityProvider } from "@/context/ActivityContext";
 import Link from "next/link";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -36,7 +37,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       <Header />
       <NetworkSwitcher />
-      <main className="relative">{children}</main>
+      <ActivityProvider>
+        <main className="relative">{children}</main>
+      </ActivityProvider>
 
       {/* ── Footer ── */}
       <footer className="relative mt-24 border-t border-white/[0.055]">
