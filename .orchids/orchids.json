@@ -1,7 +1,0 @@
-{
-  "startupCommands": [
-    "cd /home/user/app/frontend && npm install --legacy-peer-deps; npm run dev"
-  ],
-  "projectId": "b2604ecf-3b39-4d5a-9484-24792eccb510",
-  "templateId": "any"
-}
