@@ -11,15 +11,15 @@ coverage/
 coverage.json
 
 # Environment — never commit real secrets
-.env
-.env.local
-.env.*.local
-frontend/.env
-frontend/.env.local
-frontend/.env.*.local
+# .env # Removed by Orchids to allow .env files
+# .env.local # Removed by Orchids to allow .env files
+# .env.*.local # Removed by Orchids to allow .env files
+# frontend/.env # Removed by Orchids to allow .env files
+# frontend/.env.local # Removed by Orchids to allow .env files
+# frontend/.env.*.local # Removed by Orchids to allow .env files
 # Keep example files
-!.env.example
-!frontend/.env.example
+# !.env.example # Removed by Orchids to allow .env files
+# !frontend/.env.example # Removed by Orchids to allow .env files
 
 .idea/
 .vscode/
