@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build
+artifacts/
+cache/
+out/
+typechain-types/
+coverage/
+coverage.json
+
+# Environment — never commit real secrets
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+# Keep example files
+!.env.example
+!frontend/.env.example
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment
+deployments/*.json
+
+# Frontend
+frontend/.next/
+frontend/out/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+.nyc_output/
