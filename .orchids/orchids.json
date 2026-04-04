@@ -1,0 +1,8 @@
+{
+  "projectId": "d2f93b79-1ab9-44e3-82d5-dc33dcd95430",
+  "createdAt": 1772085407068,
+  "startupCommands": [
+    "npm install; npm run dev:frontend"
+  ],
+  "templateId": "any"
+}
