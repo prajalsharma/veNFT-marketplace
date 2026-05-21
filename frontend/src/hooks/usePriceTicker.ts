@@ -4,11 +4,11 @@
  * usePriceTicker — live USD prices for BTC, MEZO, and MUSD.
  *
  * Sources:
- *  - BTC:  CoinGecko public API (bitcoin)
- *  - MEZO: CoinGecko public API (mezo-network) — falls back to $0.00 if not listed
- *  - MUSD: always $1.00 (pegged stablecoin)
+ *  - BTC:  CoinGecko (via /api/prices proxy — avoids CORS)
+ *  - MEZO: CoinGecko (id: "mezo", ~$0.03)
+ *  - MUSD: CoinGecko (id: "mezo-usd", pegged ~$1.00)
  *
- * Refreshes every 60 seconds. No API key required for CoinGecko public endpoint.
+ * Refreshes every 60 seconds. Proxy caches at edge for 60s.
  * All errors are silently swallowed — UI degrades to "—" gracefully.
  */
 
@@ -25,20 +25,16 @@ const REFRESH_INTERVAL_MS = 60_000;
 
 const DEFAULT: TokenPrices = { BTC: null, MEZO: null, MUSD: 1.0, lastUpdated: null };
 
-// CoinGecko free endpoint — no auth needed, 30req/min limit
-// CoinGecko IDs verified 2026-05:
-//   bitcoin      → BTC
-//   mezo         → MEZO (governance token, $0.03)
-//   mezo-usd     → MUSD stablecoin (pegged ~$1)
-const CG_URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cmezo%2Cmezo-usd&vs_currencies=usd";
+// Uses a local Next.js API proxy (/api/prices) to avoid CoinGecko CORS blocks.
+// The proxy fetches server-side and caches for 60s.
+const PRICES_URL = "/api/prices";
 
 export function usePriceTicker(): TokenPrices {
   const [prices, setPrices] = useState<TokenPrices>(DEFAULT);
 
   const fetchPrices = useCallback(async () => {
     try {
-      const res = await fetch(CG_URL, { cache: "no-store" });
+      const res = await fetch(PRICES_URL, { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();
       setPrices({

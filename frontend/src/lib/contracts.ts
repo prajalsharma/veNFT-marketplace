@@ -45,7 +45,7 @@ export const CONTRACTS = {
   },
   mainnet: {
     chainId: 31612,
-    rpcUrl: "https://rpc.mezo.org",
+    rpcUrl: "https://mezo.drpc.org",
     explorer: "https://explorer.mezo.org",
 
     // Token addresses (fixed on Mezo network)
