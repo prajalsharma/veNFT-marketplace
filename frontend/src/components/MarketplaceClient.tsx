@@ -55,7 +55,28 @@ function StatBar({
 }
 
 // ─── Empty state — taste-skill: composed, shows how to populate ──────────────
-function EmptyState({ filtered }: { filtered: boolean }) {
+// `variant` makes the empty state honest about *why* nothing is shown:
+//   "filtered"    — the user's filters/search excluded everything
+//   "unavailable" — listings exist on-chain but are all expired/sold/unbuyable
+//   "empty"       — the market is genuinely empty
+type EmptyVariant = "filtered" | "unavailable" | "empty";
+
+function EmptyState({ variant }: { variant: EmptyVariant }) {
+  const copy: Record<EmptyVariant, { title: string; body: string }> = {
+    filtered: {
+      title: "No listings match",
+      body: "Try adjusting or clearing your filters to see more results.",
+    },
+    unavailable: {
+      title: "No buyable listings right now",
+      body: "There are listings on-chain, but they’re all expired, sold, or otherwise unavailable to purchase.",
+    },
+    empty: {
+      title: "No active listings yet",
+      body: "Be the first to list a veNFT and provide liquidity to the Mezo ecosystem.",
+    },
+  };
+  const { title, body } = copy[variant];
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -72,14 +93,71 @@ function EmptyState({ filtered }: { filtered: boolean }) {
       </div>
       <div>
         <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
-          {filtered ? "No listings match" : "No active listings yet"}
+          {title}
         </h3>
         <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
-          {filtered
-            ? "Try adjusting or clearing your filters to see more results."
-            : "Be the first to list a veNFT and provide liquidity to the Mezo ecosystem."}
+          {body}
         </p>
       </div>
+    </motion.div>
+  );
+}
+
+// ─── Error / not-deployed state — honest about failures (never fake empty) ───
+function LoadFailureState({
+  notDeployed,
+  marketplaceAddress,
+  message,
+  onRetry,
+}: {
+  notDeployed: boolean;
+  marketplaceAddress?: string;
+  message?: string;
+  onRetry: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="col-span-full py-24 flex flex-col items-start gap-4"
+      style={{ borderTop: "1px solid var(--border-subtle)", paddingLeft: 2 }}
+    >
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center"
+        style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}
+      >
+        <X style={{ width: 18, height: 18, color: "#EF4444" }} />
+      </div>
+      <div>
+        <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
+          {notDeployed ? "Marketplace not configured for this network" : "Couldn’t load listings"}
+        </h3>
+        <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
+          {notDeployed
+            ? "No marketplace address is set for the selected network. This is a configuration issue, not an empty market."
+            : "The marketplace contract couldn’t be read. This is a network/RPC error — listings may exist but can’t be fetched right now."}
+        </p>
+        {marketplaceAddress && (
+          <p className="text-[11px] mt-2 font-mono" style={{ color: "var(--text-3)" }}>
+            Querying: {marketplaceAddress}
+          </p>
+        )}
+        {message && (
+          <p className="text-[11px] mt-1" style={{ color: "#EF4444", maxWidth: "52ch", wordBreak: "break-word" }}>
+            {message}
+          </p>
+        )}
+      </div>
+      {!notDeployed && (
+        <button
+          onClick={onRetry}
+          className="text-xs font-bold px-4 py-2 rounded-lg"
+          style={{ background: "var(--bg-2)", border: "1px solid var(--border)", color: "var(--text-1)" }}
+        >
+          Retry
+        </button>
+      )}
     </motion.div>
   );
 }
@@ -121,7 +199,15 @@ const DEFAULT_FILTERS: FilterState = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MarketplaceClient() {
-  const { listings: rawListings, isLoading: listingsLoading, refetch } = useActiveListings();
+  const {
+    listings: rawListings,
+    isLoading: listingsLoading,
+    refetch,
+    isError: listingsError,
+    error: listingsErrorObj,
+    marketplaceAddress,
+    isMarketplaceReady,
+  } = useActiveListings();
   // Historical sales feed — used for avg discount from ACTUAL completed trades
   const { events: activityEvents } = useActivityFeed(200);
   const prices = usePriceTicker();
@@ -149,12 +235,23 @@ export default function MarketplaceClient() {
     const now = Math.floor(Date.now() / 1000);
     const soonThreshold = now + 7 * 86400;
 
+    // The discount slider is bounded 0–50%. Treat it as a filter ONLY when the
+    // user has actually narrowed it; at its default (0–50) it must NOT hide
+    // listings priced at a premium (negative discount) or deeper than 50% off,
+    // nor listings whose discount is not computable (cross-token → null). Doing
+    // otherwise silently drops valid listings even though no filter pill shows.
+    const discountFilterActive = minDiscount > 0 || maxDiscount < 50;
+
     const filtered = searchableListings.filter((l) => {
       if (collectionFilter !== "all" && l.collection !== collectionFilter) return false;
       if (activeOnly && !l.active) return false;
       if (Number(l.lockEnd) !== 0 && Number(l.lockEnd) <= now) return false;
-      const dPct = l.discountBps !== null ? Number(l.discountBps) / 100 : 0;
-      if (dPct < minDiscount || dPct > maxDiscount) return false;
+      // Only constrain by discount when the user narrows the band. Null discounts
+      // (no oracle-safe comparison) are never hidden by this slider.
+      if (discountFilterActive && l.discountBps !== null) {
+        const dPct = Number(l.discountBps) / 100;
+        if (dPct < minDiscount || dPct > maxDiscount) return false;
+      }
       if (showGrantOnly && !l.isGrant) return false;
       if (showAutoLockOnly && Number(l.lockEnd) !== 0) return false;
       if (showEndingSoon && (Number(l.lockEnd) === 0 || Number(l.lockEnd) > soonThreshold)) return false;
@@ -489,7 +586,30 @@ export default function MarketplaceClient() {
               </AnimatePresence>
 
               {filteredListings.length === 0 && dataLoaded && (
-                <EmptyState filtered={activeFilterCount > 0 || searchQuery.length > 0} />
+                !isMarketplaceReady ? (
+                  <LoadFailureState
+                    notDeployed
+                    marketplaceAddress={marketplaceAddress}
+                    onRetry={refetch}
+                  />
+                ) : listingsError ? (
+                  <LoadFailureState
+                    notDeployed={false}
+                    marketplaceAddress={marketplaceAddress}
+                    message={listingsErrorObj?.message}
+                    onRetry={refetch}
+                  />
+                ) : (
+                  <EmptyState
+                    variant={
+                      activeFilterCount > 0 || searchQuery.length > 0
+                        ? "filtered"
+                        : searchableListings.length > 0
+                          ? "unavailable" // listings exist on-chain but all expired/sold/unbuyable
+                          : "empty"
+                    }
+                  />
+                )
               )}
             </div>
           )}

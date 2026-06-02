@@ -517,7 +517,7 @@ export function useListing(listingId: number) {
   // Cross-check: verify seller still owns the NFT. If they transferred it out without
   // cancelling the listing (possible in escrowless design), the listing is stale.
   // We only run this check when the listing reports active=true to save RPC calls.
-  const { data: currentOwner } = useReadContract({
+  const { data: currentOwner, isError: ownerIsError, isLoading: ownerLoading } = useReadContract({
     address: collection as `0x${string}`,
     abi: ERC721_ABI,
     functionName: "ownerOf",
@@ -596,11 +596,18 @@ export function useListing(listingId: number) {
   // A listing is only truly active if:
   //   1. The contract marks it active, AND
   //   2. The seller still owns the NFT (ownerOf cross-check)
-  // If currentOwner is not yet loaded we default to contract's active flag to
-  // avoid a flash of "inactive" while the RPC call is in-flight.
-  const sellerStillOwns =
-    currentOwner == null || // not yet loaded — optimistically trust contract
-    (currentOwner as string).toLowerCase() === listing.seller.toLowerCase();
+  // States handled explicitly:
+  //   • in-flight → optimistically trust the contract flag (no flash of "inactive")
+  //   • ownerOf reverted (token burned/nonexistent) or owner is the zero address
+  //     → treat as NOT owned (the listing is stale; buyNFT would revert)
+  //   • otherwise compare the live owner to the seller
+  const ownerStr = (currentOwner as string | undefined)?.toLowerCase();
+  const sellerStillOwns = ownerLoading
+    ? true
+    : !ownerIsError &&
+      ownerStr != null &&
+      ownerStr !== ZERO_ADDRESS &&
+      ownerStr === listing.seller.toLowerCase();
   const isActive = listing.active && sellerStillOwns;
 
   const fullListing: Listing = {
@@ -803,7 +810,7 @@ export function useActiveListings() {
   const isAdapterReady     = !!adapterAddress     && adapterAddress     !== ZERO;
 
   // Step 1a: fetch nextListingId so we know how many slots to scan
-  const { data: nextId, refetch: refetchNextId } = useReadContract({
+  const { data: nextId, refetch: refetchNextId, isError: nextIdIsError, error: nextIdError } = useReadContract({
     address: marketplaceAddress,
     abi: MARKETPLACE_ABI,
     functionName: "nextListingId",
@@ -825,7 +832,7 @@ export function useActiveListings() {
     chainId,
   }));
 
-  const { data: slotResults, isLoading: batchLoading, refetch: refetchSlots } = useReadContracts({
+  const { data: slotResults, isLoading: batchLoading, refetch: refetchSlots, isError: slotsIsError, error: slotsError } = useReadContracts({
     contracts: slotCalls,
     query: { enabled: isMarketplaceReady && slotCount > 0 },
   });
@@ -937,12 +944,20 @@ export function useActiveListings() {
     const nftLockedTokenAddr = isVeBTC ? BTC_TOKEN_ADDR : MEZO_TOKEN_ADDR;
     const discountBps = computeDiscountBps(intrinsicValue, nftLockedTokenAddr, raw.price, raw.paymentToken);
 
-    // Cross-check: seller must still own the NFT. If ownerOf hasn't loaded yet
-    // we optimistically trust the contract's active flag to avoid flash-hiding.
-    const currentOwner = ownerOfResults?.[i]?.result as string | undefined;
+    // Cross-check: the seller must still own the NFT, otherwise the listing is
+    // stale and buyNFT would revert. Three states are handled explicitly:
+    //   • batch not resolved yet (ownerOfResults == null) → optimistically trust
+    //     the contract's active flag to avoid a flash of "inactive"
+    //   • ownerOf reverted (status "failure" → result undefined; token burned or
+    //     nonexistent) OR owner is the zero address → treat as NOT owned (hide it)
+    //   • otherwise compare the live owner to the seller
+    const currentOwner = (ownerOfResults?.[i]?.result as string | undefined)?.toLowerCase();
     const sellerStillOwns =
-      currentOwner == null || // not yet loaded — optimistically trust contract
-      currentOwner.toLowerCase() === raw.seller.toLowerCase();
+      ownerOfResults == null // still loading — avoid flash-hiding
+        ? true
+        : currentOwner != null &&
+          currentOwner !== ZERO_ADDRESS &&
+          currentOwner === raw.seller.toLowerCase();
     const isActive = raw.active && sellerStillOwns;
 
     return {
@@ -963,5 +978,20 @@ export function useActiveListings() {
     };
   });
 
-  return { listings, isLoading, refetch };
+  // Surface read failures so the UI can distinguish a genuine empty market from
+  // an RPC/contract error (never show a false "no listings" state on failure).
+  const isError = nextIdIsError || slotsIsError;
+  const error = nextIdError ?? slotsError ?? null;
+
+  return {
+    listings,
+    isLoading,
+    refetch,
+    isError,
+    error,
+    // Resolved address actually queried — exposed so an env-var override that
+    // points at the wrong/empty marketplace is immediately visible in the UI.
+    marketplaceAddress,
+    isMarketplaceReady,
+  };
 }
