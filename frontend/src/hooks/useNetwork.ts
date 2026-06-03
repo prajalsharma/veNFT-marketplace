@@ -13,8 +13,7 @@ export function useNetwork() {
   const isMainnet = chainId === mezoMainnet.id;
   const isMezoNetwork = isTestnet || isMainnet;
 
-  // Default to mainnet — 173 live listings exist on Mezo Mainnet (31612).
-  const network: NetworkType = isTestnet ? "testnet" : "mainnet";
+  const network: NetworkType = isMainnet ? "mainnet" : "testnet";
   const contracts = getContracts(network);
 
   const switchToTestnet = useCallback(() => {
