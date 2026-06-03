@@ -13,10 +13,9 @@ export function useNetwork() {
   const isMainnet = chainId === mezoMainnet.id;
   const isMezoNetwork = isTestnet || isMainnet;
 
-  // When no wallet is connected (chainId doesn't match either Mezo chain),
-  // default to mainnet so the marketplace shows live listings without requiring
-  // a wallet connection first.
-  const network: NetworkType = isTestnet ? "testnet" : "mainnet";
+  // Default to testnet — live listings are on testnet (chainId 31611).
+  // Switch to mainnet once contracts are deployed there.
+  const network: NetworkType = isMainnet ? "mainnet" : "testnet";
   const contracts = getContracts(network);
 
   const switchToTestnet = useCallback(() => {
