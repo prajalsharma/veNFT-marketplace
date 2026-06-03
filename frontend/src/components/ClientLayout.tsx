@@ -1,211 +1,154 @@
 "use client";
 
-import { Header } from "@/components/Header";
-import { NetworkSwitcher } from "@/components/NetworkSwitcher";
-import { ActivityProvider } from "@/context/ActivityContext";
 import Link from "next/link";
-import { Zap, ExternalLink, Github } from "lucide-react";
-
-// Twitter/X icon as SVG
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.73-8.835L1.254 2.25H8.08l4.259 5.631L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
-    </svg>
-  );
-}
-
-const footerLinks = {
-  product: [
-    { label: "Marketplace", href: "/marketplace" },
-    { label: "Portfolio",   href: "/my-listings" },
-    { label: "Activity",    href: "/activity" },
-    { label: "Docs",        href: "/docs" },
-  ],
-  ecosystem: [
-    { label: "Mezo Network",  href: "https://mezo.org",               external: true },
-    { label: "Explorer",      href: "https://explorer.mezo.org",      external: true },
-    { label: "Mezo Earn",     href: "https://testnet.mezo.org/earn",  external: true },
-    { label: "Testnet Faucet",href: "https://faucet.test.mezo.org",   external: true },
-  ],
-  developers: [
-    { label: "GitHub",          href: "https://github.com/prajalsharma/veNFT-marketplace", external: true },
-    { label: "Smart Contracts", href: "/docs",                                               external: false },
-  ],
-};
+import { Header, VezoLogoMark } from "@/components/Header";
+import { NetworkSwitcher } from "@/components/NetworkSwitcher";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* ── Ambient background ── */}
-      <div className="fixed inset-0 -z-50 pointer-events-none">
-        <div className="absolute inset-0 bg-[#030303]" />
+      {/* ── Ambient background — cinematic depth ── */}
+      <div
+        className="fixed inset-0 -z-50 pointer-events-none"
+        style={{ background: "var(--bg)", transition: "background 380ms var(--ease-spring)" }}
+      >
+        {/* Primary red blob — top center */}
         <div
-          className="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] rounded-full opacity-[0.065]"
-          style={{ background: "radial-gradient(circle, #F7931A 0%, transparent 70%)", filter: "blur(80px)" }}
-        />
-        <div
-          className="absolute bottom-0 right-0 w-[45%] h-[45%] rounded-full opacity-[0.038]"
-          style={{ background: "radial-gradient(circle, #4A90E2 0%, transparent 70%)", filter: "blur(100px)" }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.016]"
+          className="absolute top-[-12%] left-[10%] w-[800px] h-[800px] rounded-full"
           style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
+            background: "radial-gradient(circle, rgba(255,0,64,0.055) 0%, transparent 62%)",
+            filter: "blur(60px)",
+            animation: "floatSlow 16s ease-in-out infinite",
           }}
         />
+        {/* Secondary red — right */}
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute top-[20%] right-[-8%] w-[600px] h-[600px] rounded-full"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            background: "radial-gradient(circle, rgba(255,0,64,0.03) 0%, transparent 65%)",
+            filter: "blur(70px)",
+            animation: "float 20s ease-in-out infinite 4s",
+          }}
+        />
+        {/* Blue/neutral blob — bottom left */}
+        <div
+          className="absolute bottom-[-8%] left-[5%] w-[700px] h-[700px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, rgba(74,144,226,0.035) 0%, transparent 65%)",
+            filter: "blur(60px)",
+            animation: "floatReverse 22s ease-in-out infinite 2s",
+          }}
+        />
+        {/* Orange accent — mid right */}
+        <div
+          className="absolute top-[50%] right-[15%] w-[400px] h-[400px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, rgba(247,147,26,0.02) 0%, transparent 65%)",
+            filter: "blur(80px)",
+            animation: "floatSlow 25s ease-in-out infinite 8s",
           }}
         />
       </div>
 
       <Header />
       <NetworkSwitcher />
-      <ActivityProvider>
-        <main className="relative">{children}</main>
-      </ActivityProvider>
+      <main className="relative page-enter">{children}</main>
 
-      {/* ── Footer ── */}
-      <footer className="relative mt-24 border-t border-white/[0.055]">
-        {/* Top glow accent */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#F7931A]/18 to-transparent" />
+      {/* ── Single unified footer ── */}
+      <footer
+        className="relative mt-20"
+        style={{
+          borderTop: "1px solid var(--footer-border)",
+          transition: "border-color 380ms var(--ease-spring)",
+        }}
+      >
+        {/* Gradient accent line */}
+        <div
+          aria-hidden
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: "linear-gradient(90deg, transparent 0%, var(--vezo-red) 35%, var(--vezo-red) 65%, transparent 100%)",
+            opacity: 0.22,
+          }}
+        />
 
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
 
-            {/* Brand column */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div
-                  className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg, #F7931A, #c97415)" }}
+            {/* ── Brand ── */}
+            <Link
+              href="/"
+              className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] rounded-xl shrink-0"
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{
+                  background: "var(--bg-1)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-xs)",
+                  transition: "all 380ms ease",
+                }}
+              >
+                <VezoLogoMark size={24} />
+              </div>
+              <div className="leading-none">
+                <span
+                  className="text-base font-extrabold block leading-none"
+                  style={{ letterSpacing: "-0.05em", color: "var(--text-1)", transition: "color 380ms ease" }}
                 >
-                  <Zap className="w-4.5 h-4.5 text-black" strokeWidth={2.8} />
-                </div>
-                <div>
-                  <p className="text-[16px] font-black tracking-tight">
-                    Ve<span className="text-[#F7931A]">zo</span>
-                  </p>
-                  <p className="text-[10px] text-white/25 tracking-[0.1em] uppercase leading-none">Mezo Network</p>
-                </div>
-              </div>
-              <p className="text-[13px] text-white/28 leading-relaxed max-w-[190px]">
-                The premier marketplace for trading veBTC and veMEZO locked positions.
-              </p>
-
-              {/* Social icons */}
-              <div className="flex items-center gap-2.5 mt-5">
-                <a
-                  href="https://github.com/prajalsharma/veNFT-marketplace"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.065] flex items-center justify-center text-white/32 hover:text-white hover:bg-white/[0.07] hover:border-white/[0.12] transition-all duration-200"
-                  title="GitHub"
+                  vezo
+                </span>
+                <span
+                  className="text-[7px] font-bold tracking-[0.2em] uppercase leading-none mt-0.5 block"
+                  style={{ color: "var(--vezo-red)" }}
                 >
-                  <Github className="w-3.5 h-3.5" />
-                </a>
-                {/* Twitter / X — coming soon */}
-                <div className="relative group">
-                  <div
-                    className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.055] flex items-center justify-center text-white/22 cursor-not-allowed"
-                    title="Coming Soon"
-                  >
-                    <XIcon className="w-3 h-3" />
-                  </div>
-                  {/* Tooltip */}
-                  <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/[0.1] text-[10px] font-bold text-white/50 px-2.5 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
-                    Coming Soon
-                  </div>
-                </div>
+                  veNFT Marketplace
+                </span>
               </div>
+            </Link>
+
+            {/* ── Nav links ── */}
+            <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs">
+              {[
+                { href: "/marketplace", label: "Marketplace" },
+                { href: "/my-listings", label: "My Listings" },
+                { href: "/activity", label: "Activity" },
+                { href: "/docs", label: "Documentation" },
+                { href: "https://github.com/prajalsharma/veNFT-marketplace", label: "GitHub", external: true },
+                { href: "https://x.com/VezoExchange", label: "Twitter", external: true },
+              ].map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noopener noreferrer" : undefined}
+                  className="font-medium transition-colors"
+                  style={{ color: "var(--text-3)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* ── Built on ── */}
+            <div className="flex flex-col items-start lg:items-end gap-1.5 shrink-0">
+              <a
+                href="https://mezo.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium transition-colors"
+                style={{ color: "var(--text-3)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-2)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+              >
+                Built on Mezo Network
+              </a>
+              <span className="text-[10px]" style={{ color: "var(--text-4)" }}>
+                © 2026 Vezo. All rights reserved.
+              </span>
             </div>
-
-            {/* Product links */}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/25 mb-5">Product</p>
-              <ul className="space-y-3.5">
-                {footerLinks.product.map((l) => (
-                  <li key={l.label}>
-                    <Link
-                      href={l.href}
-                      className="text-[13px] text-white/32 hover:text-white/72 transition-colors duration-150"
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Ecosystem links */}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/25 mb-5">Ecosystem</p>
-              <ul className="space-y-3.5">
-                {footerLinks.ecosystem.map((l) => (
-                  <li key={l.label}>
-                    <a
-                      href={l.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[13px] text-white/32 hover:text-white/72 transition-colors duration-150 flex items-center gap-1.5 group"
-                    >
-                      {l.label}
-                      <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Developers links */}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/25 mb-5">Developers</p>
-              <ul className="space-y-3.5 mb-6">
-                {footerLinks.developers.map((l) => (
-                  <li key={l.label}>
-                    {l.external ? (
-                      <a
-                        href={l.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[13px] text-white/32 hover:text-white/72 transition-colors duration-150 flex items-center gap-1.5 group"
-                      >
-                        {l.label}
-                        <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-                      </a>
-                    ) : (
-                      <Link
-                        href={l.href}
-                        className="text-[13px] text-white/32 hover:text-white/72 transition-colors duration-150"
-                      >
-                        {l.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Live network badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.055]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-bold text-white/28 tracking-wide">Mezo Network</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <div className="mt-14 pt-6 border-t border-white/[0.05] flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-[11.5px] text-white/18">
-              © 2026 Vezo — Built for Mezo Network
-            </p>
-            <p className="text-[11px] text-white/15 font-medium">
-              Non-custodial · Escrowless · Audited Smart Contracts
-            </p>
           </div>
         </div>
       </footer>

@@ -5,6 +5,11 @@ const VEBTC_TESTNET = "0x38E35d92E6Bfc6787272A62345856B13eA12130a";
 const VEMEZO_TESTNET = "0xaCE816CA2bcc9b12C59799dcC5A959Fb9b98111b";
 const MUSD_TESTNET = "0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503";
 
+async function waitForTx(txPromise: Promise<any>) {
+  const tx = await txPromise;
+  await tx.wait();
+}
+
 async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with account:", deployer.address);
@@ -69,13 +74,111 @@ async function main() {
 
   // 5. Configure MarketplaceAdmin with PaymentRouter
   console.log("\n5. Configuring MarketplaceAdmin...");
-  await admin.setPaymentRouter(routerAddress);
+  await waitForTx(admin.setPaymentRouter(routerAddress));
   console.log("   PaymentRouter set in MarketplaceAdmin");
 
   // 6. Authorize VeNFTMarketplace as sole caller of PaymentRouter
   console.log("\n6. Authorizing VeNFTMarketplace in PaymentRouter...");
-  await router.setMarketplace(marketplaceAddress);
+  await waitForTx(router.setMarketplace(marketplaceAddress));
   console.log("   Marketplace authorized in PaymentRouter");
+
+  // 7. Transfer PaymentRouter admin to MarketplaceAdmin (two-step)
+  // This enforces the 48-hour fee change timelock on-chain.
+  console.log("\n7. Transferring PaymentRouter admin to MarketplaceAdmin...");
+  console.log("   Step 7a: Proposing admin transfer...");
+  await waitForTx(router.transferAdmin(adminContractAddress));
+  console.log("   Step 7b: Accepting admin transfer from MarketplaceAdmin...");
+  await waitForTx(admin.acceptRouterAdmin());
+  console.log("   PaymentRouter admin transferred to MarketplaceAdmin");
+
+  // ── Phase 2: Deploy new additive modules ─────────────────────────────────
+
+  // 8. Deploy VeNFTBidding
+  console.log("\n8. Deploying VeNFTBidding...");
+  const Bidding = await ethers.getContractFactory("VeNFTBidding");
+  const bidding = await Bidding.deploy(routerAddress, adminContractAddress);
+  await bidding.waitForDeployment();
+  const biddingAddress = await bidding.getAddress();
+  console.log("   VeNFTBidding deployed to:", biddingAddress);
+
+  // 9. Deploy ListingSnapshotStore
+  console.log("\n9. Deploying ListingSnapshotStore...");
+  const SnapshotStore = await ethers.getContractFactory("ListingSnapshotStore");
+  const snapshotStore = await SnapshotStore.deploy(adapterAddress, marketplaceAddress);
+  await snapshotStore.waitForDeployment();
+  const snapshotStoreAddress = await snapshotStore.getAddress();
+  console.log("   ListingSnapshotStore deployed to:", snapshotStoreAddress);
+
+  // 10. Deploy PriceOracleHub
+  console.log("\n10. Deploying PriceOracleHub...");
+  const OracleHub = await ethers.getContractFactory("PriceOracleHub");
+  const oracleHub = await OracleHub.deploy(adminAddress);
+  await oracleHub.waitForDeployment();
+  const oracleHubAddress = await oracleHub.getAddress();
+  console.log("   PriceOracleHub deployed to:", oracleHubAddress);
+
+  // 11. Deploy MockPriceAdapters for BTC, MEZO, MUSD (testnet only — replace with Chainlink on mainnet)
+  console.log("\n11. Deploying MockPriceAdapters (testnet)...");
+  const MockAdapter = await ethers.getContractFactory("MockPriceAdapter");
+  // Prices in USD with 18 decimals (approximate testnet values)
+  const btcAdapter   = await MockAdapter.deploy(adminAddress, ethers.parseEther("97000")); // $97k BTC
+  await btcAdapter.waitForDeployment();
+  const btcAdapterAddress = await btcAdapter.getAddress();
+
+  const mezoAdapter  = await MockAdapter.deploy(adminAddress, ethers.parseEther("0.15"));   // $0.15 MEZO
+  await mezoAdapter.waitForDeployment();
+  const mezoAdapterAddress = await mezoAdapter.getAddress();
+
+  const musdAdapter  = await MockAdapter.deploy(adminAddress, ethers.parseEther("1.0"));    // $1 MUSD
+  await musdAdapter.waitForDeployment();
+  const musdAdapterAddress = await musdAdapter.getAddress();
+  console.log("   MockPriceAdapter (BTC)  :", btcAdapterAddress);
+  console.log("   MockPriceAdapter (MEZO) :", mezoAdapterAddress);
+  console.log("   MockPriceAdapter (MUSD) :", musdAdapterAddress);
+
+  // 12. Register feeds in PriceOracleHub (5-minute staleness on testnet)
+  console.log("\n12. Registering price feeds...");
+  const STALENESS = 5 * 60; // 5 minutes for testnet
+  await waitForTx(oracleHub.registerFeed(ethers.encodeBytes32String("BTC"),  btcAdapterAddress,  STALENESS));
+  await waitForTx(oracleHub.registerFeed(ethers.encodeBytes32String("MEZO"), mezoAdapterAddress, STALENESS));
+  await waitForTx(oracleHub.registerFeed(ethers.encodeBytes32String("MUSD"), musdAdapterAddress, STALENESS));
+  console.log("   Feeds registered: BTC, MEZO, MUSD");
+
+  // 13. Deploy QuoteRouter (0.5% swap fee on testnet)
+  console.log("\n13. Deploying QuoteRouter...");
+  const QuoteRouterFactory = await ethers.getContractFactory("QuoteRouter");
+  const quoteRouter = await QuoteRouterFactory.deploy(oracleHubAddress, adminAddress, 50); // 50bps = 0.5%
+  await quoteRouter.waitForDeployment();
+  const quoteRouterAddress = await quoteRouter.getAddress();
+  console.log("   QuoteRouter deployed to:", quoteRouterAddress);
+
+  // 14. Register token symbols in QuoteRouter
+  console.log("\n14. Registering token symbols in QuoteRouter...");
+  const BTC_ADDRESS  = "0x7b7C000000000000000000000000000000000000";
+  const MEZO_ADDRESS = "0x7B7c000000000000000000000000000000000001";
+  await waitForTx(quoteRouter.registerToken(BTC_ADDRESS,  ethers.encodeBytes32String("BTC")));
+  await waitForTx(quoteRouter.registerToken(MEZO_ADDRESS, ethers.encodeBytes32String("MEZO")));
+  await waitForTx(quoteRouter.registerToken(MUSD_TESTNET, ethers.encodeBytes32String("MUSD")));
+  console.log("   Tokens registered: BTC, MEZO, MUSD");
+
+  // 15. Deploy SwapRouter
+  console.log("\n15. Deploying SwapRouter...");
+  const SwapRouterFactory = await ethers.getContractFactory("SwapRouter");
+  const swapRouter = await SwapRouterFactory.deploy(routerAddress, quoteRouterAddress, adminAddress);
+  await swapRouter.waitForDeployment();
+  const swapRouterAddress = await swapRouter.getAddress();
+  console.log("   SwapRouter deployed to:", swapRouterAddress);
+
+  // 16. Authorise VeNFTMarketplace as caller in SwapRouter
+  console.log("\n16. Authorising marketplace in SwapRouter...");
+  await waitForTx(swapRouter.setAuthorisedCaller(marketplaceAddress, true));
+  console.log("   VeNFTMarketplace authorised in SwapRouter");
+
+  // 17. Register SnapshotStore in VeNFTMarketplace (optional — deployer must hold DEFAULT_ADMIN_ROLE)
+  console.log("\n17. Registering SnapshotStore in VeNFTMarketplace...");
+  const marketplaceContract = await ethers.getContractAt("VeNFTMarketplace", marketplaceAddress);
+  await waitForTx(marketplaceContract.setSnapshotStore(snapshotStoreAddress));
+  console.log("   SnapshotStore registered");
 
   // Output deployment summary
   console.log("\n=== TESTNET DEPLOYMENT COMPLETE ===");
@@ -84,16 +187,30 @@ async function main() {
   console.log("");
   console.log("Contract Addresses:");
   console.log("-------------------");
-  console.log("MezoVeNFTAdapter:", adapterAddress);
-  console.log("PaymentRouter:   ", routerAddress);
-  console.log("MarketplaceAdmin:", adminContractAddress);
-  console.log("VeNFTMarketplace:", marketplaceAddress);
+  console.log("MezoVeNFTAdapter:     ", adapterAddress);
+  console.log("PaymentRouter:        ", routerAddress);
+  console.log("MarketplaceAdmin:     ", adminContractAddress);
+  console.log("VeNFTMarketplace:     ", marketplaceAddress);
+  console.log("--- New Modules ---");
+  console.log("VeNFTBidding:         ", biddingAddress);
+  console.log("ListingSnapshotStore: ", snapshotStoreAddress);
+  console.log("PriceOracleHub:       ", oracleHubAddress);
+  console.log("QuoteRouter:          ", quoteRouterAddress);
+  console.log("SwapRouter:           ", swapRouterAddress);
+  console.log("MockAdapter (BTC):    ", btcAdapterAddress);
+  console.log("MockAdapter (MEZO):   ", mezoAdapterAddress);
+  console.log("MockAdapter (MUSD):   ", musdAdapterAddress);
   console.log("");
   console.log("Verify contracts:");
   console.log(`npx hardhat verify --network mezotestnet ${adapterAddress} ${VEBTC_TESTNET} ${VEMEZO_TESTNET}`);
   console.log(`npx hardhat verify --network mezotestnet ${routerAddress} ${feeRecipient} ${adminAddress} ${MUSD_TESTNET} ${initialFeeBps}`);
   console.log(`npx hardhat verify --network mezotestnet ${adminContractAddress} ${adminAddress} true`);
   console.log(`npx hardhat verify --network mezotestnet ${marketplaceAddress} ${adapterAddress} ${routerAddress} ${adminContractAddress}`);
+  console.log(`npx hardhat verify --network mezotestnet ${biddingAddress} ${routerAddress} ${adminContractAddress}`);
+  console.log(`npx hardhat verify --network mezotestnet ${snapshotStoreAddress} ${adapterAddress} ${marketplaceAddress}`);
+  console.log(`npx hardhat verify --network mezotestnet ${oracleHubAddress} ${adminAddress}`);
+  console.log(`npx hardhat verify --network mezotestnet ${quoteRouterAddress} ${oracleHubAddress} ${adminAddress} 50`);
+  console.log(`npx hardhat verify --network mezotestnet ${swapRouterAddress} ${routerAddress} ${quoteRouterAddress} ${adminAddress}`);
 
   // Save deployment info
   const fs = await import("fs");
@@ -107,6 +224,14 @@ async function main() {
       PaymentRouter: routerAddress,
       MarketplaceAdmin: adminContractAddress,
       VeNFTMarketplace: marketplaceAddress,
+      VeNFTBidding: biddingAddress,
+      ListingSnapshotStore: snapshotStoreAddress,
+      PriceOracleHub: oracleHubAddress,
+      QuoteRouter: quoteRouterAddress,
+      SwapRouter: swapRouterAddress,
+      MockPriceAdapterBTC: btcAdapterAddress,
+      MockPriceAdapterMEZO: mezoAdapterAddress,
+      MockPriceAdapterMUSD: musdAdapterAddress,
     },
     config: {
       veBTC: VEBTC_TESTNET,

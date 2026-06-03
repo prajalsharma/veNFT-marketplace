@@ -34,7 +34,7 @@ describe("VeNFTMarketplace Integration", function () {
       treasury.address,
       admin.address,
       await musd.getAddress(),
-      100 // 1% fee
+      200 // 2% fee
     );
     await router.waitForDeployment();
 
@@ -156,7 +156,7 @@ describe("VeNFTMarketplace Integration", function () {
       const sellerAfter = await ethers.provider.getBalance(seller.address);
       const treasuryAfter = await ethers.provider.getBalance(treasury.address);
 
-      const expectedFee = listPrice / 100n; // 1%
+      const expectedFee = (listPrice * 2n) / 100n; // 2%
       const expectedSeller = listPrice - expectedFee;
 
       expect(sellerAfter - sellerBefore).to.equal(expectedSeller);
@@ -210,7 +210,7 @@ describe("VeNFTMarketplace Integration", function () {
       const sellerAfter = await musd.balanceOf(seller.address);
       const treasuryAfter = await musd.balanceOf(treasury.address);
 
-      const expectedFee = listPrice / 100n;
+      const expectedFee = (listPrice * 2n) / 100n;
       const expectedSeller = listPrice - expectedFee;
 
       expect(sellerAfter - sellerBefore).to.equal(expectedSeller);

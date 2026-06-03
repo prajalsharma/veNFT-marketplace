@@ -2,9 +2,21 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IMezoVeNFTAdapter.sol";
 import "../interfaces/IPaymentRouter.sol";
+
+// ─── Snapshot store interface (additive — optional) ───────────────────────────
+interface IListingSnapshotStore {
+    function recordSnapshot(
+        uint256 listingId,
+        address collection,
+        uint256 tokenId,
+        uint256 listPrice,
+        uint256 usdValue
+    ) external;
+}
 
 /// @title VeNFTMarketplace
 /// @notice Escrowless P2P marketplace for veBTC and veMEZO NFTs
@@ -33,9 +45,6 @@ contract VeNFTMarketplace is ReentrancyGuard {
     /// @notice All listings (listing ID => Listing)
     mapping(uint256 => Listing) public listings;
 
-    /// @notice BidRegistry — only address allowed to call fulfillBidPurchase
-    address public bidRegistry;
-
     /// @notice Current listing ID counter
     uint256 public nextListingId;
 
@@ -44,6 +53,16 @@ contract VeNFTMarketplace is ReentrancyGuard {
 
     /// @notice Collection floor prices (collection => payment token => price)
     mapping(address => mapping(address => uint256)) public floorPrices;
+
+    /// @notice Active listing ID per NFT (collection => tokenId => listingId+1, 0 = no active listing)
+    mapping(address => mapping(uint256 => uint256)) private _activeListingByToken;
+
+    // ─── Additive: Snapshot store (optional) ──────────────────────────────────
+    // Set once after deployment via setSnapshotStore().
+    // If not set, listing / buy flows are unaffected — snapshots are simply skipped.
+
+    /// @notice Optional ListingSnapshotStore for immutable per-listing snapshots
+    IListingSnapshotStore public snapshotStore;
 
     /// @notice Emitted when NFT is listed
     event Listed(
@@ -69,8 +88,48 @@ contract VeNFTMarketplace is ReentrancyGuard {
     /// @notice Emitted when listing price is updated
     event PriceUpdated(uint256 indexed listingId, uint256 oldPrice, uint256 newPrice);
 
-    /// @notice Emitted when bid registry is configured
-    event BidRegistrySet(address indexed registry);
+    // ─── Additive: Rich analytics events ──────────────────────────────────────
+    // These are supplementary to the original Listed/Cancelled/Purchased events.
+    // Off-chain indexers can use these for floor prices, volume charts, and
+    // average sale discount tracking.  Existing event consumers are unaffected.
+
+    /// @notice Rich listing event with veNFT snapshot values
+    event ListedWithSnapshot(
+        uint256 indexed listingId,
+        address indexed seller,
+        address indexed collection,
+        uint256 tokenId,
+        uint256 price,
+        address paymentToken,
+        uint256 intrinsicValueAtListing,
+        uint256 votingPowerAtListing,
+        uint256 lockDurationAtListing,
+        uint256 discountBpsAtListing
+    );
+
+    /// @notice Rich cancellation event
+    event CancelledWithContext(
+        uint256 indexed listingId,
+        address indexed seller,
+        address indexed collection,
+        uint256 tokenId,
+        uint256 originalPrice,
+        address paymentToken
+    );
+
+    /// @notice Rich purchase event for analytics
+    event PurchasedWithAnalytics(
+        uint256 indexed listingId,
+        address indexed buyer,
+        address indexed seller,
+        address collection,
+        uint256 tokenId,
+        uint256 price,
+        address paymentToken,
+        uint256 protocolFee,
+        uint256 intrinsicValueAtSale,
+        uint256 discountBpsAtSale
+    );
 
     /// @notice Errors
     error Paused();
@@ -84,14 +143,19 @@ contract VeNFTMarketplace is ReentrancyGuard {
     error TransferFailed();
     error ExpiredVeNFT();
     error SelfPurchase();
-    error OnlyBidRegistry();
+    error PauseCheckFailed();
+    error InsufficientAllowance();
+    error AlreadyListed();
+    error SnapshotStoreAlreadySet();
+    error NotAdmin();
 
-    /// @notice Check if marketplace is paused
+    /// @notice Check if marketplace is paused (fail-closed: reverts if admin call fails)
     modifier whenNotPaused() {
         (bool success, bytes memory data) = adminContract.staticcall(
             abi.encodeWithSignature("isPaused()")
         );
-        if (success && abi.decode(data, (bool))) revert Paused();
+        if (!success || data.length < 32) revert PauseCheckFailed();
+        if (abi.decode(data, (bool))) revert Paused();
         _;
     }
 
@@ -107,6 +171,30 @@ contract VeNFTMarketplace is ReentrancyGuard {
         adapter = IMezoVeNFTAdapter(_adapter);
         paymentRouter = IPaymentRouter(_paymentRouter);
         adminContract = _adminContract;
+    }
+
+    /// @notice Emitted when snapshot store is registered
+    event SnapshotStoreSet(address indexed store);
+
+    // ─── Additive: Snapshot store registration ─────────────────────────────────
+
+    /// @notice Register the ListingSnapshotStore (admin only, one-time set).
+    ///         Must be called by the adminContract owner after deployment.
+    ///         The snapshot store is optional — if not set, listings work as before.
+    /// @param store ListingSnapshotStore contract address
+    function setSnapshotStore(address store) external {
+        // Only the adminContract can set (reuses the admin authority model)
+        (bool ok, bytes memory data) = adminContract.staticcall(
+            abi.encodeWithSignature("hasRole(bytes32,address)",
+                bytes32(0x00), // DEFAULT_ADMIN_ROLE
+                msg.sender
+            )
+        );
+        if (!ok || data.length < 32 || !abi.decode(data, (bool))) revert NotAdmin();
+        if (address(snapshotStore) != address(0)) revert SnapshotStoreAlreadySet();
+        require(store != address(0), "Invalid store");
+        snapshotStore = IListingSnapshotStore(store);
+        emit SnapshotStoreSet(store);
     }
 
     /// @notice List a veNFT for sale
@@ -140,6 +228,9 @@ contract VeNFTMarketplace is ReentrancyGuard {
             !nft.isApprovedForAll(msg.sender, address(this))
         ) revert NotApproved();
 
+        // Prevent duplicate active listings for the same NFT
+        if (_activeListingByToken[collection][tokenId] != 0) revert AlreadyListed();
+
         // Create listing
         listingId = nextListingId++;
 
@@ -155,6 +246,9 @@ contract VeNFTMarketplace is ReentrancyGuard {
 
         userListings[msg.sender].push(listingId);
 
+        // Track active listing for this NFT (store listingId + 1 so 0 means "no listing")
+        _activeListingByToken[collection][tokenId] = listingId + 1;
+
         // Update floor price if needed
         uint256 currentFloor = floorPrices[collection][paymentToken];
         if (currentFloor == 0 || price < currentFloor) {
@@ -162,6 +256,26 @@ contract VeNFTMarketplace is ReentrancyGuard {
         }
 
         emit Listed(listingId, msg.sender, collection, tokenId, price, paymentToken);
+
+        // ── Additive: snapshot + rich analytics event ──────────────────────
+        // Fetching live veNFT values here is cheap (read-only adapter calls).
+        // These values are snapshotted once at listing time so analytics remain
+        // stable even as intrinsic value / voting power decays over time.
+        (uint256 intrinsicVal, ) = adapter.getIntrinsicValue(collection, tokenId);
+        uint256 votingPow   = adapter.getVotingPower(collection, tokenId);
+        uint256 lockRemain  = adapter.getTimeRemaining(collection, tokenId);
+        uint256 discountBps = adapter.calculateDiscount(price, intrinsicVal);
+
+        emit ListedWithSnapshot(
+            listingId, msg.sender, collection, tokenId, price, paymentToken,
+            intrinsicVal, votingPow, lockRemain, discountBps
+        );
+
+        // Persist snapshot on-chain if store is registered (no-op otherwise)
+        if (address(snapshotStore) != address(0)) {
+            // usdValue = 0 here; PriceOracleHub is optional at listing time
+            try snapshotStore.recordSnapshot(listingId, collection, tokenId, price, 0) {} catch {}
+        }
     }
 
     /// @notice Cancel a listing
@@ -172,9 +286,20 @@ contract VeNFTMarketplace is ReentrancyGuard {
         if (!listing.active) revert ListingNotActive();
         if (listing.seller != msg.sender) revert NotOwner();
 
+        // Cache fields before state change for rich event
+        address _seller      = listing.seller;
+        address _collection  = listing.collection;
+        uint256 _tokenId     = listing.tokenId;
+        uint256 _price       = listing.price;
+        address _payToken    = listing.paymentToken;
+
         listing.active = false;
+        _activeListingByToken[_collection][_tokenId] = 0;
 
         emit Cancelled(listingId);
+
+        // Additive rich cancellation event for analytics indexers
+        emit CancelledWithContext(listingId, _seller, _collection, _tokenId, _price, _payToken);
     }
 
     /// @notice Update listing price
@@ -217,6 +342,7 @@ contract VeNFTMarketplace is ReentrancyGuard {
 
         // Mark as inactive before external calls (CEI pattern)
         listing.active = false;
+        _activeListingByToken[listing.collection][listing.tokenId] = 0;
 
         address seller = listing.seller;
         address collection = listing.collection;
@@ -224,8 +350,17 @@ contract VeNFTMarketplace is ReentrancyGuard {
         uint256 price = listing.price;
         address paymentToken = listing.paymentToken;
 
-        // Transfer NFT from seller to buyer FIRST, then route payment
-        // This ensures payment only happens if NFT transfer succeeds
+        // Validate buyer ERC-20 allowance before initiating any transfers.
+        // This catches insufficient approval early, before the NFT moves.
+        if (paymentToken != paymentRouter.BTC()) {
+            uint256 allowance = IERC20(paymentToken).allowance(msg.sender, address(paymentRouter));
+            if (allowance < price) revert InsufficientAllowance();
+        }
+
+        // Transfer NFT first, then route payment. The NFT-first ordering is intentional:
+        // payment only executes if the NFT transfer succeeds. safeTransferFrom triggers
+        // onERC721Received on contract buyers; nonReentrant bounds the re-entry surface.
+        // EVM atomicity ensures the entire transaction reverts if payment fails afterward.
         IERC721(collection).safeTransferFrom(seller, msg.sender, tokenId);
 
         // Route payment through PaymentRouter
@@ -245,6 +380,28 @@ contract VeNFTMarketplace is ReentrancyGuard {
         }
 
         emit Purchased(listingId, msg.sender, seller, price);
+
+        // Additive: rich analytics event with live veNFT values at sale time
+        // (intrinsic value and discount captured now for historical accuracy)
+        {
+            (uint256 iv, ) = adapter.getIntrinsicValue(collection, tokenId);
+            uint256 saleDiscount = adapter.calculateDiscount(price, iv);
+            (, uint256 fee) = paymentRouter.calculateFee(price);
+            // fee above is sellerAmount; actual fee = price - fee
+            uint256 protocolFee = price - fee;
+            emit PurchasedWithAnalytics(
+                listingId,
+                msg.sender,
+                seller,
+                collection,
+                tokenId,
+                price,
+                paymentToken,
+                protocolFee,
+                iv,
+                saleDiscount
+            );
+        }
     }
 
     /// @notice Get listing details with veNFT intrinsic value
@@ -324,7 +481,9 @@ contract VeNFTMarketplace is ReentrancyGuard {
         return userListings[user];
     }
 
-    /// @notice Get floor price for collection in payment token
+    /// @notice Returns the lowest price ever listed for this collection/token pair.
+    /// @dev WARNING: This value only decreases and is never reset on cancellation or sale.
+    ///      It is not a reliable current floor price and must not be used as a price oracle.
     /// @param collection Collection address
     /// @param paymentToken Payment token address
     function getFloorPrice(
@@ -332,32 +491,5 @@ contract VeNFTMarketplace is ReentrancyGuard {
         address paymentToken
     ) external view returns (uint256) {
         return floorPrices[collection][paymentToken];
-    }
-
-    // ── BidRegistry integration ──────────────────────────────────────────────────
-
-    /// @notice Set the BidRegistry contract (admin only via adminContract role)
-    function setBidRegistry(address _bidRegistry) external {
-        (bool ok, bytes memory data) = adminContract.staticcall(
-            abi.encodeWithSignature("hasRole(bytes32,address)", keccak256("DEFAULT_ADMIN_ROLE"), msg.sender)
-        );
-        if (!ok || !abi.decode(data, (bool))) revert NotOwner();
-        bidRegistry = _bidRegistry;
-        emit BidRegistrySet(_bidRegistry);
-    }
-
-    /// @notice Emit a unified Purchased event for bid-based sales.
-    ///         Only callable by the registered BidRegistry contract.
-    function fulfillBidPurchase(
-        address collection,
-        uint256 tokenId,
-        address buyer,
-        address seller,
-        address token,
-        uint256 amount
-    ) external {
-        if (msg.sender != bidRegistry) revert OnlyBidRegistry();
-        // Synthetic listing ID in the high range to distinguish from real listings
-        emit Purchased((type(uint256).max / 2) + tokenId, buyer, seller, amount);
     }
 }

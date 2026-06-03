@@ -43,7 +43,7 @@ contract MezoVeNFTAdapter is IMezoVeNFTAdapter {
     ) external view override returns (uint256 amount, uint256 lockEnd) {
         _requireSupported(collection);
         try IVotingEscrow(collection).locked(tokenId) returns (IVotingEscrow.LockedBalance memory lock) {
-            amount = uint256(uint128(lock.amount));
+            amount = lock.amount > 0 ? uint256(uint128(lock.amount)) : 0;
             lockEnd = lock.end;
         } catch {
             amount = 0;
@@ -52,13 +52,21 @@ contract MezoVeNFTAdapter is IMezoVeNFTAdapter {
     }
 
     /// @inheritdoc IMezoVeNFTAdapter
+    /// @dev Computed from locked() data: amount * (end - now) / MAXTIME.
+    ///      balanceOfNFT is not present on deployed Mezo veBTC/veMEZO contracts
+    ///      (Velodrome v2 fork), so we replicate the linear decay formula on-chain.
     function getVotingPower(
         address collection,
         uint256 tokenId
     ) external view override returns (uint256) {
         _requireSupported(collection);
-        try IVotingEscrow(collection).balanceOfNFT(tokenId) returns (uint256 power) {
-            return power;
+        try IVotingEscrow(collection).locked(tokenId) returns (IVotingEscrow.LockedBalance memory lock) {
+            if (lock.amount <= 0) return 0;
+            if (lock.end == 0) return uint256(uint128(lock.amount)); // permanent lock: full power
+            if (block.timestamp >= lock.end) return 0; // expired
+            uint256 maxLock = collection == veBTC ? MAX_LOCK_VEBTC : MAX_LOCK_VEMEZO;
+            uint256 remaining = lock.end - block.timestamp;
+            return (uint256(uint128(lock.amount)) * remaining) / maxLock;
         } catch {
             return 0;
         }

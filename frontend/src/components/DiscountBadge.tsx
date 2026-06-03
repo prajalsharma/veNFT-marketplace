@@ -1,34 +1,67 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface DiscountBadgeProps {
-  discountBps: number;
+  discountBps: number | null;
 }
 
 export function DiscountBadge({ discountBps }: DiscountBadgeProps) {
-  const discount  = discountBps / 100;
-  const isDisc    = discount > 0;
-  const isPrem    = discount < 0;
-
-  if (discount === 0) {
+  if (discountBps === null) {
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-[0.08em] uppercase border border-white/[0.07] text-white/30">
-        Par
-      </span>
+      <div
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+        style={{
+          background: "var(--bg-3)",
+          border: "1px solid var(--border)",
+          color: "var(--text-3)",
+        }}
+      >
+        Variable
+      </div>
     );
   }
 
+  const discount = discountBps / 100;
+
+  if (discount === 0) {
+    return (
+      <div
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+        style={{
+          background: "var(--bg-3)",
+          border: "1px solid var(--border)",
+          color: "var(--text-3)",
+        }}
+      >
+        Par
+      </div>
+    );
+  }
+
+  const isDiscount = discount > 0;
+
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-[0.08em] uppercase border ${
-        isDisc
-          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-          : "bg-red-500/10 border-red-500/20 text-red-400"
-      }`}
+    <motion.div
+      initial={{ scale: 0.88, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+      style={{
+        background: isDiscount ? "rgba(16,185,129,0.09)" : "rgba(239,68,68,0.09)",
+        border: isDiscount ? "1px solid rgba(16,185,129,0.24)" : "1px solid rgba(239,68,68,0.24)",
+        color: isDiscount ? "#10B981" : "#EF4444",
+      }}
     >
-      {isDisc ? <TrendingDown className="w-2.5 h-2.5" /> : <TrendingUp className="w-2.5 h-2.5" />}
-      {isDisc ? `${discount.toFixed(1)}% off` : `+${Math.abs(discount).toFixed(1)}%`}
-    </span>
+      {isDiscount ? (
+        <TrendingDown style={{ width: 11, height: 11 }} />
+      ) : (
+        <TrendingUp style={{ width: 11, height: 11 }} />
+      )}
+      {isDiscount
+        ? `${discount.toFixed(1)}% off`
+        : `+${Math.abs(discount).toFixed(1)}% prem`}
+    </motion.div>
   );
 }

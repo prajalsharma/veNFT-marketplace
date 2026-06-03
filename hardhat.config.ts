@@ -4,7 +4,6 @@ import "@nomicfoundation/hardhat-verify";
 import "dotenv/config";
 
 const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000001";
-const MAINNET_KEY = process.env.PRIVATE_KEY || DEPLOYER_KEY;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -14,7 +13,10 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
-      evmVersion: "istanbul",
+      evmVersion: "cancun",
+      // viaIR is required for contracts with many local variables (e.g. createBid)
+      // to avoid "Stack too deep" errors. This is production-safe with the optimizer.
+      viaIR: true,
     },
   },
   networks: {
@@ -27,9 +29,9 @@ const config: HardhatUserConfig = {
       accounts: [DEPLOYER_KEY],
     },
     mezomainnet: {
-      url: process.env.MAINNET_RPC_URL || "https://mainnet.mezo.public.validationcloud.io",
+      url: process.env.MAINNET_RPC_URL || "https://rpc.mezo.org",
       chainId: 31612,
-      accounts: [MAINNET_KEY],
+      accounts: [DEPLOYER_KEY],
     },
   },
   etherscan: {

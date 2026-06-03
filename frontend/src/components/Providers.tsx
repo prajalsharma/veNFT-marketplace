@@ -3,7 +3,7 @@
 import { RainbowKitProvider, darkTheme, Theme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { config, mezoMainnet, PassportProvider } from "@/lib/wagmi";
+import { config, mezoTestnet, mezoMainnet, PassportProvider } from "@/lib/wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
 import { useState } from "react";
 
@@ -97,7 +97,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             showRecentTransactions={true}
             initialChain={mezoMainnet}
             appInfo={{
-              appName: "Vezo",
+              appName: "Vezo Exchange",
               learnMoreUrl: "https://mezo.org",
             }}
           >

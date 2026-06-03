@@ -1,34 +1,133 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, X, ChevronDown, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { Filter, X, CheckCircle2, SlidersHorizontal, Star, Clock, TrendingDown, Zap, GitMerge, RefreshCw } from "lucide-react";
 
-interface FilterSidebarProps {
+export interface FilterState {
   collectionFilter: "all" | "veBTC" | "veMEZO";
-  setCollectionFilter: (filter: "all" | "veBTC" | "veMEZO") => void;
   sortBy: string;
-  setSortBy: (sort: string) => void;
-  showExpired: boolean;
-  setShowExpired: (show: boolean) => void;
+  activeOnly: boolean;
   minDiscount: number;
-  setMinDiscount: (discount: number) => void;
-  isOpen: boolean;
-  onClose: () => void;
+  maxDiscount: number;
+  showGrantOnly: boolean;
+  showAutoLockOnly: boolean;
+  showEndingSoon: boolean;
 }
 
+interface FilterSidebarProps extends FilterState {
+  setCollectionFilter: (v: "all" | "veBTC" | "veMEZO") => void;
+  setSortBy: (v: string) => void;
+  setActiveOnly: (v: boolean) => void;
+  setMinDiscount: (v: number) => void;
+  setMaxDiscount: (v: number) => void;
+  setShowGrantOnly: (v: boolean) => void;
+  setShowAutoLockOnly: (v: boolean) => void;
+  setShowEndingSoon: (v: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onReset: () => void;
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[9px] font-black uppercase tracking-[0.22em] mb-3 px-0.5" style={{ color: "var(--text-3)" }}>{children}</p>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  icon?: any;
+  accent?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center justify-between px-3.5 py-3 rounded-xl border text-sm font-bold transition-all duration-150"
+      style={{
+        background: active ? `${accent || "#FF0040"}12` : "var(--bg-2)",
+        borderColor: active ? `${accent || "#FF0040"}45` : "var(--border)",
+        color: active ? (accent || "#FF0040") : "var(--text-2)",
+      }}
+      onMouseEnter={(e) => {
+        if (!active) {
+          (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+          (e.currentTarget as HTMLElement).style.color = "var(--text-1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+          (e.currentTarget as HTMLElement).style.color = "var(--text-2)";
+        }
+      }}
+    >
+      <span className="flex items-center gap-2">
+        {Icon && <Icon className="w-3.5 h-3.5" />}
+        {label}
+      </span>
+      {active && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+    </button>
+  );
+}
+
+function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className="relative w-10 h-5.5 rounded-full transition-all duration-200 flex-shrink-0"
+      style={{
+        background: checked ? "#FF0040" : "var(--bg-4)",
+        width: 40,
+        height: 22,
+      }}
+    >
+      <motion.div
+        animate={{ x: checked ? 20 : 2 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className="absolute top-[3px] w-4 h-4 rounded-full bg-white"
+        style={{ width: 16, height: 16 }}
+      />
+    </button>
+  );
+}
+
+const SORT_OPTIONS = [
+  { value: "discount", label: "Highest Discount" },
+  { value: "price-asc", label: "Lowest Price" },
+  { value: "price-desc", label: "Highest Price" },
+  { value: "time-remaining", label: "Expiring Soon" },
+  { value: "newest", label: "Newest First" },
+];
+
 export function FilterSidebar({
-  collectionFilter,
-  setCollectionFilter,
-  sortBy,
-  setSortBy,
-  showExpired,
-  setShowExpired,
-  minDiscount,
-  setMinDiscount,
-  isOpen,
-  onClose,
+  collectionFilter, setCollectionFilter,
+  sortBy, setSortBy,
+  activeOnly, setActiveOnly,
+  minDiscount, setMinDiscount,
+  maxDiscount, setMaxDiscount,
+  showGrantOnly, setShowGrantOnly,
+  showAutoLockOnly, setShowAutoLockOnly,
+  showEndingSoon, setShowEndingSoon,
+  isOpen, onClose, onReset,
 }: FilterSidebarProps) {
+
+  const activeFilterCount = [
+    collectionFilter !== "all",
+    minDiscount > 0,
+    maxDiscount < 50,
+    showGrantOnly,
+    showAutoLockOnly,
+    showEndingSoon,
+  ].filter(Boolean).length;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -38,110 +137,219 @@ export function FilterSidebar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#030303]/80 backdrop-blur-sm z-[60]"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[60]"
+            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
             onClick={onClose}
           />
 
-          {/* Sidebar */}
+          {/* Panel */}
           <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-full max-w-sm bg-[#0a0a0a] border-l border-white/[0.07] z-[70] p-8 overflow-y-auto"
+            transition={{ type: "spring", damping: 28, stiffness: 220 }}
+            className="fixed top-0 right-0 h-full w-full max-w-[340px] z-[70] flex flex-col overflow-hidden"
+            style={{
+              background: "var(--bg-1)",
+              borderLeft: "1px solid var(--border)",
+              boxShadow: "var(--shadow-xl)",
+            }}
           >
-            <div className="flex items-center justify-between mb-12">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-[#F7931A]" />
-                <h3 className="text-xl font-bold">Market Filters</h3>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "var(--border)" }}>
+              <div className="flex items-center gap-2.5">
+                <SlidersHorizontal className="w-4 h-4 text-vezo-red" style={{ color: "#FF0040" }} />
+                <h3 className="text-base font-bold">Filters</h3>
+                {activeFilterCount > 0 && (
+                  <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center text-white"
+                    style={{ background: "#FF0040" }}>
+                    {activeFilterCount}
+                  </span>
+                )}
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/[0.05] rounded-xl transition-colors"
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: "var(--text-3)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; (e.currentTarget as HTMLElement).style.background = "var(--bg-3)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-12">
-              {/* Collection Section */}
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-5 py-6 space-y-7" style={{ background: "var(--bg-1)" }}>
+
+              {/* ── Asset Type ── */}
               <section>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Asset Type</h4>
-                <div className="grid grid-cols-1 gap-2">
+                <SectionLabel>Asset Type</SectionLabel>
+                <div className="space-y-2">
                   {[
-                    { id: 'all', label: 'All Collections' },
-                    { id: 'veBTC', label: 'veBTC (Bitcoin)' },
-                    { id: 'veMEZO', label: 'veMEZO (Governance)' }
+                    { id: "all", label: "All Collections" },
+                    { id: "veBTC", label: "veBTC", accent: "#F7931A" },
+                    { id: "veMEZO", label: "veMEZO", accent: "#4A90E2" },
                   ].map((item) => (
-                    <button
+                    <FilterChip
                       key={item.id}
+                      label={item.label}
+                      active={collectionFilter === item.id}
                       onClick={() => setCollectionFilter(item.id as any)}
-                      className={`flex items-center justify-between px-4 py-4 rounded-2xl border transition-all text-sm font-bold
-                        ${collectionFilter === item.id
-                          ? 'bg-[#F7931A]/10 border-[#F7931A]/40 text-white shadow-[0_0_20px_rgba(247,147,26,0.1)]'
-                          : 'bg-white/[0.03] border-transparent text-white/40 hover:border-white/[0.1] hover:text-white'
-                        }`}
-                    >
-                      {item.label}
-                      {collectionFilter === item.id && <CheckCircle2 className="w-4 h-4 text-[#F7931A]" />}
-                    </button>
+                      accent={item.accent}
+                    />
                   ))}
                 </div>
               </section>
 
-              {/* Discount Section */}
+              {/* ── Sort By ── */}
               <section>
-                <div className="flex justify-between items-center mb-6">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Min. Discount</h4>
-                  <span className="text-sm font-bold text-[#F7931A]">{minDiscount}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="50"
-                  step="5"
-                  value={minDiscount}
-                  onChange={(e) => setMinDiscount(parseInt(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between mt-2 text-[10px] font-bold text-white/30">
-                  <span>0%</span>
-                  <span>25%</span>
-                  <span>50%</span>
+                <SectionLabel>Sort By</SectionLabel>
+                <div className="space-y-1.5">
+                  {SORT_OPTIONS.map((opt) => (
+                    <FilterChip
+                      key={opt.value}
+                      label={opt.label}
+                      active={sortBy === opt.value}
+                      onClick={() => setSortBy(opt.value)}
+                    />
+                  ))}
                 </div>
               </section>
 
-              {/* Options Section */}
+              {/* ── Discount Range ── */}
               <section>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Market Options</h4>
-                <label className="flex items-center justify-between p-4 bg-white/[0.03] rounded-2xl border border-transparent hover:border-white/[0.1] transition-all cursor-pointer">
-                  <span className="text-sm font-bold">Active Listings Only</span>
-                  <input
-                    type="checkbox"
-                    checked={showExpired}
-                    onChange={(e) => setShowExpired(e.target.checked)}
-                    className="w-5 h-5 accent-[#F7931A] rounded-lg"
+                <div className="flex justify-between items-center mb-3">
+                  <SectionLabel>Discount Range</SectionLabel>
+                  <span className="text-xs font-bold" style={{ color: "#FF0040" }}>
+                    {minDiscount}% – {maxDiscount}%
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-[10px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
+                      <span>Min discount</span>
+                      <span className="font-bold" style={{ color: "var(--text-2)" }}>{minDiscount}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="45"
+                      step="5"
+                      value={minDiscount}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value);
+                        setMinDiscount(v);
+                        if (v > maxDiscount) setMaxDiscount(v);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[10px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
+                      <span>Max discount</span>
+                      <span className="font-bold" style={{ color: "var(--text-2)" }}>{maxDiscount}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="50"
+                      step="5"
+                      value={maxDiscount}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value);
+                        setMaxDiscount(v);
+                        if (v < minDiscount) setMinDiscount(v);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex justify-between text-[9px] font-bold" style={{ color: "var(--text-4)" }}>
+                    <span>0%</span>
+                    <span>25%</span>
+                    <span>50%</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Quick Presets ── */}
+              <section>
+                <SectionLabel>Quick Presets</SectionLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  <FilterChip
+                    label="Best Deals"
+                    icon={Star}
+                    active={minDiscount >= 10}
+                    onClick={() => { setMinDiscount(10); setMaxDiscount(50); }}
+                    accent="#F59E0B"
                   />
-                </label>
+                  <FilterChip
+                    label="Ending Soon"
+                    icon={Clock}
+                    active={showEndingSoon}
+                    onClick={() => { setShowEndingSoon(!showEndingSoon); setSortBy("time-remaining"); }}
+                    accent="#EF4444"
+                  />
+                  <FilterChip
+                    label="Deep Discount"
+                    icon={TrendingDown}
+                    active={minDiscount >= 20}
+                    onClick={() => { setMinDiscount(20); setMaxDiscount(50); }}
+                    accent="#10B981"
+                  />
+                  <FilterChip
+                    label="Grant NFTs"
+                    icon={GitMerge}
+                    active={showGrantOnly}
+                    onClick={() => setShowGrantOnly(!showGrantOnly)}
+                    accent="#F59E0B"
+                  />
+                </div>
+              </section>
+
+              {/* ── Toggles ── */}
+              <section>
+                <SectionLabel>Options</SectionLabel>
+                <div className="space-y-3">
+                  {[
+                    { label: "Active listings only", sub: "Hide sold/cancelled", val: activeOnly, set: setActiveOnly },
+                    { label: "Auto max-lock only", sub: "Continuously max-locked positions", val: showAutoLockOnly, set: setShowAutoLockOnly },
+                  ].map((toggle) => (
+                    <div
+                      key={toggle.label}
+                      className="flex items-center justify-between p-3 rounded-xl cursor-pointer"
+                      style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
+                      onClick={() => toggle.set(!toggle.val)}
+                    >
+                      <div>
+                        <p className="text-sm font-bold">{toggle.label}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
+                      </div>
+                      <ToggleSwitch checked={toggle.val} onChange={toggle.set} />
+                    </div>
+                  ))}
+                </div>
               </section>
             </div>
 
-            <div className="mt-20 pt-8 border-t border-white/[0.07] flex flex-col gap-3">
-              <button 
+            {/* Footer actions */}
+            <div className="px-5 py-5 border-t space-y-2" style={{ borderColor: "var(--border)", background: "var(--bg-1)" }}>
+              <button
                 onClick={onClose}
-                className="btn-primary w-full"
+                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-150"
+                style={{ background: "linear-gradient(135deg, #FF0040, #CC0030)" }}
               >
                 Apply Filters
               </button>
-              <button 
-                onClick={() => {
-                  setCollectionFilter("all");
-                  setMinDiscount(0);
-                  setShowExpired(true);
-                }}
-                className="w-full py-4 text-sm font-bold text-mezo-muted hover:text-white transition-colors"
+              <button
+                onClick={onReset}
+                className="w-full py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                style={{ color: "var(--text-3)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
               >
-                Reset to Default
+                <RefreshCw className="w-3.5 h-3.5" />
+                Reset All
               </button>
             </div>
           </motion.aside>
@@ -155,12 +363,26 @@ export function FilterButton({ onClick, activeFilters }: { onClick: () => void; 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-6 py-4 bg-white/[0.03] border border-white/[0.07] rounded-2xl text-sm font-bold hover:bg-white/[0.05] transition-all"
+      className="relative flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-bold transition-all duration-150"
+      style={{
+        background: "var(--bg-2)",
+        border: "1px solid var(--border)",
+        color: "var(--text-2)",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+        (e.currentTarget as HTMLElement).style.color = "var(--text-1)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+        (e.currentTarget as HTMLElement).style.color = "var(--text-2)";
+      }}
     >
       <Filter className="w-4 h-4" />
       Filters
       {activeFilters > 0 && (
-        <span className="w-5 h-5 rounded-full bg-[#F7931A] text-black text-[10px] font-black flex items-center justify-center">
+        <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center text-white"
+          style={{ background: "#FF0040" }}>
           {activeFilters}
         </span>
       )}

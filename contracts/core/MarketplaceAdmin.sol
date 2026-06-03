@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title MarketplaceAdmin
 /// @notice Admin controls for veNFT marketplace: pause, whitelist, fee governance
@@ -43,6 +43,10 @@ contract MarketplaceAdmin is AccessControl, Pausable {
     PendingFeeChange public pendingFee;
 
     /// @notice Whitelisted collections mapping
+    /// @dev Advisory only — VeNFTMarketplace enforces collection support via
+    ///      MezoVeNFTAdapter.isSupported(), not this mapping. Changes here do not
+    ///      block or enable listings on the marketplace. Retained for off-chain
+    ///      governance tracking and potential future integration.
     mapping(address => bool) public supportedCollections;
 
     /// @notice Payment router address
@@ -75,6 +79,8 @@ contract MarketplaceAdmin is AccessControl, Pausable {
     error InvalidAddress();
     error AlreadyWhitelisted();
     error NotWhitelisted();
+    error PendingChangeExists();
+    error RouterNotSet();
 
     /// @notice Deploy MarketplaceAdmin
     /// @param defaultAdmin Address receiving all admin roles
@@ -109,6 +115,16 @@ contract MarketplaceAdmin is AccessControl, Pausable {
         emit PaymentRouterSet(_router);
     }
 
+    /// @notice Accept admin role on PaymentRouter (completes two-step transfer)
+    /// @dev Call after PaymentRouter.transferAdmin(thisContract) has been invoked.
+    function acceptRouterAdmin() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (paymentRouter == address(0)) revert RouterNotSet();
+        (bool success, ) = paymentRouter.call(
+            abi.encodeWithSignature("acceptAdmin()")
+        );
+        require(success, "Accept admin failed");
+    }
+
     /// @notice Emergency pause marketplace
     /// @param reason Human-readable reason for pause
     function emergencyPause(string calldata reason) external onlyRole(PAUSER_ROLE) {
@@ -122,9 +138,11 @@ contract MarketplaceAdmin is AccessControl, Pausable {
     }
 
     /// @notice Propose fee change with timelock
-    /// @param _newFeeBps New fee in basis points (max 100 = 1%)
+    /// @dev Reverts if a proposal is already pending. Cancel the existing proposal first.
+    /// @param _newFeeBps New fee in basis points (max 500 = 5%)
     function proposeFeeChange(uint256 _newFeeBps) external onlyRole(FEE_MANAGER_ROLE) {
-        require(_newFeeBps <= 100, "Max 1%");
+        require(_newFeeBps <= 500, "Max 5%");
+        if (pendingFee.pending) revert PendingChangeExists();
 
         pendingFee = PendingFeeChange({
             newFeeBps: _newFeeBps,
@@ -136,11 +154,13 @@ contract MarketplaceAdmin is AccessControl, Pausable {
     }
 
     /// @notice Execute pending fee change after timelock
+    /// @dev Reverts if paymentRouter has not been set via setPaymentRouter.
     function executeFeeChange() external onlyRole(FEE_MANAGER_ROLE) {
         if (!pendingFee.pending) revert NoPendingChange();
         if (block.timestamp < pendingFee.effectiveTime) {
             revert TimelockActive(pendingFee.effectiveTime - block.timestamp);
         }
+        if (paymentRouter == address(0)) revert RouterNotSet();
 
         uint256 newFee = pendingFee.newFeeBps;
 
@@ -148,12 +168,10 @@ contract MarketplaceAdmin is AccessControl, Pausable {
         delete pendingFee;
 
         // Call PaymentRouter to update fee
-        if (paymentRouter != address(0)) {
-            (bool success, ) = paymentRouter.call(
-                abi.encodeWithSignature("setProtocolFee(uint256)", newFee)
-            );
-            require(success, "Fee update failed");
-        }
+        (bool success, ) = paymentRouter.call(
+            abi.encodeWithSignature("setProtocolFee(uint256)", newFee)
+        );
+        require(success, "Fee update failed");
 
         emit FeeChangeExecuted(newFee);
     }

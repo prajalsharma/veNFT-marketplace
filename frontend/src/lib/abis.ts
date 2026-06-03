@@ -1,4 +1,4 @@
-// Contract ABIs for Mezo veNFT Marketplace
+// Contract ABIs for Vezo Exchange
 
 export const VeNFTMarketplaceABI = [
   {
@@ -217,6 +217,236 @@ export const MezoVeNFTAdapterABI = [
   },
 ] as const;
 
+// ─── VeNFTBidding ABI (new module — additive) ─────────────────────────────────
+export const VeNFTBiddingABI = [
+  {
+    inputs: [
+      { internalType: "address", name: "collection",          type: "address" },
+      { internalType: "uint256", name: "tokenId",             type: "uint256" },
+      { internalType: "address", name: "paymentToken",        type: "address" },
+      { internalType: "uint256", name: "amount",              type: "uint256" },
+      { internalType: "uint256", name: "expiry",              type: "uint256" },
+      {
+        components: [
+          { internalType: "uint256", name: "minIntrinsicValue",  type: "uint256" },
+          { internalType: "uint256", name: "maxIntrinsicValue",  type: "uint256" },
+          { internalType: "uint256", name: "maxLockDuration",    type: "uint256" },
+          { internalType: "uint256", name: "minVotingPower",     type: "uint256" },
+          { internalType: "bool",    name: "requireAutoMaxLock", type: "bool"    },
+        ],
+        internalType: "struct VeNFTBidding.BidFilter",
+        name: "filter",
+        type: "tuple",
+      },
+      { internalType: "uint256", name: "minIntrinsicValue",   type: "uint256" },
+      { internalType: "uint256", name: "maxIntrinsicValue",   type: "uint256" },
+      { internalType: "uint256", name: "minVotingPower",      type: "uint256" },
+      { internalType: "uint256", name: "minLockDuration",     type: "uint256" },
+      { internalType: "bool",    name: "requireAutoMaxLock",  type: "bool"    },
+    ],
+    name: "createBid",
+    outputs: [{ internalType: "uint256", name: "bidId", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "bidId", type: "uint256" }],
+    name: "cancelBid",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "bidId", type: "uint256" }],
+    name: "acceptBid",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "bidder", type: "address" }],
+    name: "getBidderBids",
+    outputs: [{ internalType: "uint256[]", name: "", type: "uint256[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "collection", type: "address" },
+      { internalType: "uint256", name: "tokenId",    type: "uint256" },
+    ],
+    name: "getTokenBids",
+    outputs: [{ internalType: "uint256[]", name: "", type: "uint256[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "collection", type: "address" },
+      { internalType: "uint256", name: "tokenId",    type: "uint256" },
+    ],
+    name: "getActiveTokenBids",
+    outputs: [
+      {
+        components: [
+          { internalType: "uint256", name: "id",                  type: "uint256" },
+          { internalType: "address", name: "bidder",              type: "address" },
+          { internalType: "address", name: "collection",          type: "address" },
+          { internalType: "uint256", name: "tokenId",             type: "uint256" },
+          { internalType: "address", name: "paymentToken",        type: "address" },
+          { internalType: "uint256", name: "amount",              type: "uint256" },
+          { internalType: "uint256", name: "expiry",              type: "uint256" },
+          { internalType: "bool",    name: "active",              type: "bool"    },
+          { internalType: "uint256", name: "minIntrinsicValue",   type: "uint256" },
+          { internalType: "uint256", name: "maxIntrinsicValue",   type: "uint256" },
+          { internalType: "uint256", name: "minVotingPower",      type: "uint256" },
+          { internalType: "uint256", name: "minLockDuration",     type: "uint256" },
+          { internalType: "bool",    name: "requireAutoMaxLock",  type: "bool"    },
+        ],
+        internalType: "struct VeNFTBidding.Bid[]",
+        name: "activeBids",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "bids",
+    outputs: [
+      { internalType: "uint256", name: "id",                  type: "uint256" },
+      { internalType: "address", name: "bidder",              type: "address" },
+      { internalType: "address", name: "collection",          type: "address" },
+      { internalType: "uint256", name: "tokenId",             type: "uint256" },
+      { internalType: "address", name: "paymentToken",        type: "address" },
+      { internalType: "uint256", name: "amount",              type: "uint256" },
+      { internalType: "uint256", name: "expiry",              type: "uint256" },
+      { internalType: "bool",    name: "active",              type: "bool"    },
+      { internalType: "uint256", name: "minIntrinsicValue",   type: "uint256" },
+      { internalType: "uint256", name: "maxIntrinsicValue",   type: "uint256" },
+      { internalType: "uint256", name: "minVotingPower",      type: "uint256" },
+      { internalType: "uint256", name: "minLockDuration",     type: "uint256" },
+      { internalType: "bool",    name: "requireAutoMaxLock",  type: "bool"    },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "collection", type: "address" },
+      { internalType: "uint256", name: "tokenId",    type: "uint256" },
+      { internalType: "bool",    name: "watching",   type: "bool"    },
+    ],
+    name: "emitWatchlistUpdate",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  // Events
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true,  internalType: "uint256", name: "bidId",        type: "uint256" },
+      { indexed: true,  internalType: "address", name: "bidder",       type: "address" },
+      { indexed: true,  internalType: "address", name: "collection",   type: "address" },
+      { indexed: false, internalType: "uint256", name: "tokenId",      type: "uint256" },
+      { indexed: false, internalType: "address", name: "paymentToken", type: "address" },
+      { indexed: false, internalType: "uint256", name: "amount",       type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "expiry",       type: "uint256" },
+    ],
+    name: "BidCreated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true,  internalType: "uint256", name: "bidId",      type: "uint256" },
+      { indexed: true,  internalType: "address", name: "bidder",     type: "address" },
+    ],
+    name: "BidCancelled",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true,  internalType: "uint256", name: "bidId",      type: "uint256" },
+      { indexed: true,  internalType: "address", name: "seller",     type: "address" },
+      { indexed: true,  internalType: "address", name: "bidder",     type: "address" },
+      { indexed: false, internalType: "address", name: "collection", type: "address" },
+      { indexed: false, internalType: "uint256", name: "tokenId",    type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "amount",     type: "uint256" },
+    ],
+    name: "BidAccepted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true,  internalType: "address", name: "user",       type: "address" },
+      { indexed: true,  internalType: "address", name: "collection", type: "address" },
+      { indexed: false, internalType: "uint256", name: "tokenId",    type: "uint256" },
+      { indexed: false, internalType: "bool",    name: "watching",   type: "bool"    },
+    ],
+    name: "WatchlistUpdated",
+    type: "event",
+  },
+] as const;
+
+// ─── ListingSnapshotStore ABI (new module) ────────────────────────────────────
+export const ListingSnapshotStoreABI = [
+  {
+    inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
+    name: "getSnapshot",
+    outputs: [
+      {
+        components: [
+          { internalType: "uint256", name: "intrinsicValueAtListing", type: "uint256" },
+          { internalType: "uint256", name: "votingPowerAtListing",    type: "uint256" },
+          { internalType: "uint256", name: "lockDurationAtListing",   type: "uint256" },
+          { internalType: "uint256", name: "lockEndAtListing",        type: "uint256" },
+          { internalType: "uint256", name: "discountBpsAtListing",    type: "uint256" },
+          { internalType: "uint256", name: "usdValueAtListing",       type: "uint256" },
+          { internalType: "uint256", name: "snapshotTimestamp",       type: "uint256" },
+          { internalType: "bool",    name: "exists",                  type: "bool"    },
+        ],
+        internalType: "struct ListingSnapshotStore.ListingSnapshot",
+        name: "snap",
+        type: "tuple",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "listingId", type: "uint256" }],
+    name: "getListingDiscount",
+    outputs: [
+      { internalType: "uint256", name: "discountBps", type: "uint256" },
+      { internalType: "bool",    name: "exists_",     type: "bool"    },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true,  internalType: "uint256", name: "listingId",     type: "uint256" },
+      { indexed: true,  internalType: "address", name: "collection",    type: "address" },
+      { indexed: true,  internalType: "uint256", name: "tokenId",       type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "intrinsicValue",type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "votingPower",   type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "lockDuration",  type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "lockEnd",       type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "discountBps",   type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "usdValue",      type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "timestamp",     type: "uint256" },
+    ],
+    name: "SnapshotRecorded",
+    type: "event",
+  },
+] as const;
+
 export const ERC721ABI = [
   {
     inputs: [
@@ -259,25 +489,4 @@ export const ERC721ABI = [
     stateMutability: "view",
     type: "function",
   },
-] as const;
-
-// ── SwapPaymentRouter ABI ─────────────────────────────────────────────────────
-export const SwapPaymentRouterABI = [
-  { inputs: [{ name: "listingId", type: "uint256" }, { name: "buyToken", type: "address" }, { name: "maxAmountIn", type: "uint256" }, { name: "amountOutMin", type: "uint256" }, { name: "maxSlippageBps", type: "uint256" }], name: "swapAndBuy", outputs: [], stateMutability: "payable", type: "function" },
-  { inputs: [], name: "platformFeeSwapBps", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
-  { inputs: [], name: "dexRouter", outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
-  { anonymous: false, inputs: [{ indexed: true, name: "listingId", type: "uint256" }, { indexed: true, name: "buyer", type: "address" }, { indexed: false, name: "payToken", type: "address" }, { indexed: false, name: "amountIn", type: "uint256" }, { indexed: false, name: "quoteToken", type: "address" }, { indexed: false, name: "amountOut", type: "uint256" }, { indexed: false, name: "swapFee", type: "uint256" }], name: "SwapAndPurchase", type: "event" },
-] as const;
-
-// ── BidRegistry ABI ───────────────────────────────────────────────────────────
-export const BidRegistryABI = [
-  { inputs: [{ name: "collection", type: "address" }, { name: "tokenId", type: "uint256" }, { name: "bidToken", type: "address" }, { name: "bidAmount", type: "uint256" }, { name: "duration", type: "uint256" }], name: "placeBid", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [{ name: "collection", type: "address" }, { name: "tokenId", type: "uint256" }, { name: "bidIndex", type: "uint256" }], name: "cancelBid", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [{ name: "collection", type: "address" }, { name: "tokenId", type: "uint256" }, { name: "bidIndex", type: "uint256" }], name: "acceptBid", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [{ name: "collection", type: "address" }, { name: "tokenId", type: "uint256" }], name: "getBidsForToken", outputs: [{ components: [{ name: "bidder", type: "address" }, { name: "bidToken", type: "address" }, { name: "bidAmount", type: "uint256" }, { name: "expiry", type: "uint256" }, { name: "active", type: "bool" }], name: "", type: "tuple[]" }], stateMutability: "view", type: "function" },
-  { inputs: [{ name: "collection", type: "address" }, { name: "tokenId", type: "uint256" }], name: "activeBidCount", outputs: [{ name: "count", type: "uint256" }], stateMutability: "view", type: "function" },
-  { inputs: [], name: "platformFeeBidBps", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
-  { anonymous: false, inputs: [{ indexed: true, name: "collection", type: "address" }, { indexed: true, name: "tokenId", type: "uint256" }, { indexed: true, name: "bidIndex", type: "uint256" }, { indexed: false, name: "bidder", type: "address" }, { indexed: false, name: "bidToken", type: "address" }, { indexed: false, name: "bidAmount", type: "uint256" }, { indexed: false, name: "expiry", type: "uint256" }], name: "BidPlaced", type: "event" },
-  { anonymous: false, inputs: [{ indexed: true, name: "collection", type: "address" }, { indexed: true, name: "tokenId", type: "uint256" }, { indexed: true, name: "bidIndex", type: "uint256" }, { indexed: false, name: "bidder", type: "address" }], name: "BidCancelled", type: "event" },
-  { anonymous: false, inputs: [{ indexed: true, name: "collection", type: "address" }, { indexed: true, name: "tokenId", type: "uint256" }, { indexed: true, name: "bidIndex", type: "uint256" }, { indexed: false, name: "bidder", type: "address" }, { indexed: false, name: "seller", type: "address" }, { indexed: false, name: "bidToken", type: "address" }, { indexed: false, name: "bidAmount", type: "uint256" }, { indexed: false, name: "fee", type: "uint256" }], name: "BidAccepted", type: "event" },
 ] as const;

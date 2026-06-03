@@ -39,7 +39,7 @@ The Mezo veNFT Marketplace provides a secondary liquidity layer for locked Bitco
 | **Escrowless** | NFT stays in seller's wallet until purchase — no custodial risk |
 | **Atomic swap** | NFT transfer happens before payment — buyer cannot lose funds if NFT moved |
 | **Multi-token** | Native BTC, MEZO governance token, MUSD stablecoin |
-| **Protocol fee** | 1%, 48-hour timelock on changes |
+| **Protocol fee** | Default 2%, hardcapped at 5%, 48-hour timelock on changes |
 | **Emergency pause** | Admin can halt marketplace instantly |
 
 ---
@@ -62,8 +62,10 @@ Four modular smart contracts — adapted from the OpenXSwap audited pattern for 
 2. PaymentRouter(feeRecipient, admin, MUSD, feeBps)
 3. MarketplaceAdmin(admin, isTestnet)
 4. VeNFTMarketplace(adapter, router, admin)
-5. router.setMarketplace(marketplace)    ← security: restrict routePayment caller
+5. router.setMarketplace(marketplace)    ← security: restrict routePayment caller (one-time)
 6. admin.setPaymentRouter(router)        ← governance: link fee control
+7. router.transferAdmin(adminContract)   ← propose admin transfer to MarketplaceAdmin
+8. admin.acceptRouterAdmin()             ← accept: enforce 48h timelock on fee changes
 ```
 
 ---
@@ -79,10 +81,10 @@ Four modular smart contracts — adapted from the OpenXSwap audited pattern for 
 | MUSD | `0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503` |
 | veBTC (ERC-721) | `0x38E35d92E6Bfc6787272A62345856B13eA12130a` |
 | veMEZO (ERC-721) | `0xaCE816CA2bcc9b12C59799dcC5A959Fb9b98111b` |
-| **VeNFTMarketplace** | **`0xcFbAf5F9563AFa8E4CD1861876a6BD011aA00ddb`** |
-| **MezoVeNFTAdapter** | **`0x3B302be6d65CeAF32310A7F37E332EdbBA3759E3`** |
-| **PaymentRouter** | **`0xDcB630Bf1f306D215A81A998D235Eb457fe10619`** |
-| **MarketplaceAdmin** | **`0x21943576a5152f6E1503B3b800Fd7830ab2dD7ce`** |
+| **VeNFTMarketplace** | **`0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570`** |
+| **MezoVeNFTAdapter** | **`0x8EC595099030aB282511c87cAF104E734418Eff5`** |
+| **PaymentRouter** | **`0xA4098F23aA2883DA13A714982d89BFB403718fb9`** |
+| **MarketplaceAdmin** | **`0x5bBc2d83D0786Bf2Bc56096d832e6B7cfcca9396`** |
 | RPC | `https://rpc.test.mezo.org` |
 | Explorer | `https://explorer.test.mezo.org` |
 | Faucet | `https://faucet.test.mezo.org` |
@@ -96,6 +98,10 @@ Four modular smart contracts — adapted from the OpenXSwap audited pattern for 
 | MUSD | `0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186` |
 | veBTC (ERC-721) | `0x3D4b1b884A7a1E59fE8589a3296EC8f8cBB6f279` |
 | veMEZO (ERC-721) | `0xb90fdAd3DFD180458D62Cc6acedc983D78E20122` |
+| **VeNFTMarketplace** | **`0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570`** |
+| **MezoVeNFTAdapter** | **`0x8EC595099030aB282511c87cAF104E734418Eff5`** |
+| **PaymentRouter** | **`0xA4098F23aA2883DA13A714982d89BFB403718fb9`** |
+| **MarketplaceAdmin** | **`0x5bBc2d83D0786Bf2Bc56096d832e6B7cfcca9396`** |
 | RPC | `https://rpc.mezo.org` |
 | Explorer | `https://explorer.mezo.org` |
 
@@ -157,7 +163,7 @@ Fill in at minimum:
 DEPLOYER_PRIVATE_KEY=0x...        # wallet with testnet BTC for gas
 FEE_RECIPIENT=0x...               # address to receive protocol fees
 ADMIN_ADDRESS=0x...               # address to hold all admin roles
-PROTOCOL_FEE_BPS=100              # 100 = 1%
+PROTOCOL_FEE_BPS=200              # 200 = 2%
 NEXT_PUBLIC_WALLETCONNECT_ID=...  # from cloud.walletconnect.com
 ```
 
@@ -181,10 +187,11 @@ After deployment, copy addresses from `deployments/testnet.json` into `frontend/
 The testnet deployment is already live — use these values directly:
 
 ```env
-NEXT_PUBLIC_WALLETCONNECT_ID=
-NEXT_PUBLIC_MARKETPLACE_TESTNET=
-NEXT_PUBLIC_ADAPTER_TESTNET=
-NEXT_PUBLIC_ADMIN_TESTNET=
+NEXT_PUBLIC_WALLETCONNECT_ID=your_walletconnect_project_id
+NEXT_PUBLIC_MARKETPLACE_TESTNET=0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570
+NEXT_PUBLIC_ADAPTER_TESTNET=0x8EC595099030aB282511c87cAF104E734418Eff5
+NEXT_PUBLIC_ROUTER_TESTNET=0xA4098F23aA2883DA13A714982d89BFB403718fb9
+NEXT_PUBLIC_ADMIN_TESTNET=0x5bBc2d83D0786Bf2Bc56096d832e6B7cfcca9396
 ```
 
 ### 4. Deploy to Mainnet
@@ -200,7 +207,7 @@ The deploy script prints the exact verify commands. Example:
 
 ```bash
 npx hardhat verify --network mezotestnet <ADAPTER_ADDRESS> <VEBTC> <VEMEZO>
-npx hardhat verify --network mezotestnet <ROUTER_ADDRESS> <FEE_RECIPIENT> <ADMIN> <MUSD> 100
+npx hardhat verify --network mezotestnet <ROUTER_ADDRESS> <FEE_RECIPIENT> <ADMIN> <MUSD> 200
 npx hardhat verify --network mezotestnet <ADMIN_ADDRESS> <ADMIN> true
 npx hardhat verify --network mezotestnet <MARKETPLACE_ADDRESS> <ADAPTER> <ROUTER> <ADMIN_CONTRACT>
 ```
@@ -222,7 +229,7 @@ npm test
 | `DEPLOYER_PRIVATE_KEY` | Private key of deployer wallet | Yes |
 | `FEE_RECIPIENT` | Address receiving protocol fees | Mainnet only |
 | `ADMIN_ADDRESS` | Address receiving all admin roles | Mainnet only |
-| `PROTOCOL_FEE_BPS` | Initial fee in basis points (default: 100 = 1%) | No |
+| `PROTOCOL_FEE_BPS` | Initial fee in basis points (default: 200 = 2%) | No |
 | `REPORT_GAS` | Enable Hardhat gas reporter | No |
 
 ### Frontend (`frontend/.env.local`)
@@ -254,15 +261,20 @@ Introduced a read-only adapter that queries Mezo's `IVotingEscrow` interface (ve
 - Added native BTC payment path (value-based transfer) alongside ERC-20
 - **[Security Fix]** Added `onlyMarketplace` modifier to `routePayment` — only the deployed `VeNFTMarketplace` contract can trigger payment routing, preventing any external address from exploiting user token approvals
 
-#### 3. `VeNFTMarketplace` — Four Security Patches Applied
+#### 3. `VeNFTMarketplace` — Security Patches Applied
 
 | Issue | Severity | Fix |
 |---|---|---|
 | Payment sent before NFT transfer — buyer loses funds if NFT moved away between list and buy | **Critical** | NFT transferred first, then payment routed |
 | `routePayment` open to any caller — ERC-20 approval drain vector | **High** | `onlyMarketplace` modifier added to `PaymentRouter` |
+| `whenNotPaused` fail-open — emergency pause has no effect if admin staticcall fails | **High** | Fail-closed: reverts with `PauseCheckFailed` if staticcall fails |
+| ERC-20 allowance not validated before NFT transfer in `buyNFT` | **High** | Allowance pre-check added before `safeTransferFrom` |
 | Expired veNFTs (zero value) purchasable | **Medium** | `adapter.isExpired()` check in `buyNFT` |
 | Seller could buy own listing | **Medium** | `SelfPurchase` guard added |
 | Ownership not re-validated at buy time | **Medium** | `ownerOf` check before state mutation in `buyNFT` |
+| `proposeFeeChange` silently overwrites pending proposal | **Medium** | Reverts with `PendingChangeExists` if proposal already pending |
+| `executeFeeChange` emits event without updating fee when router is zero | **Medium** | Reverts with `RouterNotSet` if `paymentRouter == address(0)` |
+| `floorPrices` never decremented — stale and manipulable | **Medium** | NatSpec warning added; view-only, not used as price oracle |
 
 #### 4. `IVotingEscrow` Interface — Velodrome v2 Compatibility
 
@@ -276,8 +288,14 @@ The deployed veBTC and veMEZO contracts are EIP-1967 proxies over a Velodrome v2
 
 `getIntrinsicValue`, `isExpired`, `isSupported`, and all ERC-721 functions (`approve`, `safeTransferFrom`, `ownerOf`, `getApproved`) are present and work correctly.
 
-#### 5. `MarketplaceAdmin` — Role Segregation
-Enhanced access control to separate `PAUSER_ROLE`, `FEE_MANAGER_ROLE`, and `COLLECTION_MANAGER_ROLE` for operational security. Added 48-hour timelock on all fee changes.
+#### 5. `MarketplaceAdmin` — Role Segregation + Governance Hardening
+Enhanced access control to separate `PAUSER_ROLE`, `FEE_MANAGER_ROLE`, and `COLLECTION_MANAGER_ROLE` for operational security. Added 48-hour timelock on all fee changes. Added `acceptRouterAdmin()` to complete two-step PaymentRouter admin transfer.
+
+#### 6. `PaymentRouter` — Admin Hardening
+- **[Security Fix]** Two-step admin transfer (`transferAdmin` + `acceptAdmin`) prevents irreversible loss from typo
+- **[Security Fix]** `setMarketplace` is one-time only (`AlreadySet` guard) — prevents silent deauthorization
+- **[Recovery]** Added `sweepBTC()` for admin recovery of accidentally sent native BTC
+- **[CRIT-01 Fix]** Deploy scripts now transfer PaymentRouter admin to MarketplaceAdmin, enforcing the 48-hour fee timelock
 
 ### Security Checklist
 
@@ -287,14 +305,20 @@ Enhanced access control to separate `PAUSER_ROLE`, `FEE_MANAGER_ROLE`, and `COLL
 [✓] SafeERC20 for all ERC-20 transfers
 [✓] safeTransferFrom for all NFT transfers
 [✓] Ownership validated at listNFT AND re-validated at buyNFT
-[✓] Approval validated at listNFT time
+[✓] Approval validated at listNFT time AND ERC-20 allowance pre-checked at buyNFT
 [✓] routePayment restricted to marketplace contract only
+[✓] setMarketplace is one-time only (AlreadySet guard)
 [✓] Self-purchase blocked
 [✓] Expired veNFT purchase blocked
 [✓] Zero-address guards on all constructors
-[✓] Protocol fee hardcapped at 1% (100 bps)
-[✓] Fee changes require 48-hour timelock
+[✓] Protocol fee hardcapped at 5% (500 bps)
+[✓] Fee changes require 48-hour timelock (enforced via two-step admin transfer to MarketplaceAdmin)
+[✓] proposeFeeChange reverts if a pending proposal already exists
+[✓] executeFeeChange reverts if PaymentRouter not configured
+[✓] Emergency pause is fail-closed (reverts if admin contract call fails)
 [✓] Emergency pause available to PAUSER_ROLE
+[✓] Two-step admin transfer on PaymentRouter (propose + accept)
+[✓] BTC sweep function for accidentally sent native BTC
 [✓] Integer overflow protected (Solidity ^0.8.28)
 ```
 

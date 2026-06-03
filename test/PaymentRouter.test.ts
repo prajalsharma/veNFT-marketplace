@@ -5,7 +5,7 @@ import { PaymentRouter, MockERC20 } from "../typechain-types";
 
 describe("PaymentRouter", function () {
   const BTC_ADDRESS = "0x7b7C000000000000000000000000000000000000";
-  const INITIAL_FEE_BPS = 100; // 1%
+  const INITIAL_FEE_BPS = 200; // 2%
 
   async function deployFixture() {
     const [owner, admin, treasury, seller, buyer] = await ethers.getSigners();
@@ -55,28 +55,28 @@ describe("PaymentRouter", function () {
   });
 
   describe("calculateFee", function () {
-    it("Should calculate 1% fee correctly", async function () {
+    it("Should calculate 2% fee correctly", async function () {
       const { router } = await loadFixture(deployFixture);
 
       const amount = ethers.parseEther("1");
       const [fee, sellerAmount] = await router.calculateFee(amount);
 
-      expect(fee).to.equal(ethers.parseEther("0.01"));
-      expect(sellerAmount).to.equal(ethers.parseEther("0.99"));
+      expect(fee).to.equal(ethers.parseEther("0.02"));
+      expect(sellerAmount).to.equal(ethers.parseEther("0.98"));
       expect(fee + sellerAmount).to.equal(amount);
     });
 
     it("Should work with different fee levels", async function () {
       const { router, admin } = await loadFixture(deployFixture);
 
-      // Set 1% fee
-      await router.connect(admin).setProtocolFee(100);
+      // Set 5% fee
+      await router.connect(admin).setProtocolFee(500);
 
       const amount = ethers.parseEther("10");
       const [fee, sellerAmount] = await router.calculateFee(amount);
 
-      expect(fee).to.equal(ethers.parseEther("0.1"));
-      expect(sellerAmount).to.equal(ethers.parseEther("9.9"));
+      expect(fee).to.equal(ethers.parseEther("0.5"));
+      expect(sellerAmount).to.equal(ethers.parseEther("9.5"));
     });
   });
 
@@ -85,8 +85,8 @@ describe("PaymentRouter", function () {
       const { router, musd, treasury, seller, buyer } = await loadFixture(deployFixture);
 
       const amount = ethers.parseEther("100");
-      const expectedFee = ethers.parseEther("1"); // 1%
-      const expectedSeller = ethers.parseEther("99");
+      const expectedFee = ethers.parseEther("2"); // 2%
+      const expectedSeller = ethers.parseEther("98");
 
       // Approve router
       await musd.connect(buyer).approve(await router.getAddress(), amount);
@@ -128,7 +128,7 @@ describe("PaymentRouter", function () {
           seller.address,
           await musd.getAddress(),
           amount,
-          ethers.parseEther("1")
+          ethers.parseEther("2")
         );
     });
   });
@@ -138,8 +138,8 @@ describe("PaymentRouter", function () {
       const { router, treasury, seller, buyer } = await loadFixture(deployFixture);
 
       const amount = ethers.parseEther("1");
-      const expectedFee = ethers.parseEther("0.01");
-      const expectedSeller = ethers.parseEther("0.99");
+      const expectedFee = ethers.parseEther("0.02");
+      const expectedSeller = ethers.parseEther("0.98");
 
       const sellerBefore = await ethers.provider.getBalance(seller.address);
       const treasuryBefore = await ethers.provider.getBalance(treasury.address);
@@ -182,16 +182,16 @@ describe("PaymentRouter", function () {
 
       await expect(router.connect(admin).setProtocolFee(200))
         .to.emit(router, "ProtocolFeeUpdated")
-        .withArgs(100, 200);
+        .withArgs(200, 200);
 
       expect(await router.protocolFeeBps()).to.equal(200);
     });
 
-    it("Should reject fee above 1%", async function () {
+    it("Should reject fee above 5%", async function () {
       const { router, admin } = await loadFixture(deployFixture);
 
       await expect(
-        router.connect(admin).setProtocolFee(101)
+        router.connect(admin).setProtocolFee(501)
       ).to.be.revertedWithCustomError(router, "FeeTooHigh");
     });
 

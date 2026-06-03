@@ -2,6 +2,12 @@
 
 import { useReadContract, useReadContracts, useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { useNetwork } from "./useNetwork";
+import { computeDiscountBps } from "@/lib/computeDiscount";
+
+// ─── Discount logic ───────────────────────────────────────────────────────────
+// Discount percentages are only shown when the listing currency matches the
+// locked asset denomination. Cross-token listings intentionally render no %
+// until a reliable oracle-backed comparison exists.
 
 // ─── Marketplace ABI ──────────────────────────────────────────────────────────
 
@@ -61,6 +67,32 @@ const MARKETPLACE_ABI = [
     inputs: [{ name: "user", type: "address" }],
     outputs: [{ type: "uint256[]" }],
   },
+  {
+    name: "getActiveListings",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "collection", type: "address" },
+      { name: "offset",     type: "uint256" },
+      { name: "limit",      type: "uint256"  },
+    ],
+    outputs: [
+      {
+        components: [
+          { name: "seller",       type: "address" },
+          { name: "collection",   type: "address" },
+          { name: "tokenId",      type: "uint256" },
+          { name: "price",        type: "uint256" },
+          { name: "paymentToken", type: "address" },
+          { name: "createdAt",    type: "uint256" },
+          { name: "active",       type: "bool"    },
+        ],
+        name: "result",
+        type: "tuple[]",
+      },
+      { name: "total", type: "uint256" },
+    ],
+  },
   // ── Custom errors — needed for wagmi to decode revert reasons ──────────────
   { name: "Paused",                  type: "error", inputs: [] },
   { name: "NotOwner",                type: "error", inputs: [] },
@@ -108,16 +140,6 @@ const ADAPTER_ABI = [
       { name: "amount", type: "uint256" },
       { name: "lockEnd", type: "uint256" },
     ],
-  },
-  {
-    name: "isExpired",
-    type: "function",
-    stateMutability: "view",
-    inputs: [
-      { name: "collection", type: "address" },
-      { name: "tokenId", type: "uint256" },
-    ],
-    outputs: [{ type: "bool" }],
   },
 ] as const;
 
@@ -218,6 +240,32 @@ const ERC20_ABI = [
   },
 ] as const;
 
+// ─── Grant NFT detection ABI ──────────────────────────────────────────────────
+// Grant veNFTs are identified by two storage slots on the VotingEscrow contract:
+//   grantManager[tokenId] != address(0)  → token was distributed as a grant
+//   vestingEnd[tokenId]   != 0           → token has a non-zero vesting end
+// Both conditions must be true for a token to be classified as a Grant NFT.
+// Grant NFTs CANNOT be merged or split.  They CAN be listed and purchased.
+
+const GRANT_NFT_ABI = [
+  {
+    name: "grantManager",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ type: "address" }],
+  },
+  {
+    name: "vestingEnd",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 // ─── Voting power computation ─────────────────────────────────────────────────
 // Derived from locked() data returned by getIntrinsicValue.
 // Velodrome v2: VP = amount * (end - now) / MAXTIME  (for timed locks)
@@ -259,7 +307,10 @@ export interface Listing {
   intrinsicValue: bigint;
   votingPower: bigint;
   lockEnd: bigint;
-  discountBps: bigint;
+  discountBps: bigint | null;
+  /** True if this veNFT is a grant NFT (grantManager != 0x0 AND vestingEnd != 0).
+   *  Grant NFTs cannot be merged or split, but CAN be listed and purchased. */
+  isGrant: boolean;
 }
 
 interface ListingTuple {
@@ -279,12 +330,14 @@ export interface WalletVeNFT {
   intrinsicValue: bigint;
   votingPower: bigint;
   lockEnd: bigint;
+  /** True if this is a grant NFT — cannot be merged or split. */
+  isGrant: boolean;
 }
 
 // ─── useMarketplace ───────────────────────────────────────────────────────────
 
 export function useMarketplace() {
-  const { contracts } = useNetwork();
+  const { contracts, chainId } = useNetwork();
   const { address } = useAccount();
   const { writeContract, writeContractAsync, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
@@ -298,6 +351,7 @@ export function useMarketplace() {
     address: marketplaceAddress,
     abi: MARKETPLACE_ABI,
     functionName: "nextListingId",
+    chainId,
     query: {
       enabled: isMarketplaceReady,
     },
@@ -310,7 +364,7 @@ export function useMarketplace() {
     paymentToken: string
   ) => {
     if (!isMarketplaceReady) throw new Error("Marketplace not deployed");
-    writeContract({
+    return writeContractAsync({
       address: marketplaceAddress,
       abi: MARKETPLACE_ABI,
       functionName: "listNFT",
@@ -367,7 +421,7 @@ export function useMarketplace() {
 
   const approveNFT = async (collection: string, tokenId: bigint) => {
     if (!isMarketplaceReady) throw new Error("Marketplace not deployed");
-    writeContract({
+    return writeContractAsync({
       address: collection as `0x${string}`,
       abi: ERC721_ABI,
       functionName: "approve",
@@ -392,6 +446,7 @@ export function useMarketplace() {
     abi: MARKETPLACE_ABI,
     functionName: "getUserListings",
     args: address ? [address] : undefined,
+    chainId,
     query: {
       enabled: isMarketplaceReady && !!address,
     },
@@ -422,7 +477,7 @@ export function useMarketplace() {
 // ─── useListing ───────────────────────────────────────────────────────────────
 
 export function useListing(listingId: number) {
-  const { contracts } = useNetwork();
+  const { contracts, chainId } = useNetwork();
 
   const ZERO = "0x0000000000000000000000000000000000000000";
   const marketplaceAddress = contracts.marketplace as `0x${string}`;
@@ -435,8 +490,11 @@ export function useListing(listingId: number) {
     abi: MARKETPLACE_ABI,
     functionName: "listings",
     args: [BigInt(listingId)],
+    chainId,
     query: {
       enabled: isMarketplaceReady,
+      // Re-fetch on every mount so post-purchase the sold listing is marked inactive
+      staleTime: 0,
     },
   });
 
@@ -456,29 +514,101 @@ export function useListing(listingId: number) {
   const collection = listing?.collection;
   const tokenId = listing?.tokenId;
 
+  // Cross-check: verify seller still owns the NFT. If they transferred it out without
+  // cancelling the listing (possible in escrowless design), the listing is stale.
+  // We only run this check when the listing reports active=true to save RPC calls.
+  const { data: currentOwner, isError: ownerIsError, isLoading: ownerLoading } = useReadContract({
+    address: collection as `0x${string}`,
+    abi: ERC721_ABI,
+    functionName: "ownerOf",
+    args: tokenId !== undefined ? [tokenId] : undefined,
+    chainId,
+    query: {
+      enabled: isMarketplaceReady && !!collection && tokenId !== undefined && listing?.active === true,
+      staleTime: 0,
+    },
+  });
+
   // getIntrinsicValue returns (amount, lockEnd) — works correctly on deployed contracts
   const { data: adapterData } = useReadContract({
     address: adapterAddress,
     abi: ADAPTER_ABI,
     functionName: "getIntrinsicValue",
     args: collection && tokenId !== undefined ? [collection, tokenId] : undefined,
+    chainId,
     query: {
       enabled: isAdapterReady && !!collection && tokenId !== undefined,
     },
   });
 
+  // ── Grant NFT detection ────────────────────────────────────────────────────
+  // A veNFT is a Grant NFT if grantManager[tokenId] != address(0) AND vestingEnd[tokenId] != 0.
+  // Grant NFTs cannot be merged or split but CAN be listed and purchased.
+  const { data: grantManagerAddr } = useReadContract({
+    address: collection as `0x${string}`,
+    abi: GRANT_NFT_ABI,
+    functionName: "grantManager",
+    args: tokenId !== undefined ? [tokenId] : undefined,
+    chainId,
+    query: { enabled: !!collection && tokenId !== undefined },
+  });
+
+  const { data: vestingEndVal } = useReadContract({
+    address: collection as `0x${string}`,
+    abi: GRANT_NFT_ABI,
+    functionName: "vestingEnd",
+    args: tokenId !== undefined ? [tokenId] : undefined,
+    chainId,
+    query: { enabled: !!collection && tokenId !== undefined },
+  });
+
   const [intrinsicValue, lockEnd] = (adapterData as [bigint, bigint] | undefined) ?? [0n, 0n];
+
+  // Derive Grant flag — defaults to false while data is loading (no UI flicker)
+  const grantMgr = (grantManagerAddr as string | undefined) ?? ZERO_ADDRESS;
+  const vestingEndTs = (vestingEndVal as bigint | undefined) ?? 0n;
+  const isGrant = grantMgr.toLowerCase() !== ZERO_ADDRESS && vestingEndTs !== 0n;
 
   if (!listing) return { listing: null, isLoading };
 
   const price = listing.price;
   const iv = intrinsicValue ?? 0n;
-  const discountBps = iv > 0n ? ((iv - price) * 10000n) / iv : 0n;
   const isVeBTC = collection?.toLowerCase() === contracts.veBTC.toLowerCase();
+
+  // Locked token address: veBTC locks BTC, veMEZO locks MEZO
+  const BTC_TOKEN_ADDR  = "0x7b7c000000000000000000000000000000000000";
+  const MEZO_TOKEN_ADDR = "0x7b7c000000000000000000000000000000000001";
+  const nftLockedTokenAddr = isVeBTC ? BTC_TOKEN_ADDR : MEZO_TOKEN_ADDR;
+
+  // Only same-token listings get a discount percentage. Cross-token listings
+  // intentionally render "unknown" instead of a guessed percentage.
+  const discountBps = computeDiscountBps(
+    iv,
+    nftLockedTokenAddr,
+    price,
+    listing.paymentToken,
+  );
 
   // Compute voting power from locked() data — avoids calling balanceOfNFT which
   // does not exist on the deployed Velodrome v2 veBTC/veMEZO contracts
   const votingPower = computeVotingPower(iv, lockEnd, isVeBTC ?? true);
+
+  // A listing is only truly active if:
+  //   1. The contract marks it active, AND
+  //   2. The seller still owns the NFT (ownerOf cross-check)
+  // States handled explicitly:
+  //   • in-flight → optimistically trust the contract flag (no flash of "inactive")
+  //   • ownerOf reverted (token burned/nonexistent) or owner is the zero address
+  //     → treat as NOT owned (the listing is stale; buyNFT would revert)
+  //   • otherwise compare the live owner to the seller
+  const ownerStr = (currentOwner as string | undefined)?.toLowerCase();
+  const sellerStillOwns = ownerLoading
+    ? true
+    : !ownerIsError &&
+      ownerStr != null &&
+      ownerStr !== ZERO_ADDRESS &&
+      ownerStr === listing.seller.toLowerCase();
+  const isActive = listing.active && sellerStillOwns;
 
   const fullListing: Listing = {
     listingId,
@@ -488,12 +618,13 @@ export function useListing(listingId: number) {
     tokenId: listing.tokenId,
     price: listing.price,
     paymentToken: listing.paymentToken,
-    active: listing.active,
+    active: isActive,
     createdAt: listing.createdAt,
     intrinsicValue: iv,
     votingPower,
     lockEnd,
     discountBps,
+    isGrant,
   };
 
   return { listing: fullListing, isLoading };
@@ -510,7 +641,7 @@ const MAX_TOKENS_PER_COLLECTION = 50;
 
 export function useUserVeNFTs() {
   const { address } = useAccount();
-  const { contracts } = useNetwork();
+  const { contracts, chainId } = useNetwork();
 
   const ZERO = "0x0000000000000000000000000000000000000000";
   const veBTCAddress   = contracts.veBTC   as `0x${string}`;
@@ -519,19 +650,23 @@ export function useUserVeNFTs() {
   const isAdapterDeployed = !!adapterAddress && adapterAddress !== ZERO;
 
   // Step 1: get token counts via ERC-721 balanceOf
-  const { data: veBTCCount, isLoading: veBTCCountLoading, refetch: refetchVeBTCCount } = useReadContract({
+  // Explicitly pass chainId so reads always target the correct network regardless
+  // of which chain the wallet is currently connected to.
+  const { data: veBTCCount, isLoading: veBTCCountLoading } = useReadContract({
     address: veBTCAddress,
     abi: VOTING_ESCROW_ENUM_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    chainId,
     query: { enabled: !!address },
   });
 
-  const { data: veMEZOCount, isLoading: veMEZOCountLoading, refetch: refetchVeMEZOCount } = useReadContract({
+  const { data: veMEZOCount, isLoading: veMEZOCountLoading } = useReadContract({
     address: veMEZOAddress,
     abi: VOTING_ESCROW_ENUM_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    chainId,
     query: { enabled: !!address },
   });
 
@@ -545,12 +680,14 @@ export function useUserVeNFTs() {
       abi: VOTING_ESCROW_ENUM_ABI,
       functionName: "ownerToNFTokenIdList" as const,
       args: [address!, BigInt(i)] as const,
+      chainId,
     })),
     ...Array.from({ length: veMEZOCountNum }, (_, i) => ({
       address: veMEZOAddress,
       abi: VOTING_ESCROW_ENUM_ABI,
       functionName: "ownerToNFTokenIdList" as const,
       args: [address!, BigInt(i)] as const,
+      chainId,
     })),
   ];
 
@@ -584,11 +721,39 @@ export function useUserVeNFTs() {
     abi: ADAPTER_ABI,
     functionName: "getIntrinsicValue" as const,
     args: [pair.nftContract, pair.tokenId] as const,
+    chainId,
   }));
 
   const { data: intrinsicResults, isLoading: intrinsicLoading } = useReadContracts({
     contracts: intrinsicCalls,
     query: { enabled: isAdapterDeployed && tokenPairs.length > 0 },
+  });
+
+  // Step 4: Grant NFT detection — batch-read grantManager and vestingEnd for every token.
+  // If either call reverts (contract doesn't implement the function) the result is ignored
+  // and isGrant defaults to false — safe fallback with no UI impact.
+  const grantManagerCalls = tokenPairs.map((pair) => ({
+    address: pair.nftContract,
+    abi: GRANT_NFT_ABI,
+    functionName: "grantManager" as const,
+    args: [pair.tokenId] as const,
+    chainId,
+  }));
+  const vestingEndCalls = tokenPairs.map((pair) => ({
+    address: pair.nftContract,
+    abi: GRANT_NFT_ABI,
+    functionName: "vestingEnd" as const,
+    args: [pair.tokenId] as const,
+    chainId,
+  }));
+
+  const { data: grantManagerResults } = useReadContracts({
+    contracts: grantManagerCalls,
+    query: { enabled: tokenPairs.length > 0 },
+  });
+  const { data: vestingEndResults } = useReadContracts({
+    contracts: vestingEndCalls,
+    query: { enabled: tokenPairs.length > 0 },
   });
 
   const isLoading = veBTCCountLoading || veMEZOCountLoading || enumLoading || intrinsicLoading;
@@ -599,6 +764,10 @@ export function useUserVeNFTs() {
     const isVeBTC = pair.collection === "veBTC";
     const votingPower = computeVotingPower(intrinsicValue, lockEnd, isVeBTC);
 
+    const grantMgr  = (grantManagerResults?.[i]?.result as string | undefined) ?? ZERO_ADDRESS;
+    const vestingTs = (vestingEndResults?.[i]?.result  as bigint | undefined) ?? 0n;
+    const isGrant   = grantMgr.toLowerCase() !== ZERO_ADDRESS && vestingTs !== 0n;
+
     return {
       tokenId: pair.tokenId,
       collection: pair.collection,
@@ -606,13 +775,9 @@ export function useUserVeNFTs() {
       intrinsicValue,
       votingPower,
       lockEnd,
+      isGrant,
     };
   });
-
-  const refetchVeNFTs = () => {
-    refetchVeBTCCount();
-    refetchVeMEZOCount();
-  };
 
   return {
     veNFTs,
@@ -620,6 +785,213 @@ export function useUserVeNFTs() {
     veBTCCount: veBTCCountNum,
     veMEZOCount: veMEZOCountNum,
     totalVeNFTs: tokenPairs.length,
-    refetchVeNFTs,
+  };
+}
+
+// ─── useActiveListings ────────────────────────────────────────────────────────
+// Batch-fetches ALL active listings in 2 contract calls (one per collection)
+// rather than N individual calls. Dramatically reduces RPC load vs the old
+// per-listing approach (was ~715 calls for 143 listings; now 2 calls + 1 batch).
+//
+// Returns the same Listing[] shape as useListing so MarketplaceClient needs
+// minimal changes.
+
+const ACTIVE_LISTINGS_LIMIT = 500n; // fetch up to 500 at once
+
+export function useActiveListings() {
+  const { contracts, chainId } = useNetwork();
+
+  const ZERO = "0x0000000000000000000000000000000000000000";
+  const marketplaceAddress = contracts.marketplace as `0x${string}`;
+  const adapterAddress     = contracts.adapter     as `0x${string}`;
+  const veBTCAddress       = contracts.veBTC       as `0x${string}`;
+  const veMEZOAddress      = contracts.veMEZO      as `0x${string}`;
+  const isMarketplaceReady = !!marketplaceAddress && marketplaceAddress !== ZERO;
+  const isAdapterReady     = !!adapterAddress     && adapterAddress     !== ZERO;
+
+  // Step 1a: fetch nextListingId so we know how many slots to scan
+  const { data: nextId, refetch: refetchNextId, isError: nextIdIsError, error: nextIdError } = useReadContract({
+    address: marketplaceAddress,
+    abi: MARKETPLACE_ABI,
+    functionName: "nextListingId",
+    chainId,
+    query: { enabled: isMarketplaceReady },
+  });
+
+  const slotCount = nextId ? Number(nextId) : 0;
+
+  // Step 1b: batch-fetch every listing slot [0 .. nextListingId-1] so we get
+  // both the struct data AND the slot index (= listingId). This replaces the
+  // old getActiveListings call which returned structs without their IDs —
+  // causing buyNFT to be called with tokenId instead of the real listingId.
+  const slotCalls = Array.from({ length: Math.min(slotCount, Number(ACTIVE_LISTINGS_LIMIT)) }, (_, i) => ({
+    address: marketplaceAddress,
+    abi: MARKETPLACE_ABI,
+    functionName: "listings" as const,
+    args: [BigInt(i)] as const,
+    chainId,
+  }));
+
+  const { data: slotResults, isLoading: batchLoading, refetch: refetchSlots, isError: slotsIsError, error: slotsError } = useReadContracts({
+    contracts: slotCalls,
+    query: { enabled: isMarketplaceReady && slotCount > 0 },
+  });
+
+  const refetch = async () => {
+    await refetchNextId();
+    await refetchSlots();
+  };
+
+  // NOTE: getActiveListings returns (Listing[], total) — result[0] is the array.
+  type RawListing = {
+    seller:       `0x${string}`;
+    collection:   `0x${string}`;
+    tokenId:      bigint;
+    price:        bigint;
+    paymentToken: `0x${string}`;
+    createdAt:    bigint;
+    active:       boolean;
+  };
+
+  // Build allRaw from slot scan — only active listings for veBTC or veMEZO,
+  // keeping the slot index as the authoritative listingId.
+  const allRaw: (RawListing & { collectionKey: "veBTC" | "veMEZO"; listingSlotId: number })[] = [];
+
+  if (slotResults) {
+    for (let i = 0; i < slotResults.length; i++) {
+      const raw = slotResults[i]?.result as RawListing | undefined;
+      if (!raw || !raw.active) continue;
+      const collLower = raw.collection.toLowerCase();
+      if (collLower === veBTCAddress.toLowerCase()) {
+        allRaw.push({ ...raw, collectionKey: "veBTC",  listingSlotId: i });
+      } else if (collLower === veMEZOAddress.toLowerCase()) {
+        allRaw.push({ ...raw, collectionKey: "veMEZO", listingSlotId: i });
+      }
+    }
+  }
+
+  // Step 2: batch-fetch intrinsicValue + lockEnd for all active listings
+  const intrinsicCalls = allRaw.map(l => ({
+    address: adapterAddress,
+    abi: ADAPTER_ABI,
+    functionName: "getIntrinsicValue" as const,
+    args: [l.collection, l.tokenId] as const,
+    chainId,
+  }));
+
+  const { data: intrinsicResults, isLoading: intrinsicLoading } = useReadContracts({
+    contracts: intrinsicCalls,
+    query: { enabled: isAdapterReady && allRaw.length > 0 },
+  });
+
+  // Step 3: batch-fetch grant NFT flags
+  const grantManagerCalls = allRaw.map(l => ({
+    address: l.collection,
+    abi: GRANT_NFT_ABI,
+    functionName: "grantManager" as const,
+    args: [l.tokenId] as const,
+    chainId,
+  }));
+  const vestingEndCalls = allRaw.map(l => ({
+    address: l.collection,
+    abi: GRANT_NFT_ABI,
+    functionName: "vestingEnd" as const,
+    args: [l.tokenId] as const,
+    chainId,
+  }));
+
+  const { data: grantManagerResults } = useReadContracts({
+    contracts: grantManagerCalls,
+    query: { enabled: allRaw.length > 0 },
+  });
+  const { data: vestingEndResults } = useReadContracts({
+    contracts: vestingEndCalls,
+    query: { enabled: allRaw.length > 0 },
+  });
+
+  // Step 4: ownerOf cross-check to filter fake / stale listings.
+  // In an escrowless design a seller can transfer the NFT out without cancelling.
+  // We batch-call ownerOf for every active listing and exclude any where the
+  // seller no longer owns the NFT — these listings would revert on buy anyway.
+  const ownerOfCalls = allRaw.map(l => ({
+    address: l.collection,
+    abi: ERC721_ABI,
+    functionName: "ownerOf" as const,
+    args: [l.tokenId] as const,
+    chainId,
+  }));
+
+  const { data: ownerOfResults } = useReadContracts({
+    contracts: ownerOfCalls,
+    query: { enabled: allRaw.length > 0, staleTime: 0 },
+  });
+
+  const isLoading = batchLoading || (allRaw.length > 0 && intrinsicLoading);
+
+  const BTC_TOKEN_ADDR  = "0x7b7c000000000000000000000000000000000000";
+  const MEZO_TOKEN_ADDR = "0x7b7c000000000000000000000000000000000001";
+
+  const listings: Listing[] = allRaw.map((raw, i) => {
+    const ivRaw = intrinsicResults?.[i]?.result as [bigint, bigint] | undefined;
+    const [intrinsicValue, lockEnd] = ivRaw ?? [0n, 0n];
+    const isVeBTC    = raw.collectionKey === "veBTC";
+    const votingPower = computeVotingPower(intrinsicValue, lockEnd, isVeBTC);
+
+    const grantMgr  = (grantManagerResults?.[i]?.result as string | undefined) ?? ZERO_ADDRESS;
+    const vestingTs = (vestingEndResults?.[i]?.result  as bigint | undefined) ?? 0n;
+    const isGrant   = grantMgr.toLowerCase() !== ZERO_ADDRESS && vestingTs !== 0n;
+
+    const nftLockedTokenAddr = isVeBTC ? BTC_TOKEN_ADDR : MEZO_TOKEN_ADDR;
+    const discountBps = computeDiscountBps(intrinsicValue, nftLockedTokenAddr, raw.price, raw.paymentToken);
+
+    // Cross-check: the seller must still own the NFT, otherwise the listing is
+    // stale and buyNFT would revert. Three states are handled explicitly:
+    //   • batch not resolved yet (ownerOfResults == null) → optimistically trust
+    //     the contract's active flag to avoid a flash of "inactive"
+    //   • ownerOf reverted (status "failure" → result undefined; token burned or
+    //     nonexistent) OR owner is the zero address → treat as NOT owned (hide it)
+    //   • otherwise compare the live owner to the seller
+    const currentOwner = (ownerOfResults?.[i]?.result as string | undefined)?.toLowerCase();
+    const sellerStillOwns =
+      ownerOfResults == null // still loading — avoid flash-hiding
+        ? true
+        : currentOwner != null &&
+          currentOwner !== ZERO_ADDRESS &&
+          currentOwner === raw.seller.toLowerCase();
+    const isActive = raw.active && sellerStillOwns;
+
+    return {
+      listingId:      raw.listingSlotId, // authoritative slot ID from listings[i] scan
+      seller:         raw.seller,
+      nftContract:    raw.collection,
+      collection:     raw.collectionKey,
+      tokenId:        raw.tokenId,
+      price:          raw.price,
+      paymentToken:   raw.paymentToken,
+      active:         isActive,
+      createdAt:      raw.createdAt,
+      intrinsicValue,
+      votingPower,
+      lockEnd,
+      discountBps,
+      isGrant,
+    };
+  });
+
+  // Surface read failures so the UI can distinguish a genuine empty market from
+  // an RPC/contract error (never show a false "no listings" state on failure).
+  const isError = nextIdIsError || slotsIsError;
+  const error = nextIdError ?? slotsError ?? null;
+
+  return {
+    listings,
+    isLoading,
+    refetch,
+    isError,
+    error,
+    // Resolved address actually queried — exposed so an env-var override that
+    // points at the wrong/empty marketplace is immediately visible in the UI.
+    marketplaceAddress,
+    isMarketplaceReady,
   };
 }

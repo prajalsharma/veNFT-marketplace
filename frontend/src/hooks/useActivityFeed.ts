@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
-import { formatEther } from "viem";
+import { createPublicClient, http, formatEther, parseAbiItem, type AbiEvent } from "viem";
 import { useNetwork } from "./useNetwork";
+import { mezoMainnet, mezoTestnet } from "@/lib/wagmi";
+import { computeDiscountBpsNumber } from "@/lib/computeDiscount";
 
 export interface ActivityEvent {
-  type: "sale" | "listed" | "cancelled" | "bid-placed" | "bid-accepted" | "bid-cancelled";
+  type: "sale" | "listed" | "cancelled";
   listingId: bigint;
   collection: "veBTC" | "veMEZO";
   tokenId: bigint;
   price: string;
   paymentToken: string;
+  /** Discount in basis points (e.g. 500 = 5% OFF). Negative = premium. null if not computable. */
+  discountBps: number | null;
   from: string;
   to: string | null;
   blockNumber: bigint;
@@ -19,46 +23,106 @@ export interface ActivityEvent {
   timestamp: number | null;
 }
 
+// Primary + fallback RPCs per network
+const RPC_URLS: Record<number, string[]> = {
+  31612: [
+    "https://mainnet.mezo.public.validationcloud.io",
+    "https://rpc.mezo.org",
+  ],
+  31611: [
+    "https://rpc.test.mezo.org",
+  ],
+};
+
+// How far back to look and how many blocks per chunk.
+// Mainnet: scan the last 200k blocks (~8 days at ~3.5 s/block).
+// Testnet: scan the last 200k blocks — scanning from genesis causes RPC timeouts on Mezo.
+const LOOK_BACK_BLOCKS_MAINNET = 200_000n;
+const LOOK_BACK_BLOCKS_TESTNET = 200_000n;
+const CHUNK_SIZE = 2_000n;
+
+// ── Adapter ABI (getIntrinsicValue only) ─────────────────────────────────────
+const ADAPTER_ABI_IV = [
+  {
+    name: "getIntrinsicValue",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "collection", type: "address" },
+      { name: "tokenId",    type: "uint256" },
+    ],
+    outputs: [
+      { name: "amount",  type: "uint256" },
+      { name: "lockEnd", type: "uint256" },
+    ],
+  },
+] as const;
+
+// ── Token address constants ───────────────────────────────────────────────────
+const BTC_ADDR  = "0x7b7c000000000000000000000000000000000000";
+const MEZO_ADDR = "0x7b7c000000000000000000000000000000000001";
+
+// Discount calculation delegates to computeDiscount.ts. Cross-token listings
+// intentionally return null until a reliable oracle-backed comparison exists.
+
+// Typed event ABIs
+const LISTED_EVENT    = parseAbiItem("event Listed(uint256 indexed listingId, address indexed seller, address indexed collection, uint256 tokenId, uint256 price, address paymentToken)");
+const PURCHASED_EVENT = parseAbiItem("event Purchased(uint256 indexed listingId, address indexed buyer, address indexed seller, uint256 price)");
+const CANCELLED_EVENT = parseAbiItem("event Cancelled(uint256 indexed listingId)");
+
 function getPaymentSymbol(token: string, musd: string): string {
   const lower = token.toLowerCase();
   if (lower === "0x7b7c000000000000000000000000000000000000") return "BTC";
   if (lower === "0x7b7c000000000000000000000000000000000001") return "MEZO";
   if (lower === musd.toLowerCase()) return "MUSD";
+  if (!token) return "—";
   return token.slice(0, 6) + "…";
 }
 
-// Mezo testnet RPC limits getLogs to max 10,000 blocks per request.
-// This helper fetches logs across a range by splitting into 10k-block chunks.
-async function getLogsChunked(
-  publicClient: NonNullable<ReturnType<typeof usePublicClient>>,
-  params: {
-    address: `0x${string}`;
-    event: Parameters<typeof publicClient.getLogs>[0]["event"];
-    fromBlock: bigint;
-    toBlock: bigint;
-  }
-): Promise<Awaited<ReturnType<typeof publicClient.getLogs>>> {
-  const CHUNK_SIZE = 9_000n;
-  const allLogs: Awaited<ReturnType<typeof publicClient.getLogs>> = [];
-  let from = params.fromBlock;
+type AnyClient = ReturnType<typeof createPublicClient>;
 
-  while (from <= params.toBlock) {
-    const to = from + CHUNK_SIZE > params.toBlock ? params.toBlock : from + CHUNK_SIZE;
-    const logs = await publicClient.getLogs({
-      address: params.address,
-      event: params.event,
-      fromBlock: from,
-      toBlock: to,
-    });
-    allLogs.push(...(logs as any[]));
-    from = to + 1n;
+/** Try each RPC URL in sequence; return the first successful result */
+async function withFallback<T>(
+  chainId: number,
+  fn: (client: AnyClient) => Promise<T>
+): Promise<T> {
+  const urls = RPC_URLS[chainId] ?? RPC_URLS[31612];
+  const chain = chainId === 31612 ? mezoMainnet : mezoTestnet;
+  let lastErr: unknown;
+  for (const url of urls) {
+    const client = createPublicClient({ chain, transport: http(url) });
+    try {
+      return await fn(client);
+    } catch (e) {
+      lastErr = e;
+    }
   }
+  throw lastErr;
+}
 
-  return allLogs;
+/** Fetch logs in CHUNK_SIZE slices to stay within RPC range limits */
+async function fetchLogsChunked(
+  chainId: number,
+  address: `0x${string}`,
+  event: any,
+  fromBlock: bigint,
+  toBlock: bigint
+): Promise<ReturnType<AnyClient["getLogs"]> extends Promise<infer R> ? R : never> {
+  const allLogs: any[] = [];
+  let start = fromBlock;
+  while (start <= toBlock) {
+    const end = start + CHUNK_SIZE - 1n > toBlock ? toBlock : start + CHUNK_SIZE - 1n;
+    const chunk = await withFallback(chainId, (client) =>
+      client.getLogs({ address, event, fromBlock: start, toBlock: end } as any)
+    );
+    allLogs.push(...chunk);
+    start = end + 1n;
+  }
+  return allLogs as any;
 }
 
 export function useActivityFeed(limit = 50) {
-  const { contracts } = useNetwork();
+  const { contracts, chainId } = useNetwork();
   const publicClient = usePublicClient();
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,81 +142,39 @@ export function useActivityFeed(limit = 50) {
       setError(null);
 
       try {
-        // Get the current block to define our range
-        const latestBlock = await publicClient!.getBlockNumber();
+        // Get current block number via fallback-aware client
+        const latestBlock = await withFallback(chainId, (client) =>
+          client.getBlockNumber()
+        );
+        // Both testnet and mainnet scan the last N blocks to avoid RPC range limits.
+        const isTestnet = chainId === 31611;
+        const lookBack = isTestnet ? LOOK_BACK_BLOCKS_TESTNET : LOOK_BACK_BLOCKS_MAINNET;
+        const fromBlock = latestBlock > lookBack ? latestBlock - lookBack : 0n;
 
-        // Deploy block is unknown; look back at most 200k blocks (≈ ~55 days on Mezo)
-        // using chunked requests of 9k blocks to respect RPC limits.
-        const LOOK_BACK = 200_000n;
-        const fromBlock = latestBlock > LOOK_BACK ? latestBlock - LOOK_BACK : 0n;
-
-        const listedEvent = {
-          type: "event" as const,
-          name: "Listed",
-          inputs: [
-            { indexed: true, name: "listingId", type: "uint256" as const },
-            { indexed: true, name: "seller", type: "address" as const },
-            { indexed: true, name: "collection", type: "address" as const },
-            { indexed: false, name: "tokenId", type: "uint256" as const },
-            { indexed: false, name: "price", type: "uint256" as const },
-            { indexed: false, name: "paymentToken", type: "address" as const },
-          ],
-        };
-
-        const purchasedEvent = {
-          type: "event" as const,
-          name: "Purchased",
-          inputs: [
-            { indexed: true, name: "listingId", type: "uint256" as const },
-            { indexed: true, name: "buyer", type: "address" as const },
-            { indexed: true, name: "seller", type: "address" as const },
-            { indexed: false, name: "price", type: "uint256" as const },
-          ],
-        };
-
-        const cancelledEvent = {
-          type: "event" as const,
-          name: "Cancelled",
-          inputs: [
-            { indexed: true, name: "listingId", type: "uint256" as const },
-          ],
-        };
+        if (cancelled) return;
 
         // Fetch all three event types in parallel using chunked requests
         const [listedLogs, purchasedLogs, cancelledLogs] = await Promise.all([
-          getLogsChunked(publicClient!, {
-            address: marketplaceAddress,
-            event: listedEvent,
-            fromBlock,
-            toBlock: latestBlock,
-          }),
-          getLogsChunked(publicClient!, {
-            address: marketplaceAddress,
-            event: purchasedEvent,
-            fromBlock,
-            toBlock: latestBlock,
-          }),
-          getLogsChunked(publicClient!, {
-            address: marketplaceAddress,
-            event: cancelledEvent,
-            fromBlock,
-            toBlock: latestBlock,
-          }),
+          fetchLogsChunked(chainId, marketplaceAddress, LISTED_EVENT,    fromBlock, latestBlock),
+          fetchLogsChunked(chainId, marketplaceAddress, PURCHASED_EVENT, fromBlock, latestBlock),
+          fetchLogsChunked(chainId, marketplaceAddress, CANCELLED_EVENT, fromBlock, latestBlock),
         ]);
 
         if (cancelled) return;
 
         // Collect unique block numbers to fetch timestamps
         const blockNumbers = new Set<bigint>();
-        [...listedLogs, ...purchasedLogs, ...cancelledLogs].forEach((log) => {
+        [...listedLogs, ...purchasedLogs, ...cancelledLogs].forEach((log: any) => {
           if (log.blockNumber != null) blockNumbers.add(log.blockNumber);
         });
 
-        // Fetch block timestamps in parallel (capped to avoid rate limits)
+        // Fetch block timestamps (capped to avoid rate limits)
         const blockTimestamps = new Map<bigint, number>();
         const blockArr = Array.from(blockNumbers).slice(0, 100);
         const blockData = await Promise.allSettled(
-          blockArr.map((bn) => publicClient!.getBlock({ blockNumber: bn }))
+          blockArr.map((bn) =>
+            withFallback(chainId, (client) => client.getBlock({ blockNumber: bn }))
+          )
         );
         blockArr.forEach((bn, i) => {
           const result = blockData[i];
@@ -163,118 +185,167 @@ export function useActivityFeed(limit = 50) {
 
         if (cancelled) return;
 
-        const allEvents: ActivityEvent[] = [];
+        // ── Fetch intrinsic values from adapter for unique (collection, tokenId) pairs ──
+        // Build a deduplicated map keyed by "collection:tokenId"
+        const ivMap = new Map<string, bigint>();
+        const adapterAddress = contracts.adapter as `0x${string}`;
+        const isAdapterReady =
+          !!adapterAddress &&
+          adapterAddress !== "0x0000000000000000000000000000000000000000";
 
-        for (const log of listedLogs) {
-          const args = log.args as any;
-          const isVeBTC =
-            (args.collection as string).toLowerCase() ===
-            contracts.veBTC.toLowerCase();
-          allEvents.push({
-            type: "listed",
-            listingId: args.listingId,
-            collection: isVeBTC ? "veBTC" : "veMEZO",
-            tokenId: args.tokenId,
-            price: parseFloat(formatEther(args.price as bigint)).toFixed(4),
-            paymentToken: getPaymentSymbol(args.paymentToken, contracts.MUSD),
-            from: args.seller,
-            to: null,
-            blockNumber: log.blockNumber ?? 0n,
-            transactionHash: log.transactionHash ?? "",
-            timestamp: log.blockNumber
-              ? (blockTimestamps.get(log.blockNumber) ?? null)
-              : null,
+        if (isAdapterReady) {
+          // Collect unique pairs from all log types
+          const pairs: { collection: string; tokenId: bigint; key: string }[] = [];
+          const seen = new Set<string>();
+
+          const collectPair = (collection: string, tokenId: bigint) => {
+            if (!collection || tokenId === undefined) return;
+            const key = `${collection.toLowerCase()}:${tokenId}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              pairs.push({ collection, tokenId, key });
+            }
+          };
+
+          for (const log of listedLogs as any[]) {
+            const a = log.args ?? {};
+            collectPair(String(a.collection ?? ""), a.tokenId ?? 0n);
+          }
+          for (const log of purchasedLogs as any[]) {
+            const a = log.args ?? {};
+            const ll = (listedLogs as any[]).find((l: any) => l.args?.listingId === a.listingId);
+            if (ll) collectPair(String(ll.args?.collection ?? ""), ll.args?.tokenId ?? 0n);
+          }
+          for (const log of cancelledLogs as any[]) {
+            const a = log.args ?? {};
+            const ll = (listedLogs as any[]).find((l: any) => l.args?.listingId === a.listingId);
+            if (ll) collectPair(String(ll.args?.collection ?? ""), ll.args?.tokenId ?? 0n);
+          }
+
+          // Batch fetch intrinsic values; silently ignore failures per token
+          const ivResults = await Promise.allSettled(
+            pairs.map(({ collection, tokenId }) =>
+              withFallback(chainId, (client) =>
+                client.readContract({
+                  address: adapterAddress,
+                  abi: ADAPTER_ABI_IV,
+                  functionName: "getIntrinsicValue",
+                  args: [collection as `0x${string}`, tokenId],
+                })
+              )
+            )
+          );
+
+          pairs.forEach(({ key }, i) => {
+            const res = ivResults[i];
+            if (res.status === "fulfilled") {
+              const [amount] = res.value as [bigint, bigint];
+              ivMap.set(key, amount);
+            }
           });
         }
 
-        for (const log of purchasedLogs) {
-          const args = log.args as any;
-          const listedLog = listedLogs.find(
-            (l) => (l.args as any).listingId === args.listingId
+        if (cancelled) return;
+
+        const allEvents: ActivityEvent[] = [];
+
+        for (const log of listedLogs as any[]) {
+          const args = log.args ?? {};
+          const isVeBTC =
+            String(args.collection ?? "").toLowerCase() ===
+            contracts.veBTC.toLowerCase();
+          const nftTokenAddr = isVeBTC ? BTC_ADDR : MEZO_ADDR;
+          const ivKey = `${String(args.collection ?? "").toLowerCase()}:${args.tokenId ?? 0n}`;
+          const iv = ivMap.get(ivKey) ?? 0n;
+          const priceRaw = (args.price as bigint) ?? 0n;
+          allEvents.push({
+            type: "listed",
+            listingId: args.listingId ?? 0n,
+            collection: isVeBTC ? "veBTC" : "veMEZO",
+            tokenId: args.tokenId ?? 0n,
+            price: parseFloat(formatEther(priceRaw)).toFixed(4),
+            paymentToken: getPaymentSymbol(args.paymentToken ?? "", contracts.MUSD),
+            discountBps: computeDiscountBpsNumber(iv, nftTokenAddr, priceRaw, args.paymentToken ?? ""),
+            from: args.seller ?? "",
+            to: null,
+            blockNumber: log.blockNumber ?? 0n,
+            transactionHash: log.transactionHash ?? "",
+            timestamp: log.blockNumber ? (blockTimestamps.get(log.blockNumber) ?? null) : null,
+          });
+        }
+
+        for (const log of purchasedLogs as any[]) {
+          const args = log.args ?? {};
+          const listedLog = (listedLogs as any[]).find(
+            (l: any) => l.args?.listingId === args.listingId
           );
-          const collection = listedLog
-            ? (listedLog.args as any).collection.toLowerCase() ===
-              contracts.veBTC.toLowerCase()
+          const listedArgs = listedLog?.args ?? {};
+          const collection =
+            String(listedArgs.collection ?? "").toLowerCase() ===
+            contracts.veBTC.toLowerCase()
               ? "veBTC"
-              : "veMEZO"
-            : "veBTC";
-          const tokenId = listedLog ? (listedLog.args as any).tokenId : 0n;
-          const paymentToken = listedLog
-            ? getPaymentSymbol(
-                (listedLog.args as any).paymentToken,
-                contracts.MUSD
-              )
-            : "BTC";
+              : "veMEZO";
+          const nftTokenAddr = collection === "veBTC" ? BTC_ADDR : MEZO_ADDR;
+          const ivKey = `${String(listedArgs.collection ?? "").toLowerCase()}:${listedArgs.tokenId ?? 0n}`;
+          const iv = ivMap.get(ivKey) ?? 0n;
+          const priceRaw = (args.price as bigint) ?? 0n;
 
           allEvents.push({
             type: "sale",
-            listingId: args.listingId,
+            listingId: args.listingId ?? 0n,
             collection,
-            tokenId,
-            price: parseFloat(formatEther(args.price as bigint)).toFixed(4),
-            paymentToken,
-            from: args.seller,
-            to: args.buyer,
+            tokenId: listedArgs.tokenId ?? 0n,
+            price: parseFloat(formatEther(priceRaw)).toFixed(4),
+            paymentToken: getPaymentSymbol(listedArgs.paymentToken ?? "", contracts.MUSD),
+            discountBps: computeDiscountBpsNumber(iv, nftTokenAddr, priceRaw, listedArgs.paymentToken ?? ""),
+            from: args.seller ?? "",
+            to: args.buyer ?? null,
             blockNumber: log.blockNumber ?? 0n,
             transactionHash: log.transactionHash ?? "",
-            timestamp: log.blockNumber
-              ? (blockTimestamps.get(log.blockNumber) ?? null)
-              : null,
+            timestamp: log.blockNumber ? (blockTimestamps.get(log.blockNumber) ?? null) : null,
           });
         }
 
-        for (const log of cancelledLogs) {
-          const args = log.args as any;
-          const listedLog = listedLogs.find(
-            (l) => (l.args as any).listingId === args.listingId
+        for (const log of cancelledLogs as any[]) {
+          const args = log.args ?? {};
+          const listedLog = (listedLogs as any[]).find(
+            (l: any) => l.args?.listingId === args.listingId
           );
-          const collection = listedLog
-            ? (listedLog.args as any).collection.toLowerCase() ===
-              contracts.veBTC.toLowerCase()
+          const listedArgs = listedLog?.args ?? {};
+          const collection =
+            String(listedArgs.collection ?? "").toLowerCase() ===
+            contracts.veBTC.toLowerCase()
               ? "veBTC"
-              : "veMEZO"
-            : "veBTC";
-          const tokenId = listedLog ? (listedLog.args as any).tokenId : 0n;
-          const price = listedLog
-            ? parseFloat(
-                formatEther((listedLog.args as any).price as bigint)
-              ).toFixed(4)
-            : "0";
-          const paymentToken = listedLog
-            ? getPaymentSymbol(
-                (listedLog.args as any).paymentToken,
-                contracts.MUSD
-              )
-            : "BTC";
-          const seller = listedLog ? (listedLog.args as any).seller : "";
+              : "veMEZO";
+          const nftTokenAddr = collection === "veBTC" ? BTC_ADDR : MEZO_ADDR;
+          const ivKey = `${String(listedArgs.collection ?? "").toLowerCase()}:${listedArgs.tokenId ?? 0n}`;
+          const iv = ivMap.get(ivKey) ?? 0n;
+          const priceRaw = (listedArgs.price as bigint) ?? 0n;
 
           allEvents.push({
             type: "cancelled",
-            listingId: args.listingId,
+            listingId: args.listingId ?? 0n,
             collection,
-            tokenId,
-            price,
-            paymentToken,
-            from: seller,
+            tokenId: listedArgs.tokenId ?? 0n,
+            price: parseFloat(formatEther(priceRaw)).toFixed(4),
+            paymentToken: getPaymentSymbol(listedArgs.paymentToken ?? "", contracts.MUSD),
+            discountBps: computeDiscountBpsNumber(iv, nftTokenAddr, priceRaw, listedArgs.paymentToken ?? ""),
+            from: listedArgs.seller ?? "",
             to: null,
             blockNumber: log.blockNumber ?? 0n,
             transactionHash: log.transactionHash ?? "",
-            timestamp: log.blockNumber
-              ? (blockTimestamps.get(log.blockNumber) ?? null)
-              : null,
+            timestamp: log.blockNumber ? (blockTimestamps.get(log.blockNumber) ?? null) : null,
           });
         }
 
-        // Sort by block number descending (most recent first), then cap
+        // Sort by block number descending, then cap
         allEvents.sort((a, b) =>
-          a.blockNumber > b.blockNumber
-            ? -1
-            : a.blockNumber < b.blockNumber
-            ? 1
-            : 0
+          a.blockNumber > b.blockNumber ? -1 : a.blockNumber < b.blockNumber ? 1 : 0
         );
 
-        setEvents(allEvents.slice(0, limit));
+        if (!cancelled) {
+          setEvents(allEvents.slice(0, limit));
+        }
       } catch (err: any) {
         if (!cancelled) {
           setError(err?.message ?? "Failed to load activity");
@@ -289,7 +360,7 @@ export function useActivityFeed(limit = 50) {
     return () => {
       cancelled = true;
     };
-  }, [publicClient, marketplaceAddress, isDeployed, contracts.veBTC, contracts.MUSD, limit]);
+  }, [publicClient, marketplaceAddress, isDeployed, chainId, contracts.veBTC, contracts.MUSD, contracts.adapter, limit]);
 
   return { events, isLoading, error, isDeployed };
 }
