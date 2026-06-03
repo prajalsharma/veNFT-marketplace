@@ -102,34 +102,56 @@ async function main() {
   }
 
   // ── 1. VeNFTBidding ────────────────────────────────────────────────────────
-  console.log("\n1. Deploying VeNFTBidding...");
-  const Bidding   = await ethers.getContractFactory("VeNFTBidding");
-  const bidding   = await Bidding.deploy(routerAddress, adminContractAddress);
-  await bidding.waitForDeployment();
-  const biddingAddress = await bidding.getAddress();
-  console.log("   ✅ VeNFTBidding:", biddingAddress);
+  // If already deployed, pass EXISTING_BIDDING in .env to skip redeployment
+  let biddingAddress = process.env.EXISTING_BIDDING || "";
+  if (biddingAddress) {
+    console.log("\n1. Reusing existing VeNFTBidding:", biddingAddress);
+  } else {
+    console.log("\n1. Deploying VeNFTBidding...");
+    const Bidding = await ethers.getContractFactory("VeNFTBidding");
+    const bidding = await Bidding.deploy(routerAddress, adminContractAddress);
+    await bidding.waitForDeployment();
+    biddingAddress = await bidding.getAddress();
+    console.log("   ✅ VeNFTBidding:", biddingAddress);
+  }
 
   // ── 2. ListingSnapshotStore ────────────────────────────────────────────────
-  console.log("\n2. Deploying ListingSnapshotStore...");
-  const SnapshotStore    = await ethers.getContractFactory("ListingSnapshotStore");
-  const snapshotStore    = await SnapshotStore.deploy(adapterAddress, marketplaceAddress);
-  await snapshotStore.waitForDeployment();
-  const snapshotAddress  = await snapshotStore.getAddress();
-  console.log("   ✅ ListingSnapshotStore:", snapshotAddress);
+  // If already deployed, pass EXISTING_SNAPSHOT_STORE in .env to skip redeployment
+  let snapshotAddress = process.env.EXISTING_SNAPSHOT_STORE || "";
+  if (snapshotAddress) {
+    console.log("\n2. Reusing existing ListingSnapshotStore:", snapshotAddress);
+  } else {
+    console.log("\n2. Deploying ListingSnapshotStore...");
+    const SnapshotStore = await ethers.getContractFactory("ListingSnapshotStore");
+    const snapshotStore = await SnapshotStore.deploy(adapterAddress, marketplaceAddress);
+    await snapshotStore.waitForDeployment();
+    snapshotAddress = await snapshotStore.getAddress();
+    console.log("   ✅ ListingSnapshotStore:", snapshotAddress);
+  }
 
-  // Wire SnapshotStore into Marketplace
-  console.log("   Registering SnapshotStore in VeNFTMarketplace...");
-  const marketplace = await ethers.getContractAt("VeNFTMarketplace", marketplaceAddress);
-  await waitForTx(marketplace.setSnapshotStore(snapshotAddress));
-  console.log("   ✅ SnapshotStore registered");
+  // Wire SnapshotStore into Marketplace (requires DEFAULT_ADMIN_ROLE — skip if not admin)
+  try {
+    const marketplace = await ethers.getContractAt("VeNFTMarketplace", marketplaceAddress);
+    await waitForTx(marketplace.setSnapshotStore(snapshotAddress));
+    console.log("   ✅ SnapshotStore registered in VeNFTMarketplace");
+  } catch {
+    console.log("   ⚠️  Could not register SnapshotStore (deployer lacks admin role).");
+    console.log("      Ask the marketplace admin to call setSnapshotStore(" + snapshotAddress + ")");
+  }
 
   // ── 3. PriceOracleHub ─────────────────────────────────────────────────────
-  console.log("\n3. Deploying PriceOracleHub...");
-  const OracleHub    = await ethers.getContractFactory("PriceOracleHub");
-  const oracleHub    = await OracleHub.deploy(adminAddress);
-  await oracleHub.waitForDeployment();
-  const oracleAddress = await oracleHub.getAddress();
-  console.log("   ✅ PriceOracleHub:", oracleAddress);
+  let oracleAddress = process.env.EXISTING_ORACLE_HUB || "";
+  if (oracleAddress) {
+    console.log("\n3. Reusing existing PriceOracleHub:", oracleAddress);
+  } else {
+    console.log("\n3. Deploying PriceOracleHub...");
+    const OracleHub = await ethers.getContractFactory("PriceOracleHub");
+    const oracleHub = await OracleHub.deploy(adminAddress);
+    await oracleHub.waitForDeployment();
+    oracleAddress = await oracleHub.getAddress();
+    console.log("   ✅ PriceOracleHub:", oracleAddress);
+  }
+  const oracleHub = await ethers.getContractAt("PriceOracleHub", oracleAddress);
 
   // Register oracle feeds if adapters were provided
   if (btcOracleAdapter || mezoOracleAdapter || musdOracleAdapter) {
@@ -160,19 +182,33 @@ async function main() {
   }
 
   // ── 4. QuoteRouter ─────────────────────────────────────────────────────────
-  console.log("\n4. Deploying QuoteRouter...");
-  const QuoteRouterFactory = await ethers.getContractFactory("QuoteRouter");
-  const quoteRouter        = await QuoteRouterFactory.deploy(oracleAddress, adminAddress, swapFeeBps);
-  await quoteRouter.waitForDeployment();
-  const quoteAddress = await quoteRouter.getAddress();
-  console.log("   ✅ QuoteRouter:", quoteAddress);
+  let quoteAddress = process.env.EXISTING_QUOTE_ROUTER || "";
+  if (quoteAddress) {
+    console.log("\n4. Reusing existing QuoteRouter:", quoteAddress);
+  } else {
+    console.log("\n4. Deploying QuoteRouter...");
+    const QuoteRouterFactory = await ethers.getContractFactory("QuoteRouter");
+    const quoteRouter        = await QuoteRouterFactory.deploy(oracleAddress, adminAddress, swapFeeBps);
+    await quoteRouter.waitForDeployment();
+    quoteAddress = await quoteRouter.getAddress();
+    console.log("   ✅ QuoteRouter:", quoteAddress);
+  }
+  const quoteRouter = await ethers.getContractAt("QuoteRouter", quoteAddress);
 
-  // Register tokens in QuoteRouter
-  console.log("   Registering tokens in QuoteRouter...");
-  await waitForTx(quoteRouter.registerToken(BTC_TOKEN,   ethers.encodeBytes32String("BTC")));
-  await waitForTx(quoteRouter.registerToken(MEZO_TOKEN,  ethers.encodeBytes32String("MEZO")));
-  await waitForTx(quoteRouter.registerToken(musdAddress, ethers.encodeBytes32String("MUSD")));
-  console.log("   ✅ BTC, MEZO, MUSD registered");
+  // Register tokens in QuoteRouter (requires deployer == ADMIN_ADDRESS)
+  try {
+    console.log("   Registering tokens in QuoteRouter...");
+    await waitForTx(quoteRouter.registerToken(BTC_TOKEN,   ethers.encodeBytes32String("BTC")));
+    await waitForTx(quoteRouter.registerToken(MEZO_TOKEN,  ethers.encodeBytes32String("MEZO")));
+    await waitForTx(quoteRouter.registerToken(musdAddress, ethers.encodeBytes32String("MUSD")));
+    console.log("   ✅ BTC, MEZO, MUSD registered");
+  } catch {
+    console.log("   ⚠️  Could not register tokens (deployer is not QuoteRouter owner).");
+    console.log("      From the ADMIN wallet, call registerToken() for each token:");
+    console.log(`      registerToken(${BTC_TOKEN},   bytes32("BTC"))`);
+    console.log(`      registerToken(${MEZO_TOKEN},  bytes32("MEZO"))`);
+    console.log(`      registerToken(${musdAddress}, bytes32("MUSD"))`);
+  }
 
   // ── 5. SwapRouter ──────────────────────────────────────────────────────────
   console.log("\n5. Deploying SwapRouter...");
@@ -182,10 +218,15 @@ async function main() {
   const swapAddress = await swapRouter.getAddress();
   console.log("   ✅ SwapRouter:", swapAddress);
 
-  // Authorise VeNFTMarketplace to call SwapRouter
-  console.log("   Authorising VeNFTMarketplace in SwapRouter...");
-  await waitForTx(swapRouter.setAuthorisedCaller(marketplaceAddress, true));
-  console.log("   ✅ Marketplace authorised");
+  // Authorise VeNFTMarketplace to call SwapRouter (requires deployer == ADMIN_ADDRESS)
+  try {
+    console.log("   Authorising VeNFTMarketplace in SwapRouter...");
+    await waitForTx(swapRouter.setAuthorisedCaller(marketplaceAddress, true));
+    console.log("   ✅ Marketplace authorised");
+  } catch {
+    console.log("   ⚠️  Could not authorise marketplace (deployer is not SwapRouter owner).");
+    console.log(`      From the ADMIN wallet, call: setAuthorisedCaller(${marketplaceAddress}, true)`);
+  }
 
   // ── Summary ────────────────────────────────────────────────────────────────
   console.log("\n=== DEPLOYMENT COMPLETE ===");
