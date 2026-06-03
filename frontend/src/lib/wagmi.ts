@@ -1,11 +1,33 @@
 import {
   getDefaultWallets,
-  mezoMainnet,
-  mezoTestnet,
+  mezoMainnet as _mezoMainnet,
+  mezoTestnet as _mezoTestnet,
   PassportProvider
 } from "@mezo-org/passport";
 import { createConfig, http } from "wagmi";
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+
+// Multicall3 is deployed at the canonical address on both Mezo networks.
+// @mezo-org/orangekit doesn't include it in the chain definition, so wagmi
+// falls back to 173 individual RPC calls for listings instead of 1 batched
+// multicall. Adding it here restores batching and fixes listings not loading.
+const MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11" as const;
+
+const mezoMainnet = {
+  ..._mezoMainnet,
+  contracts: {
+    ..._mezoMainnet.contracts,
+    multicall3: { address: MULTICALL3 },
+  },
+};
+
+const mezoTestnet = {
+  ..._mezoTestnet,
+  contracts: {
+    ..._mezoTestnet.contracts,
+    multicall3: { address: MULTICALL3 },
+  },
+};
 import {
   metaMaskWallet,
   okxWallet,
