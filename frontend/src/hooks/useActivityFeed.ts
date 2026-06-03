@@ -23,15 +23,11 @@ export interface ActivityEvent {
   timestamp: number | null;
 }
 
-// Primary + fallback RPCs per network
+// Route through the Next.js API proxy (same-origin) to avoid the CORS block
+// from validationcloud.io / rpc.test.mezo.org when called from the browser.
 const RPC_URLS: Record<number, string[]> = {
-  31612: [
-    "https://mainnet.mezo.public.validationcloud.io",
-    "https://rpc.mezo.org",
-  ],
-  31611: [
-    "https://rpc.test.mezo.org",
-  ],
+  31612: ["/api/rpc/mainnet"],
+  31611: ["/api/rpc/testnet"],
 };
 
 // How far back to look and how many blocks per chunk.

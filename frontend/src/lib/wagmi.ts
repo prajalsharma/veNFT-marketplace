@@ -10,7 +10,6 @@ import {
   metaMaskWallet,
   okxWallet,
   injectedWallet,
-  walletConnectWallet,
   rainbowWallet,
   coinbaseWallet,
 } from "@rainbow-me/rainbowkit/wallets";
@@ -69,13 +68,13 @@ export const config = typeof window !== "undefined" ? getConfig({
   // Inject custom wallet list so OKX appears as an EVM wallet
   wallets: buildWallets("mainnet"),
   transports: {
-    // Use the validationcloud endpoint as the primary — it supports larger log ranges
+    // Route through our Next.js API proxy so the RPC call happens server-side
+    // and avoids the CORS block from validationcloud.io / rpc.test.mezo.org.
     [mezoMainnet.id]: http(
-      process.env.NEXT_PUBLIC_RPC_MAINNET ||
-        "https://mainnet.mezo.public.validationcloud.io"
+      process.env.NEXT_PUBLIC_RPC_MAINNET || "/api/rpc/mainnet"
     ),
     [mezoTestnet.id]: http(
-      process.env.NEXT_PUBLIC_RPC_TESTNET || "https://rpc.test.mezo.org"
+      process.env.NEXT_PUBLIC_RPC_TESTNET || "/api/rpc/testnet"
     ),
   },
   ssr: false,

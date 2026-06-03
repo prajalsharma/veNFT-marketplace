@@ -216,6 +216,8 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   }}
                 >
                   <input
+                    id="listing-price"
+                    name="listing-price"
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}

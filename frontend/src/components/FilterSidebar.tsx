@@ -232,6 +232,8 @@ export function FilterSidebar({
                       <span className="font-bold" style={{ color: "var(--text-2)" }}>{minDiscount}%</span>
                     </div>
                     <input
+                      id="filter-min-discount"
+                      name="filter-min-discount"
                       type="range"
                       min="0"
                       max="45"
@@ -251,6 +253,8 @@ export function FilterSidebar({
                       <span className="font-bold" style={{ color: "var(--text-2)" }}>{maxDiscount}%</span>
                     </div>
                     <input
+                      id="filter-max-discount"
+                      name="filter-max-discount"
                       type="range"
                       min="5"
                       max="50"

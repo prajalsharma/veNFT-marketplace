@@ -149,6 +149,8 @@ function PlaceBidForm({
       {/* Amount + expiry row */}
       <div className="flex gap-2">
         <input
+          id="bids-panel-amount"
+          name="bids-panel-amount"
           type="number"
           min="0"
           step="any"

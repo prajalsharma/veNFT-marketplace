@@ -18,7 +18,29 @@
   eslint: {
     ignoreDuringBuilds: true,
   },
-   
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            // Wallet libs (WalletConnect, RainbowKit, viem) use eval internally.
+            // 'unsafe-eval' is required or they silently break.
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https: wss:",
+              "frame-src 'self' https:",
+            ].join("; "),
+          },
+        ],
+      },
+    ];
+  },
     webpack: (config) => {
       config.resolve.alias = {
         ...config.resolve.alias,

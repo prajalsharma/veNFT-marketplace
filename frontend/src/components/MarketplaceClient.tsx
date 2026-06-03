@@ -424,6 +424,8 @@ export default function MarketplaceClient() {
                   }}
                 />
                 <input
+                  id="marketplace-search"
+                  name="marketplace-search"
                   type="text"
                   placeholder="Token ID, collection, or seller address…"
                   value={searchQuery}

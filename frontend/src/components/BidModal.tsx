@@ -172,7 +172,7 @@ export function BidModal({ isOpen, onClose, collection, tokenId, collectionName,
                 <div>
                   <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-white/30 mb-2">Bid Amount</p>
                   <div className="relative">
-                    <input type="number" min="0" step="any" placeholder="0.00" value={amtStr} onChange={(e) => setAmtStr(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3.5 text-[15px] font-bold placeholder:text-white/20 focus:outline-none focus:border-[#F7931A]/40 transition-all pr-20" />
+                    <input id="bid-amount" name="bid-amount" type="number" min="0" step="any" placeholder="0.00" value={amtStr} onChange={(e) => setAmtStr(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3.5 text-[15px] font-bold placeholder:text-white/20 focus:outline-none focus:border-[#F7931A]/40 transition-all pr-20" />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-white/35">{bidSym}</span>
                   </div>
                   {amtWei > 0n && (
@@ -196,7 +196,7 @@ export function BidModal({ isOpen, onClose, collection, tokenId, collectionName,
                     ))}
                   </div>
                   {expiryIdx === 3 && (
-                    <input type="number" min="1" max="30" step="1" placeholder="Days (1–30)" value={customDays} onChange={(e) => setCustomDays(e.target.value)} className="w-full mt-2 bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3 text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#F7931A]/40" />
+                    <input id="bid-expiry-days" name="bid-expiry-days" type="number" min="1" max="30" step="1" placeholder="Days (1–30)" value={customDays} onChange={(e) => setCustomDays(e.target.value)} className="w-full mt-2 bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3 text-[13px] placeholder:text-white/20 focus:outline-none focus:border-[#F7931A]/40" />
                   )}
                 </div>
                 {!approved && (
