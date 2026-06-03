@@ -926,7 +926,9 @@ export function useActiveListings() {
     query: { enabled: allRaw.length > 0, staleTime: 0 },
   });
 
-  const isLoading = batchLoading || (allRaw.length > 0 && intrinsicLoading);
+  // Also loading while nextId is in-flight — prevents premature empty-state flash
+  // before the first RPC call fires (batchLoading is false when slotCount=0).
+  const isLoading = !nextId || batchLoading || (allRaw.length > 0 && intrinsicLoading);
 
   const BTC_TOKEN_ADDR  = "0x7b7c000000000000000000000000000000000000";
   const MEZO_TOKEN_ADDR = "0x7b7c000000000000000000000000000000000001";

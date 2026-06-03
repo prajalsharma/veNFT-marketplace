@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { Header, VezoLogoMark } from "@/components/Header";
 import { NetworkSwitcher } from "@/components/NetworkSwitcher";
+import { ActivityProvider } from "@/context/ActivityContext";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
+    <ActivityProvider>
     <>
       {/* ── Ambient background — cinematic depth ── */}
       <div
@@ -153,5 +155,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </div>
       </footer>
     </>
+    </ActivityProvider>
   );
 }
