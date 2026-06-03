@@ -1,635 +1,444 @@
 "use client";
 
-/*
-  Taste-skill rules applied:
-  ✓ BANNED: 3-col equal card grid → masonry-feel 2-col + 3-col breakpoints with varied items
-  ✓ BANNED: centered header → left-aligned, asymmetric two-part header
-  ✓ tabular-nums on all stats
-  ✓ Skeleton matches card layout shape exactly
-  ✓ Spring physics: stiffness:100, damping:20
-  ✓ Active filter pills with staggered reveal
-  ✓ Sticky toolbar using transform, not top/left (GPU rule)
-  ✓ Empty state: composed, shows how to get started
-*/
-
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
+  TrendingUp,
+  Zap,
+  Coins,
+  Filter,
   ArrowUpDown,
+  Activity,
   ShieldCheck as ShieldCheckIcon,
-  X,
-  TrendingDown,
-  DollarSign,
 } from "lucide-react";
 import { formatEther } from "viem";
 import { VeNFTCard, VeNFTCardSkeleton } from "@/components/VeNFTCard";
-import { FilterSidebar, FilterButton, FilterState } from "@/components/FilterSidebar";
+import { FilterSidebar } from "@/components/FilterSidebar";
 import { BuyModal } from "@/components/BuyModal";
-import { useActiveListings, Listing } from "@/hooks/useMarketplace";
-import { useActivityFeed } from "@/hooks/useActivityFeed";
+import { useMarketplace, useListing, Listing } from "@/hooks/useMarketplace";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
-import { usePriceTicker } from "@/hooks/usePriceTicker";
 
-// ─── Inline stat bar (header) ─────────────────────────────────────────────────
-function StatBar({
+// Renders a single listing card; passes the full Listing object up on buy.
+// Reports whether this listing is active so the parent can count active listings.
+function MarketplaceListingItem({
+  listingId,
+  onBuy,
+  onListingResolved,
+  showInactive,
+}: {
+  listingId: number;
+  onBuy: (listing: Listing) => void;
+  onListingResolved?: (listingId: number, listing: Listing | null) => void;
+  showInactive?: boolean;
+}) {
+  const { listing, isLoading } = useListing(listingId);
+
+  useEffect(() => {
+    if (!isLoading) {
+      onListingResolved?.(listingId, listing);
+    }
+  }, [isLoading, listing, listingId, onListingResolved]);
+
+  if (isLoading) return <VeNFTCardSkeleton />;
+  if (!listing) return null;
+  if (!showInactive && !listing.active) return null;
+
+  return (
+    <VeNFTCard
+      {...listing}
+      active={listing.active}
+      onBuy={listing.active ? () => onBuy(listing) : undefined}
+    />
+  );
+}
+
+function StatCard({
+  icon: Icon,
   label,
   value,
-  color,
+  trend,
+  color = "primary",
 }: {
+  icon: React.ElementType;
   label: string;
   value: string;
-  color: string;
+  trend?: string;
+  color?: "primary" | "accent" | "success";
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="eyebrow">{label}</span>
-      <span
-        className="text-sm font-bold tabular-nums"
-        style={{ color, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}
-      >
-        {value}
-      </span>
+    <div className="glass-card p-6 rounded-2xl relative overflow-hidden">
+      <div
+        className={`absolute top-0 right-0 w-16 h-16 blur-3xl opacity-10 ${
+          color === "primary"
+            ? "bg-mezo-primary"
+            : color === "accent"
+            ? "bg-mezo-accent"
+            : "bg-mezo-success"
+        }`}
+      />
+      <div className="flex items-center gap-3 mb-4">
+        <div
+          className={`p-2 rounded-lg ${
+            color === "primary"
+              ? "bg-mezo-primary/10 text-mezo-primary"
+              : color === "accent"
+              ? "bg-mezo-accent/10 text-mezo-accent"
+              : "bg-mezo-success/10 text-mezo-success"
+          }`}
+        >
+          <Icon className="w-4 h-4" />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-widest text-mezo-muted">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <h3 className="text-2xl font-bold tracking-tight">{value}</h3>
+        {trend && (
+          <span className="text-[10px] font-bold text-mezo-success">{trend}</span>
+        )}
+      </div>
     </div>
   );
 }
 
-// ─── Empty state — taste-skill: composed, shows how to populate ──────────────
-// `variant` makes the empty state honest about *why* nothing is shown:
-//   "filtered"    — the user's filters/search excluded everything
-//   "unavailable" — listings exist on-chain but are all expired/sold/unbuyable
-//   "empty"       — the market is genuinely empty
-type EmptyVariant = "filtered" | "unavailable" | "empty";
-
-function EmptyState({ variant }: { variant: EmptyVariant }) {
-  const copy: Record<EmptyVariant, { title: string; body: string }> = {
-    filtered: {
-      title: "No listings match",
-      body: "Try adjusting or clearing your filters to see more results.",
-    },
-    unavailable: {
-      title: "No buyable listings right now",
-      body: "There are listings on-chain, but they’re all expired, sold, or otherwise unavailable to purchase.",
-    },
-    empty: {
-      title: "No active listings yet",
-      body: "Be the first to list a veNFT and provide liquidity to the Mezo ecosystem.",
-    },
-  };
-  const { title, body } = copy[variant];
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="col-span-full py-24 flex flex-col items-start gap-4"
-      style={{ borderTop: "1px solid var(--border-subtle)", paddingLeft: 2 }}
-    >
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center"
-        style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
-      >
-        <Search style={{ width: 18, height: 18, color: "var(--text-3)" }} />
-      </div>
-      <div>
-        <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
-          {title}
-        </h3>
-        <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
-          {body}
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Error / not-deployed state — honest about failures (never fake empty) ───
-function LoadFailureState({
-  notDeployed,
-  marketplaceAddress,
-  message,
-  onRetry,
-}: {
-  notDeployed: boolean;
-  marketplaceAddress?: string;
-  message?: string;
-  onRetry: () => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="col-span-full py-24 flex flex-col items-start gap-4"
-      style={{ borderTop: "1px solid var(--border-subtle)", paddingLeft: 2 }}
-    >
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center"
-        style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}
-      >
-        <X style={{ width: 18, height: 18, color: "#EF4444" }} />
-      </div>
-      <div>
-        <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
-          {notDeployed ? "Marketplace not configured for this network" : "Couldn’t load listings"}
-        </h3>
-        <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
-          {notDeployed
-            ? "No marketplace address is set for the selected network. This is a configuration issue, not an empty market."
-            : "The marketplace contract couldn’t be read. This is a network/RPC error — listings may exist but can’t be fetched right now."}
-        </p>
-        {marketplaceAddress && (
-          <p className="text-[11px] mt-2 font-mono" style={{ color: "var(--text-3)" }}>
-            Querying: {marketplaceAddress}
-          </p>
-        )}
-        {message && (
-          <p className="text-[11px] mt-1" style={{ color: "#EF4444", maxWidth: "52ch", wordBreak: "break-word" }}>
-            {message}
-          </p>
-        )}
-      </div>
-      {!notDeployed && (
-        <button
-          onClick={onRetry}
-          className="text-xs font-bold px-4 py-2 rounded-lg"
-          style={{ background: "var(--bg-2)", border: "1px solid var(--border)", color: "var(--text-1)" }}
-        >
-          Retry
-        </button>
-      )}
-    </motion.div>
-  );
-}
-
-// ─── Filter pill ──────────────────────────────────────────────────────────────
-function ActiveFilterPill({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.88 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.88 }}
-      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold"
-      style={{
-        background: "rgba(255,0,64,0.08)",
-        border: "1px solid rgba(255,0,64,0.22)",
-        color: "#FF0040",
-      }}
-    >
-      {label}
-      <button onClick={onRemove} style={{ lineHeight: 1 }}>
-        <X style={{ width: 10, height: 10 }} />
-      </button>
-    </motion.div>
-  );
-}
-
-// ─── Default filter state ─────────────────────────────────────────────────────
-const DEFAULT_FILTERS: FilterState = {
-  collectionFilter: "all",
-  sortBy: "discount",
-  activeOnly: true,
-  minDiscount: 0,
-  maxDiscount: 50,
-  showGrantOnly: false,
-  showAutoLockOnly: false,
-  showEndingSoon: false,
-};
-
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function MarketplaceClient() {
-  const {
-    listings: rawListings,
-    isLoading: listingsLoading,
-    refetch,
-    isError: listingsError,
-    error: listingsErrorObj,
-    marketplaceAddress,
-    isMarketplaceReady,
-  } = useActiveListings();
-  // Historical sales feed — used for avg discount from ACTUAL completed trades
-  const { events: activityEvents } = useActivityFeed(200);
-  const prices = usePriceTicker();
+  const { nextListingId } = useMarketplace();
 
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [collectionFilter, setCollectionFilter] = useState<"all" | "veBTC" | "veMEZO">("all");
+  const [sortBy, setSortBy] = useState("discount");
+  const [activeOnly, setActiveOnly] = useState(true);
+  const [minDiscount, setMinDiscount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // The listing the user clicked "Buy" on — opens BuyModal
   const [activeBuyListing, setActiveBuyListing] = useState<Listing | null>(null);
+  const [listingMap, setListingMap] = useState<Record<number, Listing>>({});
+  // Track IDs that have been purchased in this session. These are immediately
+  // marked inactive in listingMap (optimistic update); we never let a stale
+  // wagmi cache re-activate them before the chain re-read catches up.
   const [purchasedIds, setPurchasedIds] = useState<Set<number>>(new Set());
 
-  function setFilter<K extends keyof FilterState>(key: K, val: FilterState[K]) {
-    setFilters((prev) => ({ ...prev, [key]: val }));
-  }
-  const resetFilters = () => setFilters(DEFAULT_FILTERS);
-
-  // Filter out listings whose tokenId was locally purchased (optimistic hide)
-  const searchableListings = useMemo(
-    () => rawListings.filter(l => !purchasedIds.has(Number(l.tokenId))),
-    [rawListings, purchasedIds]
+  const listingIds = useMemo(
+    () => Array.from({ length: nextListingId }, (_, i) => i).reverse(),
+    [nextListingId]
   );
 
+  const handleListingResolved = useCallback((listingId: number, listing: Listing | null) => {
+    if (!listing) return;
+    setListingMap((prev) => {
+      const existing = prev[listingId];
+      // Never re-activate a listing that was purchased in this session.
+      // The chain re-read will eventually confirm active=false; until then,
+      // the optimistic update from onSuccess must not be overwritten by a
+      // stale wagmi cache returning active=true.
+      if (purchasedIds.has(listingId) && listing.active) {
+        return prev;
+      }
+      if (
+        existing &&
+        existing.active === listing.active &&
+        existing.collection === listing.collection &&
+        existing.price === listing.price &&
+        existing.discountBps === listing.discountBps &&
+        existing.lockEnd === listing.lockEnd &&
+        existing.paymentToken === listing.paymentToken &&
+        existing.seller === listing.seller
+      ) {
+        return prev;
+      }
+      return { ...prev, [listingId]: listing };
+    });
+  }, [purchasedIds]);
+
+  const searchableListings = useMemo(() => {
+    return listingIds
+      .map((id) => listingMap[id])
+      .filter((listing): listing is Listing => !!listing);
+  }, [listingIds, listingMap]);
+
   const filteredListings = useMemo(() => {
-    const { collectionFilter, activeOnly, minDiscount, maxDiscount, showGrantOnly, showAutoLockOnly, showEndingSoon, sortBy } = filters;
-    const q = searchQuery.trim().toLowerCase();
+    const normalizedQuery = searchQuery.trim().toLowerCase();
     const now = Math.floor(Date.now() / 1000);
-    const soonThreshold = now + 7 * 86400;
 
-    // The discount slider is bounded 0–50%. Treat it as a filter ONLY when the
-    // user has actually narrowed it; at its default (0–50) it must NOT hide
-    // listings priced at a premium (negative discount) or deeper than 50% off,
-    // nor listings whose discount is not computable (cross-token → null). Doing
-    // otherwise silently drops valid listings even though no filter pill shows.
-    const discountFilterActive = minDiscount > 0 || maxDiscount < 50;
+    const filtered = searchableListings.filter((listing) => {
+      const collectionMatch =
+        collectionFilter === "all" || listing.collection === collectionFilter;
+      const activeMatch = activeOnly ? listing.active : true;
+      const discountMatch =
+        minDiscount === 0 ||
+        (listing.discountBps !== null &&
+          Number(listing.discountBps) / 100 >= minDiscount);
 
-    const filtered = searchableListings.filter((l) => {
-      if (collectionFilter !== "all" && l.collection !== collectionFilter) return false;
-      if (activeOnly && !l.active) return false;
-      if (Number(l.lockEnd) !== 0 && Number(l.lockEnd) <= now) return false;
-      // Only constrain by discount when the user narrows the band. Null discounts
-      // (no oracle-safe comparison) are never hidden by this slider.
-      if (discountFilterActive && l.discountBps !== null) {
-        const dPct = Number(l.discountBps) / 100;
-        if (dPct < minDiscount || dPct > maxDiscount) return false;
-      }
-      if (showGrantOnly && !l.isGrant) return false;
-      if (showAutoLockOnly && Number(l.lockEnd) !== 0) return false;
-      if (showEndingSoon && (Number(l.lockEnd) === 0 || Number(l.lockEnd) > soonThreshold)) return false;
-      if (q) {
-        const ok =
-          l.tokenId.toString().includes(q) ||
-          l.collection.toLowerCase().includes(q) ||
-          l.seller.toLowerCase().includes(q);
-        if (!ok) return false;
-      }
-      return true;
+      const hasRemaining =
+        Number(listing.lockEnd) === 0 || Number(listing.lockEnd) > now;
+
+      const queryMatch =
+        normalizedQuery.length === 0 ||
+        listing.tokenId.toString().toLowerCase().includes(normalizedQuery) ||
+        listing.collection.toLowerCase().includes(normalizedQuery) ||
+        listing.seller.toLowerCase().includes(normalizedQuery);
+
+      return collectionMatch && activeMatch && discountMatch && queryMatch && hasRemaining;
     });
 
-    return [...filtered].sort((a, b) => {
-      if (sortBy === "price-asc") return a.price < b.price ? -1 : a.price > b.price ? 1 : 0;
-      if (sortBy === "price-desc") return a.price > b.price ? -1 : a.price < b.price ? 1 : 0;
-      if (sortBy === "time-remaining" || sortBy === "expiry") return Number(a.lockEnd) - Number(b.lockEnd);
-      if (sortBy === "newest") return b.listingId - a.listingId;
-      const ad = a.discountBps ?? -999999999n;
-      const bd = b.discountBps ?? -999999999n;
-      return ad > bd ? -1 : ad < bd ? 1 : 0;
-    });
-  }, [searchableListings, searchQuery, filters]);
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "price-asc") {
+        if (a.price < b.price) return -1;
+        if (a.price > b.price) return 1;
+        return 0;
+      }
 
-  const visibleIds = useMemo(
-    () => filteredListings.map((l) => l.listingId),
+      if (sortBy === "price-desc") {
+        if (a.price > b.price) return -1;
+        if (a.price < b.price) return 1;
+        return 0;
+      }
+
+      if (sortBy === "time-remaining" || sortBy === "expiry") {
+        return Number(a.lockEnd) - Number(b.lockEnd);
+      }
+
+      // Default: highest discount first.
+      const aDiscount = a.discountBps ?? -999999999n;
+      const bDiscount = b.discountBps ?? -999999999n;
+      if (aDiscount > bDiscount) return -1;
+      if (aDiscount < bDiscount) return 1;
+      return 0;
+    });
+
+    return sorted;
+  }, [searchableListings, searchQuery, collectionFilter, activeOnly, minDiscount, sortBy]);
+
+  const visibleListingIds = useMemo(
+    () => filteredListings.map((listing) => listing.listingId),
     [filteredListings]
   );
 
-  // ── Market stats — floors from open listings, avg discount from HISTORICAL SALES ──
+  // Count matches the grid exactly: filteredListings already applies activeOnly,
+  // hasRemaining, discountMatch, queryMatch and collectionFilter.
+  const activeCount = filteredListings.length;
+
+  // ── Real-time market stats computed from live listing data ──────────────────
   const marketStats = useMemo(() => {
-    if (listingsLoading) return { veBTCFloor: "Loading…", veMEZOFloor: "Loading…", avgDiscount: "Loading…", tradeCount: 0 };
-
-    const active = searchableListings.filter((l) => l.active);
-    const veBTC = active.filter((l) => l.collection === "veBTC");
-    const veMEZO = active.filter((l) => l.collection === "veMEZO");
-
-    let veBTCFloor = "—";
-    if (veBTC.length) {
-      const min = veBTC.reduce((m, l) => (l.price < m ? l.price : m), veBTC[0].price);
-      const sym = getPaymentTokenSymbol(veBTC.find((l) => l.price === min)!.paymentToken);
-      veBTCFloor = `${parseFloat(formatEther(min)).toFixed(4)} ${sym}`;
+    if (nextListingId > 0 && searchableListings.length === 0) {
+      return {
+        veBTCFloor: "Loading...",
+        veMEZOFloor: "Loading...",
+        avgDiscount: "Loading...",
+      };
     }
 
-    let veMEZOFloor = "—";
-    if (veMEZO.length) {
-      const min = veMEZO.reduce((m, l) => (l.price < m ? l.price : m), veMEZO[0].price);
-      const sym = getPaymentTokenSymbol(veMEZO.find((l) => l.price === min)!.paymentToken);
-      const v = parseFloat(formatEther(min));
-      const fmt = v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(4);
-      veMEZOFloor = `${fmt} ${sym}`;
+    const activeListings = searchableListings.filter((l) => l.active);
+
+    // veBTC floor: lowest listing price among active veBTC listings
+    const veBTCListings = activeListings.filter((l) => l.collection === "veBTC");
+    let veBTCFloor: string = "—";
+    if (veBTCListings.length > 0) {
+      const minPrice = veBTCListings.reduce(
+        (min, l) => (l.price < min ? l.price : min),
+        veBTCListings[0].price
+      );
+      const sym = getPaymentTokenSymbol(veBTCListings.find((l) => l.price === minPrice)!.paymentToken);
+      veBTCFloor = `${parseFloat(formatEther(minPrice)).toFixed(4)} ${sym}`;
     }
 
-    // Avg discount from HISTORICAL SALES only (not open listings) — gives buyers
-    // an accurate picture of what past trades actually cleared at.
-    const historicalSales = activityEvents.filter(
-      (e) => e.type === "sale" && e.discountBps !== null && e.discountBps > 0
+    // veMEZO floor: lowest listing price among active veMEZO listings
+    const veMEZOListings = activeListings.filter((l) => l.collection === "veMEZO");
+    let veMEZOFloor: string = "—";
+    if (veMEZOListings.length > 0) {
+      const minPrice = veMEZOListings.reduce(
+        (min, l) => (l.price < min ? l.price : min),
+        veMEZOListings[0].price
+      );
+      const sym = getPaymentTokenSymbol(veMEZOListings.find((l) => l.price === minPrice)!.paymentToken);
+      // Format large MEZO amounts with k/M suffix for readability
+      const val = parseFloat(formatEther(minPrice));
+      const formatted =
+        val >= 1_000_000
+          ? `${(val / 1_000_000).toFixed(2)}M`
+          : val >= 1_000
+          ? `${(val / 1_000).toFixed(1)}k`
+          : val.toFixed(4);
+      veMEZOFloor = `${formatted} ${sym}`;
+    }
+
+    // Avg discount: average discountBps across all active listings with positive discount
+    let avgDiscount: string = activeListings.length > 0 ? "N/A" : "—";
+    const positiveDiscountListings = activeListings.filter(
+      (l) => l.discountBps !== null && l.discountBps > 0n
     );
-    let avgDiscount = "—";
-    let tradeCount = 0;
-    if (historicalSales.length > 0) {
-      const avg = historicalSales.reduce((s, e) => s + (e.discountBps ?? 0), 0) / historicalSales.length;
-      avgDiscount = `${(avg / 100).toFixed(1)}%`;
-      tradeCount = historicalSales.length;
-    } else if (active.length > 0) {
-      // Fallback to open-listing avg when no sale history yet
-      const pos = active.filter((l) => l.discountBps !== null && l.discountBps > 0n);
-      if (pos.length) {
-        const avg = pos.reduce((s, l) => s + Number(l.discountBps ?? 0n), 0) / pos.length;
-        avgDiscount = `~${(avg / 100).toFixed(1)}%`;
-      } else {
-        avgDiscount = "N/A";
-      }
+    if (positiveDiscountListings.length > 0) {
+      const sumBps = positiveDiscountListings.reduce(
+        (s, l) => s + Number(l.discountBps ?? 0n),
+        0
+      );
+      const avgBps = sumBps / positiveDiscountListings.length;
+      avgDiscount = `${(avgBps / 100).toFixed(1)}%`;
     }
 
-    return { veBTCFloor, veMEZOFloor, avgDiscount, tradeCount };
-  }, [searchableListings, activityEvents, listingsLoading]);
-
-  const activeFilterCount = [
-    filters.collectionFilter !== "all",
-    filters.minDiscount > 0,
-    filters.maxDiscount < 50,
-    filters.showGrantOnly,
-    filters.showAutoLockOnly,
-    filters.showEndingSoon,
-  ].filter(Boolean).length;
-
-  const dataLoaded = !listingsLoading && rawListings.length >= 0;
-  const showSkeletons = listingsLoading;
+    return { veBTCFloor, veMEZOFloor, avgDiscount };
+  }, [nextListingId, searchableListings]);
 
   return (
     <>
+      {/* Buy modal — rendered outside the grid so it does not inherit grid layout */}
       <BuyModal
         isOpen={!!activeBuyListing}
         onClose={() => setActiveBuyListing(null)}
         listing={activeBuyListing}
-        onSuccess={(bought) => {
-          // Hide optimistically by tokenId; refetch will confirm
-          setPurchasedIds((prev) => new Set(prev).add(Number(bought.tokenId)));
+        onSuccess={(boughtListing) => {
+          // Record this ID as purchased so handleListingResolved ignores
+          // any stale wagmi cache returning active=true for it.
+          setPurchasedIds((prev) => new Set(prev).add(boughtListing.listingId));
+          // Immediately mark the purchased listing as inactive so it disappears
+          // from the marketplace grid without waiting for wagmi to re-read chain.
+          setListingMap((prev) => {
+            const existing = prev[boughtListing.listingId];
+            if (!existing) return prev;
+            return { ...prev, [boughtListing.listingId]: { ...existing, active: false } };
+          });
           setActiveBuyListing(null);
-          setTimeout(() => refetch(), 2000);
         }}
       />
 
-      <div className="min-h-[100dvh] pt-32 pb-20 px-4 md:px-8">
-        <div className="max-w-[1400px] mx-auto">
-
-          {/* ── Page header — left-aligned, asymmetric two-part ── */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <div className="section-header mb-3">
-                <span className="eyebrow">veNFT Marketplace</span>
+      <div className="min-h-screen pt-32 pb-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+            <div>
+              <div className="flex items-center gap-2 text-mezo-primary mb-2">
+                <Activity className="w-4 h-4" />
+                <span className="text-xs font-black uppercase tracking-[0.2em]">
+                  Market Pulse
+                </span>
               </div>
-              <h1
-                className="display-lg mb-2"
-                style={{ color: "var(--text-1)" }}
-              >
-                Secondary liquidity.
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                Secondary <span className="gradient-text">Liquidity</span>
               </h1>
-              <p
-                className="text-sm"
-                style={{ color: "var(--text-2)", maxWidth: "52ch" }}
-              >
-                Acquire locked governance positions from the Mezo ecosystem at market rates.
+              <p className="text-mezo-muted mt-2">
+                Acquire locked positions from the Mezo ecosystem at market rates.
               </p>
-            </motion.div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:grid grid-cols-3 gap-3">
+                <StatCard icon={Coins} label="veBTC Floor" value={marketStats.veBTCFloor} />
+                <StatCard
+                  icon={Zap}
+                  label="veMEZO Floor"
+                  value={marketStats.veMEZOFloor}
+                  color="accent"
+                />
+                <StatCard
+                  icon={TrendingUp}
+                  label="Avg Discount"
+                  value={marketStats.avgDiscount}
+                  color="success"
+                />
+              </div>
+            </div>
+          </div>
 
-            {/* Stats — tabular-nums, right-side */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="flex items-end gap-8 pb-1"
-            >
-              <StatBar label="veBTC Floor" value={marketStats.veBTCFloor} color="#F7931A" />
-              <StatBar label="veMEZO Floor" value={marketStats.veMEZOFloor} color="#4A90E2" />
-              <StatBar
-                label={marketStats.tradeCount > 0 ? `Avg Discount (${marketStats.tradeCount} sales)` : "Avg Discount"}
-                value={marketStats.avgDiscount}
-                color="#10B981"
+          {/* Toolbar */}
+          <div className="flex flex-col lg:flex-row gap-4 mb-8">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-mezo-muted group-focus-within:text-mezo-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="Search by Token ID or Collection..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-mezo-card/50 border border-mezo-border rounded-2xl text-sm focus:outline-none focus:border-mezo-primary/50 transition-all"
               />
-            </motion.div>
-          </div>
-
-          {/* ── Toolbar — sticky, GPU backdrop ── */}
-          <div
-            className="sticky top-[108px] z-30 py-3 mb-5"
-            style={{
-              background: "linear-gradient(to bottom, var(--bg) 70%, transparent)",
-            }}
-          >
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              {/* Search */}
-              <div className="relative flex-1 group">
-                <Search
-                  style={{
-                    position: "absolute",
-                    left: 14,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: 14,
-                    height: 14,
-                    color: searchQuery ? "#FF0040" : "var(--text-3)",
-                    transition: "color 180ms ease",
-                    pointerEvents: "none",
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Token ID, collection, or seller address…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input-field w-full"
-                  style={{ paddingLeft: 38, paddingRight: searchQuery ? 36 : 14 }}
-                />
-                <AnimatePresence>
-                  {searchQuery && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      onClick={() => setSearchQuery("")}
-                      style={{
-                        position: "absolute",
-                        right: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "var(--text-3)",
-                        cursor: "pointer",
-                        background: "none",
-                        border: "none",
-                        padding: 0,
-                        lineHeight: 1,
-                      }}
-                    >
-                      <X style={{ width: 13, height: 13 }} />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <div className="flex gap-2">
-                {/* Sort */}
-                <div className="relative">
-                  <ArrowUpDown
-                    style={{
-                      position: "absolute",
-                      left: 12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: 13,
-                      height: 13,
-                      color: "var(--text-3)",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => setFilter("sortBy", e.target.value)}
-                    className="input-field appearance-none cursor-pointer"
-                    style={{ paddingLeft: 34, paddingRight: 28, fontSize: "0.8rem", fontWeight: 600 }}
-                  >
-                    <option value="discount">Best discount</option>
-                    <option value="price-asc">Price: low → high</option>
-                    <option value="price-desc">Price: high → low</option>
-                    <option value="time-remaining">Expiring soon</option>
-                    <option value="newest">Newest</option>
-                  </select>
-                </div>
-                <FilterButton onClick={() => setSidebarOpen(true)} activeFilters={activeFilterCount} />
-              </div>
             </div>
-
-            {/* Active filter pills */}
-            <AnimatePresence>
-              {activeFilterCount > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex flex-wrap gap-2 mt-3 overflow-hidden"
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-2 px-6 py-4 bg-mezo-card border border-mezo-border rounded-2xl text-sm font-bold hover:bg-white/5 transition-all"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {minDiscount > 0 && (
+                  <span className="w-2 h-2 bg-mezo-primary rounded-full" />
+                )}
+              </button>
+              <div className="relative group">
+                <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-mezo-muted" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="pl-12 pr-8 py-4 bg-mezo-card border border-mezo-border rounded-2xl text-sm font-bold appearance-none cursor-pointer focus:outline-none focus:border-mezo-primary/50 transition-all"
                 >
-                  {filters.collectionFilter !== "all" && (
-                    <ActiveFilterPill label={filters.collectionFilter} onRemove={() => setFilter("collectionFilter", "all")} />
-                  )}
-                  {filters.minDiscount > 0 && (
-                    <ActiveFilterPill label={`Min ${filters.minDiscount}% off`} onRemove={() => setFilter("minDiscount", 0)} />
-                  )}
-                  {filters.showGrantOnly && (
-                    <ActiveFilterPill label="Grant NFTs" onRemove={() => setFilter("showGrantOnly", false)} />
-                  )}
-                  {filters.showAutoLockOnly && (
-                    <ActiveFilterPill label="Auto max-lock" onRemove={() => setFilter("showAutoLockOnly", false)} />
-                  )}
-                  {filters.showEndingSoon && (
-                    <ActiveFilterPill label="Ending soon" onRemove={() => setFilter("showEndingSoon", false)} />
-                  )}
-                  <button
-                    onClick={resetFilters}
-                    className="text-[10px] font-bold px-2 transition-colors"
-                    style={{ color: "var(--text-3)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; }}
-                  >
-                    Clear all
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <option value="discount">Highest Discount</option>
+                  <option value="price-asc">Lowest Price</option>
+                  <option value="price-desc">Highest Price</option>
+                  <option value="time-remaining">Least Time Remaining</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          {/* Result count + audit badge */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="flex items-center gap-4 mb-6 px-1"
-          >
-            <p className="text-xs font-medium" style={{ color: "var(--text-3)" }}>
-              <span style={{ color: "var(--text-1)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                {filteredListings.length}
-              </span>{" "}
-              {filters.activeOnly ? "active " : ""}listing{filteredListings.length !== 1 ? "s" : ""}
-            </p>
-            <div className="h-3 w-px" style={{ background: "var(--border)" }} />
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest"
-              style={{
-                background: "rgba(16,185,129,0.08)",
-                border: "1px solid rgba(16,185,129,0.2)",
-                color: "#10B981",
-              }}
-            >
-              <ShieldCheckIcon style={{ width: 10, height: 10 }} />
-              Audit Passed
-            </div>
-          </motion.div>
+          <div className="flex gap-8">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-6 px-2">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm font-bold text-mezo-muted">
+                    Showing <span className="text-white">{activeCount}</span> {activeOnly ? "active " : ""}listing{activeCount !== 1 ? "s" : ""}
+                  </p>
+                  <div className="h-4 w-px bg-mezo-border" />
+                  <div className="flex items-center gap-2 text-mezo-success text-[10px] font-black uppercase tracking-widest">
+                    <ShieldCheckIcon className="w-3 h-3" />
+                    Audit Passed
+                  </div>
+                </div>
+              </div>
 
-          {/* ── Grid ──
-              Taste-skill: ban 3-col equal grid — use responsive cols that allow
-              visual variation. AnimatePresence + layout for smooth re-order. */}
-          {showSkeletons ? (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
-              {[...Array(6)].map((_, i) => <VeNFTCardSkeleton key={i} />)}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
-              <AnimatePresence mode="popLayout">
-                {filteredListings.map((listing) => (
-                  <VeNFTCard
-                    key={`${listing.collection}-${listing.tokenId}`}
-                    listingId={listing.listingId}
-                    collection={listing.collection}
-                    nftContract={listing.nftContract}
-                    tokenId={listing.tokenId}
-                    price={listing.price}
-                    paymentToken={listing.paymentToken}
-                    intrinsicValue={listing.intrinsicValue}
-                    lockEnd={listing.lockEnd}
-                    votingPower={listing.votingPower}
-                    discountBps={listing.discountBps}
-                    seller={listing.seller}
-                    active={listing.active}
-                    isGrant={listing.isGrant}
-                    onBuy={() => setActiveBuyListing(listing)}
-                  />
-                ))}
-              </AnimatePresence>
-
-              {filteredListings.length === 0 && dataLoaded && (
-                !isMarketplaceReady ? (
-                  <LoadFailureState
-                    notDeployed
-                    marketplaceAddress={marketplaceAddress}
-                    onRetry={refetch}
-                  />
-                ) : listingsError ? (
-                  <LoadFailureState
-                    notDeployed={false}
-                    marketplaceAddress={marketplaceAddress}
-                    message={listingsErrorObj?.message}
-                    onRetry={refetch}
-                  />
-                ) : (
-                  <EmptyState
-                    variant={
-                      activeFilterCount > 0 || searchQuery.length > 0
-                        ? "filtered"
-                        : searchableListings.length > 0
-                          ? "unavailable" // listings exist on-chain but all expired/sold/unbuyable
-                          : "empty"
-                    }
-                  />
-                )
+              {nextListingId > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <AnimatePresence mode="popLayout">
+                    {(visibleListingIds.length > 0 || searchableListings.length > 0
+                      ? visibleListingIds
+                      : listingIds
+                    ).map((id) => (
+                      <MarketplaceListingItem
+                        key={id}
+                        listingId={id}
+                        onBuy={setActiveBuyListing}
+                        onListingResolved={handleListingResolved}
+                        showInactive={!activeOnly}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="py-32 text-center glass-card rounded-[2rem]">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-8 h-8 text-mezo-muted" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">No active listings</h3>
+                  <p className="text-mezo-muted max-w-xs mx-auto text-sm">
+                    Be the first to list a veNFT and provide liquidity to the Mezo ecosystem.
+                  </p>
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      <FilterSidebar
-        {...filters}
-        setCollectionFilter={(v) => setFilter("collectionFilter", v)}
-        setSortBy={(v) => setFilter("sortBy", v)}
-        setActiveOnly={(v) => setFilter("activeOnly", v)}
-        setMinDiscount={(v) => setFilter("minDiscount", v)}
-        setMaxDiscount={(v) => setFilter("maxDiscount", v)}
-        setShowGrantOnly={(v) => setFilter("showGrantOnly", v)}
-        setShowAutoLockOnly={(v) => setFilter("showAutoLockOnly", v)}
-        setShowEndingSoon={(v) => setFilter("showEndingSoon", v)}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onReset={resetFilters}
-      />
+        <FilterSidebar
+          collectionFilter={collectionFilter}
+          setCollectionFilter={setCollectionFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          showExpired={activeOnly}
+          setShowExpired={setActiveOnly}
+          minDiscount={minDiscount}
+          setMinDiscount={setMinDiscount}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </div>
     </>
   );
 }
