@@ -13,9 +13,8 @@ export function useNetwork() {
   const isMainnet = chainId === mezoMainnet.id;
   const isMezoNetwork = isTestnet || isMainnet;
 
-  // Default to testnet — live listings are on testnet (chainId 31611).
-  // Switch to mainnet once contracts are deployed there.
-  const network: NetworkType = isMainnet ? "mainnet" : "testnet";
+  // Default to mainnet — 173 live listings exist on Mezo Mainnet (31612).
+  const network: NetworkType = isTestnet ? "testnet" : "mainnet";
   const contracts = getContracts(network);
 
   const switchToTestnet = useCallback(() => {
