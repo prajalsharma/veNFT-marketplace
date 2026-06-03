@@ -104,7 +104,7 @@ async function withFallback<T>(
 async function fetchLogsChunked(
   chainId: number,
   address: `0x${string}`,
-  event: Parameters<AnyClient["getLogs"]>[0]["event"],
+  event: any,
   fromBlock: bigint,
   toBlock: bigint
 ): Promise<ReturnType<AnyClient["getLogs"]> extends Promise<infer R> ? R : never> {
