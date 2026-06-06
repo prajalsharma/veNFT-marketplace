@@ -24,15 +24,21 @@ const MARKETPLACE_ABI = [
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "listingId", type: "uint256" }],
-    outputs: [
-      { name: "seller", type: "address" },
-      { name: "collection", type: "address" },
-      { name: "tokenId", type: "uint256" },
-      { name: "price", type: "uint256" },
-      { name: "paymentToken", type: "address" },
-      { name: "createdAt", type: "uint256" },
-      { name: "active", type: "bool" },
-    ],
+    // Wrapped as a single tuple so viem decodes the result as a named object
+    // { seller, collection, ... active } instead of a plain array where
+    // raw.active is undefined (the active field is at index 6 in array form).
+    outputs: [{
+      type: "tuple",
+      components: [
+        { name: "seller", type: "address" },
+        { name: "collection", type: "address" },
+        { name: "tokenId", type: "uint256" },
+        { name: "price", type: "uint256" },
+        { name: "paymentToken", type: "address" },
+        { name: "createdAt", type: "uint256" },
+        { name: "active", type: "bool" },
+      ],
+    }],
   },
   {
     name: "listNFT",
@@ -498,18 +504,9 @@ export function useListing(listingId: number) {
     },
   });
 
-  const listingArray = listingData as any[] | undefined;
-  const listing: ListingTuple | undefined = listingArray
-    ? {
-        seller: listingArray[0],
-        collection: listingArray[1],
-        tokenId: listingArray[2],
-        price: listingArray[3],
-        paymentToken: listingArray[4],
-        createdAt: listingArray[5],
-        active: listingArray[6],
-      }
-    : undefined;
+  // listings() ABI now returns a single tuple so viem decodes it as a named
+  // object { seller, collection, ... active } — cast directly instead of indexing.
+  const listing = listingData as ListingTuple | undefined;
 
   const collection = listing?.collection;
   const tokenId = listing?.tokenId;
