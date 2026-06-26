@@ -11,8 +11,8 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { useAccount } from "wagmi";
-import { formatUnits, parseUnits } from "viem";
+import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { formatUnits, parseUnits, erc20Abi, maxUint256 } from "viem";
 import { useBidding, useActiveTokenBids } from "../hooks/useBidding";
 import { useNetwork } from "../hooks/useNetwork";
 import { getContracts } from "../lib/contracts";
@@ -75,6 +75,8 @@ function PlaceBidForm({
   const { network }  = useNetwork();
   const contracts    = getContracts(network);
   const { address }  = useAccount();
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
   const { createBid, isWritePending, isConfirming } = useBidding();
 
   const [amount,       setAmount]       = useState("");
@@ -82,17 +84,47 @@ function PlaceBidForm({
   const [expiryDays,   setExpiryDays]   = useState("7");
   const [error,        setError]        = useState<string | null>(null);
   const [submitted,    setSubmitted]    = useState(false);
+  const [stage,        setStage]        = useState<"idle" | "approving" | "submitting">("idle");
 
-  const busy = isWritePending || isConfirming;
+  const busy = stage !== "idle" || isWritePending || isConfirming;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError(null);
       if (!address) { setError("Connect wallet first"); return; }
+      // Guard against an unresolved token address — without this a misconfigured
+      // selector would pass `undefined` straight into viem ("Address \"undefined\"
+      // is invalid"). paymentToken should always be one of the contract addresses.
+      if (!paymentToken) { setError("Select a payment token"); return; }
+      if (!publicClient) { setError("Network not ready — try again"); return; }
+      const bidding = contracts.bidding as `0x${string}`;
       try {
         const amountWei = parseUnits(amount || "0", 18);
         if (amountWei === 0n) { setError("Amount must be > 0"); return; }
+
+        // The VeNFTBidding contract pulls the bid amount from the bidder at accept
+        // time, so it must hold an ERC-20 allowance up-front. Approve it first if
+        // the current allowance is insufficient (one-time max approval per token).
+        const allowance = (await publicClient.readContract({
+          address:      paymentToken,
+          abi:          erc20Abi,
+          functionName: "allowance",
+          args:         [address, bidding],
+        })) as bigint;
+
+        if (allowance < amountWei) {
+          setStage("approving");
+          const approveHash = await writeContractAsync({
+            address:      paymentToken,
+            abi:          erc20Abi,
+            functionName: "approve",
+            args:         [bidding, maxUint256],
+          });
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        }
+
+        setStage("submitting");
         const expiryTs = BigInt(Math.floor(Date.now() / 1000) + Number(expiryDays) * 86400);
         await createBid({ collection, tokenId, paymentToken, amount: amountWei, expiry: expiryTs });
         setSubmitted(true);
@@ -100,9 +132,11 @@ function PlaceBidForm({
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         setError(msg.length > 140 ? msg.slice(0, 140) + "…" : msg);
+      } finally {
+        setStage("idle");
       }
     },
-    [address, amount, paymentToken, expiryDays, collection, tokenId, createBid, onSuccess]
+    [address, amount, paymentToken, expiryDays, collection, tokenId, createBid, onSuccess, publicClient, writeContractAsync, contracts.bidding]
   );
 
   if (submitted) {
@@ -126,8 +160,11 @@ function PlaceBidForm({
       {/* Payment token selector */}
       <div className="flex gap-1.5">
         {PAYMENT_TOKENS.filter((t) => !t.isNative).map((t) => {
-          const addr = (contracts as unknown as Record<string, string>)[t.symbol.toLowerCase()] as `0x${string}`;
-          const active = paymentToken === addr;
+          // contracts keys are upper-case symbols (MEZO, MUSD) — do NOT lower-case
+          // them or the lookup returns undefined, which both highlights every button
+          // and feeds `undefined` into the bid call ("Address undefined is invalid").
+          const addr = (contracts as unknown as Record<string, string>)[t.symbol] as `0x${string}`;
+          const active = !!addr && paymentToken === addr;
           return (
             <button
               key={t.symbol}
@@ -207,7 +244,7 @@ function PlaceBidForm({
         }}
       >
         {busy ? (
-          <><Loader2 style={{ width: 12, height: 12 }} className="animate-spin" />Submitting…</>
+          <><Loader2 style={{ width: 12, height: 12 }} className="animate-spin" />{stage === "approving" ? "Approving…" : "Submitting…"}</>
         ) : !address ? (
           "Connect wallet to bid"
         ) : (
