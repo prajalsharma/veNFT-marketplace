@@ -228,6 +228,11 @@ contract VeNFTBidding is ReentrancyGuard {
         if (amount == 0) revert ZeroAmount();
         if (expiry == 0 || expiry <= block.timestamp) revert ZeroExpiry();
         if (!paymentRouter.supportedTokens(paymentToken)) revert UnsupportedPaymentToken();
+        // Native BTC (the 0x7b7C…0000 sentinel) cannot be used as a bid currency:
+        // bids are escrowless and settled by pulling ERC-20 from the bidder at accept
+        // time. Native value has no transferFrom path here, so a BTC bid could be
+        // created but never accepted. Reject it up-front instead of leaving dead bids.
+        if (paymentToken == paymentRouter.BTC()) revert UnsupportedPaymentToken();
 
         // Validate bidder has sufficient balance and has approved this contract
         // (or the router) so acceptBid() can pull funds atomically.
@@ -332,23 +337,34 @@ contract VeNFTBidding is ReentrancyGuard {
         // ── Transfer NFT from seller (msg.sender) to bidder ─────────────────
         IERC721(collection).safeTransferFrom(msg.sender, bidder, tokenId);
 
-        // ── Pull payment from bidder; route through PaymentRouter ────────────
-        // Pull full amount to this contract first, then approve router to take it.
-        IERC20(payToken).safeTransferFrom(bidder, address(this), amount);
-        IERC20(payToken).forceApprove(address(paymentRouter), amount);
-        paymentRouter.routePayment(address(this), msg.sender, payToken, amount);
+        // ── Pull payment from bidder and settle the fee split directly ──────
+        // We intentionally do NOT call paymentRouter.routePayment() here. That
+        // function is guarded by `onlyMarketplace` and the router's `marketplace`
+        // slot is set ONCE (AlreadySet guard) to the VeNFTMarketplace contract, so
+        // this bidding contract can never be an authorized caller — routePayment
+        // would revert `Unauthorized` on every accept, bricking the feature.
+        //
+        // Instead we read the canonical fee configuration straight from the router
+        // (calculateFee + feeRecipient are public views, callable by anyone) and
+        // move the ERC-20 directly from the bidder to the seller and the treasury.
+        // This reproduces PaymentRouter's ERC-20 accounting exactly (fee rounds
+        // down, in the seller's favour) with no authorization dependency, and the
+        // bidder only ever needs to approve THIS contract (already validated above).
+        (uint256 protocolFee, uint256 sellerReceived) = paymentRouter.calculateFee(amount);
+        address treasury = paymentRouter.feeRecipient();
+
+        IERC20(payToken).safeTransferFrom(bidder, msg.sender, sellerReceived);
+        if (protocolFee > 0) {
+            IERC20(payToken).safeTransferFrom(bidder, treasury, protocolFee);
+        }
 
         emit BidAccepted(bidId, msg.sender, bidder, collection, tokenId, amount);
 
         // Additive: rich analytics event for fee/volume tracking
-        {
-            (, uint256 sellerReceived) = paymentRouter.calculateFee(amount);
-            uint256 protocolFee = amount - sellerReceived;
-            emit BidAcceptedWithAnalytics(
-                bidId, msg.sender, bidder, collection, tokenId, amount,
-                payToken, protocolFee, sellerReceived
-            );
-        }
+        emit BidAcceptedWithAnalytics(
+            bidId, msg.sender, bidder, collection, tokenId, amount,
+            payToken, protocolFee, sellerReceived
+        );
     }
 
     // ─── Watchlist helpers (event-only, zero storage) ─────────────────────────

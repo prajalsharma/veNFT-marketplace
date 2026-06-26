@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @dev Uniswap V2-compatible DEX router interface.
 interface IUniswapV2Router {
@@ -117,7 +117,7 @@ contract SwapPaymentRouter is ReentrancyGuard, Pausable, IERC721Receiver {
                 if (excess > 0) { (bool ok,) = payable(msg.sender).call{value: excess}(""); if (!ok) revert RefundFailed(); }
             } else {
                 IERC20(quoteToken).safeTransferFrom(msg.sender, address(this), required);
-                IERC20(quoteToken).safeApprove(IVeNFTMarketplace(marketplace).paymentRouter(), required);
+                IERC20(quoteToken).forceApprove(IVeNFTMarketplace(marketplace).paymentRouter(), required);
                 IVeNFTMarketplace(marketplace).buyNFT(listingId);
             }
             emit SwapAndPurchase(listingId, msg.sender, buyToken, required, quoteToken, required, 0);
@@ -137,7 +137,7 @@ contract SwapPaymentRouter is ReentrancyGuard, Pausable, IERC721Receiver {
                 uint256 surplus = actualOut - required;
                 if (surplus > 0) { (bool ok,) = payable(msg.sender).call{value: surplus}(""); if (!ok) revert RefundFailed(); }
             } else {
-                IERC20(quoteToken).safeApprove(IVeNFTMarketplace(marketplace).paymentRouter(), required);
+                IERC20(quoteToken).forceApprove(IVeNFTMarketplace(marketplace).paymentRouter(), required);
                 IVeNFTMarketplace(marketplace).buyNFT(listingId);
                 uint256 surplus = IERC20(quoteToken).balanceOf(address(this));
                 if (surplus > 0) IERC20(quoteToken).safeTransfer(msg.sender, surplus);
@@ -169,12 +169,12 @@ contract SwapPaymentRouter is ReentrancyGuard, Pausable, IERC721Receiver {
             actualOut = amounts[amounts.length - 1];
         } else if (quoteToken == BTC) {
             IERC20(buyToken).safeTransferFrom(msg.sender, address(this), amountIn);
-            IERC20(buyToken).safeApprove(r, amountIn);
+            IERC20(buyToken).forceApprove(r, amountIn);
             uint256[] memory amounts = IUniswapV2Router(r).swapExactTokensForETH(amountIn, amountOutMin, _path(buyToken, wbtc), address(this), deadline);
             actualOut = amounts[amounts.length - 1];
         } else {
             IERC20(buyToken).safeTransferFrom(msg.sender, address(this), amountIn);
-            IERC20(buyToken).safeApprove(r, amountIn);
+            IERC20(buyToken).forceApprove(r, amountIn);
             uint256[] memory amounts = IUniswapV2Router(r).swapExactTokensForTokens(amountIn, amountOutMin, _path(buyToken, quoteToken), address(this), deadline);
             actualOut = amounts[amounts.length - 1];
         }

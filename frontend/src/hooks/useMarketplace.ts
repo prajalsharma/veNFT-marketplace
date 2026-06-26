@@ -959,8 +959,12 @@ export function useActiveListings() {
     // stale and buyNFT would revert. Four states handled:
     //   • batch not resolved yet (ownerOfResults == null) → optimistically trust
     //     the contract's active flag to avoid a flash of "inactive"
-    //   • individual call failed (status "failure") → RPC/network error; trust
-    //     the contract's active flag rather than hiding valid listings
+    //   • individual call failed (status "failure") → in a multicall this means the
+    //     ownerOf call itself REVERTED, which for ERC-721 means the token no longer
+    //     exists (withdrawn/merged → burned). Such listings show intrinsic value 0
+    //     ("worth 0") and would revert on buy, so hide them. A genuine transport
+    //     error fails the whole query (ownerOfResults == null), not one item, so
+    //     this does not hide valid listings during RPC hiccups.
     //   • owner is zero address → stale/burned token, hide it
     //   • otherwise compare the live owner to the seller
     const ownerResult = ownerOfResults?.[i];
@@ -968,8 +972,8 @@ export function useActiveListings() {
     const sellerStillOwns =
       ownerOfResults == null            // batch still loading
         ? true
-        : ownerResult?.status === "failure" // individual call reverted/failed
-          ? true                            // trust contract active flag — don't hide on RPC error
+        : ownerResult?.status === "failure" // ownerOf reverted → token burned/nonexistent
+          ? false                           // hide stale 0-value listing
           : currentOwner != null &&
             currentOwner !== ZERO_ADDRESS &&
             currentOwner === raw.seller.toLowerCase();
