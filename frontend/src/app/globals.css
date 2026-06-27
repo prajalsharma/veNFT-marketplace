@@ -752,13 +752,29 @@ select option {
   }
 }
 
-/* ─── Hide scrollbars (e.g. mobile price ticker) but keep scroll ─────────── */
+/* ─── Hide scrollbars but keep scroll ────────────────────────────────────── */
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ─── Infinite marquee (mobile price ticker) ─────────────────────────────── */
+/* Track holds two identical copies; translating -50% loops seamlessly. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 22s linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
 }
 
 /* ─── Page entry ─────────────────────────────────────────────────────────── */

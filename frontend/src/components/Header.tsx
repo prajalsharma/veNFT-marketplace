@@ -113,7 +113,9 @@ function WalletButton() {
   );
 }
 
-// ─── Price Ticker Bar (mobile: horizontal scroll, no overflow) ───────────────
+// ─── Price Ticker Bar ─────────────────────────────────────────────────────────
+// Mobile: an infinite marquee (auto-scrolls so it never looks "stuck").
+// Desktop (sm+): a static left-aligned row with the "Live Prices" label.
 function PriceTickerBar({ isDark }: { isDark: boolean }) {
   const prices = usePriceTicker();
   const tickers = [
@@ -121,22 +123,40 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
     { label: "MEZO", value: formatUSD(prices.MEZO), color: "#4A90E2" },
     { label: "MUSD", value: formatUSD(prices.MUSD), color: "#10B981" },
   ];
+
+  const Pill = ({ t }: { t: typeof tickers[number] }) => (
+    <div className="flex items-center gap-1.5 px-4 shrink-0">
+      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
+      <span className="text-[12px] font-bold tabular-nums" style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}>
+        {t.value}
+      </span>
+    </div>
+  );
+
   return (
     <div
       className="border-t h-[32px] sm:h-[36px] overflow-hidden"
       style={{ borderColor: "var(--header-border)", background: isDark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)" }}
     >
-      <div className="max-w-[1400px] mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center gap-3 sm:gap-5 overflow-x-auto no-scrollbar">
-        <div className="hidden sm:flex items-center gap-1.5 shrink-0" style={{ color: "var(--text-3)" }}>
+      {/* Mobile — infinite marquee (two copies for a seamless loop) */}
+      <div className="sm:hidden h-full flex items-center overflow-hidden" aria-label="Live prices">
+        <div className="marquee-track items-center">
+          {[...tickers, ...tickers].map((t, i) => <Pill key={i} t={t} />)}
+        </div>
+      </div>
+
+      {/* Desktop — static row */}
+      <div className="hidden sm:flex max-w-[1400px] mx-auto h-full px-6 lg:px-8 items-center gap-5">
+        <div className="flex items-center gap-1.5 shrink-0" style={{ color: "var(--text-3)" }}>
           <TrendingUp style={{ width: 11, height: 11 }} />
           <span className="text-xs font-black uppercase tracking-widest">Live Prices</span>
         </div>
-        <div className="hidden sm:block w-px h-3 shrink-0" style={{ background: "var(--border)" }} />
-        <div className="flex items-center gap-3.5 sm:gap-4 shrink-0">
+        <div className="w-px h-3 shrink-0" style={{ background: "var(--border)" }} />
+        <div className="flex items-center gap-4 shrink-0">
           {tickers.map((t) => (
             <div key={t.label} className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
-              <span className="text-[12px] sm:text-sm font-bold tabular-nums" style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}>
+              <span className="text-xs font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
+              <span className="text-sm font-bold tabular-nums" style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}>
                 {t.value}
               </span>
             </div>
@@ -306,26 +326,10 @@ export function Header() {
             className="lg:hidden overflow-hidden"
             style={{ borderTop: "1px solid var(--header-border)", background: "var(--header-bg)", backdropFilter: "blur(24px)" }}
           >
-            <div className="px-4 py-5 space-y-1.5">
-              {navLinks.map((link, i) => {
-                const isActive = pathname === link.href;
-                return (
-                  <motion.div key={link.href} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                    <Link
-                      href={link.href}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold cursor-pointer"
-                      style={{ color: isActive ? "var(--text-1)" : "var(--text-2)", background: isActive ? "var(--vezo-red-12)" : "transparent", border: isActive ? "1px solid var(--vezo-red-22)" : "1px solid transparent", letterSpacing: "-0.01em" }}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {link.icon && <link.icon style={{ width: 15, height: 15 }} />}
-                      {link.label}
-                    </Link>
-                  </motion.div>
-                );
-              })}
-
-              <div className="pt-4 mt-3 space-y-3" style={{ borderTop: "1px solid var(--border)" }}>
-                <p className="text-[9px] font-black uppercase tracking-widest px-4" style={{ color: "var(--text-3)" }}>Network</p>
+            {/* Primary routes live in the bottom tab bar; this drawer is settings. */}
+            <div className="px-4 py-5">
+              <div className="space-y-3">
+                <p className="text-[9px] font-black uppercase tracking-widest px-1" style={{ color: "var(--text-3)" }}>Network</p>
                 <div className="flex items-center rounded-full p-0.5 relative" style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}>
                   <motion.div className="absolute top-[3px] bottom-[3px] rounded-full z-0" animate={{ left: isTestnet ? "3px" : "50%", right: isTestnet ? "50%" : "3px", backgroundColor: isTestnet ? "rgba(251,191,36,0.14)" : "rgba(34,197,94,0.14)" }} transition={{ type: "spring", stiffness: 100, damping: 20 }} />
                   <button onClick={isTestnet ? undefined : handleNetworkSwitch} className="relative z-10 flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold cursor-pointer" style={{ color: isTestnet ? "#FBBF24" : "var(--text-3)" }}>

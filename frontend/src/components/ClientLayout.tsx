@@ -5,6 +5,7 @@ import { Header, VezoLogoMark } from "@/components/Header";
 import { NetworkSwitcher } from "@/components/NetworkSwitcher";
 import { ActivityProvider } from "@/context/ActivityContext";
 import { OnboardingTour, openOnboardingTour } from "@/components/OnboardingTour";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -144,6 +145,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
       </footer>
+
+      {/* Spacer so page content clears the fixed mobile bottom nav */}
+      <div className="lg:hidden" aria-hidden style={{ height: "calc(58px + env(safe-area-inset-bottom))" }} />
+
+      {/* Aave-style mobile bottom tab navigation */}
+      <MobileBottomNav />
 
       {/* First-visit walkthrough (reopen via the "How it works" footer link) */}
       <OnboardingTour />
