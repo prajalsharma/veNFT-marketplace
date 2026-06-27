@@ -782,6 +782,23 @@ select option {
   .marquee-track { animation: none; }
 }
 
+/* ─── NFT card — restrained, pure-CSS hover (no JS tilt/spotlight) ────────── */
+.nft-card {
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.22s var(--ease-spring), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+@media (hover: hover) {
+  .nft-card:not(.nft-card--disabled):hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+}
+.nft-card--disabled {
+  opacity: 0.55;
+}
+
 /* ─── Page entry ─────────────────────────────────────────────────────────── */
 .page-enter {
   animation: fadeUp 0.5s var(--ease-spring) both;
