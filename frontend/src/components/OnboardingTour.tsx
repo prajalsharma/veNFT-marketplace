@@ -16,8 +16,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  X, ArrowRight, ArrowLeft, Sparkles, Eye, Zap, Tag, ShieldCheck, Wallet,
+  X, ArrowRight, ArrowLeft, Sparkles, Eye, Tag, ShieldCheck, Wallet, CheckCircle2,
 } from "lucide-react";
+import { DiscountBadge } from "./DiscountBadge";
 
 const STORAGE_KEY = "vezo-onboarded-v1";
 const ACCENT = "#FF0040";
@@ -55,6 +56,144 @@ const STEPS: Step[] = [
     body: "The NFT transfers before payment is routed; if anything is off, the whole transaction reverts automatically. No custody, no counterparty risk. Connect your wallet to get started.",
   },
 ];
+
+// ── Real-element previews ─────────────────────────────────────────────────────
+// Each step shows an actual marketplace surface (real card styling + the real
+// DiscountBadge component) so the walkthrough demonstrates the product, not just
+// describes it. These are illustrative — non-interactive (styled spans, no
+// onClick) so they never trap focus or fire dead actions.
+
+function PreviewCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="rounded-2xl p-3.5 select-none"
+      style={{ background: "var(--bg-2)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Chip({ label, accent }: { label: string; accent?: boolean }) {
+  return (
+    <span
+      className="text-[10px] font-black tracking-[0.1em] uppercase px-2 py-1 rounded-md"
+      style={
+        accent
+          ? { color: ACCENT, background: `${ACCENT}14`, border: `1px solid ${ACCENT}2e` }
+          : { color: "var(--text-2)", background: "var(--bg-3)", border: "1px solid var(--border)" }
+      }
+    >
+      {label}
+    </span>
+  );
+}
+
+const lbl = "text-[9px] font-bold uppercase tracking-widest";
+const num = "tabular-nums";
+
+function StepVisual({ i }: { i: number }) {
+  // 0 — Welcome: collections + what you can do
+  if (i === 0) {
+    return (
+      <PreviewCard>
+        <div className="flex items-center gap-2 mb-3">
+          <Chip label="veBTC" accent />
+          <Chip label="veMEZO" accent />
+          <span
+            className="ml-auto text-[10px] font-bold px-2 py-1 rounded-md"
+            style={{ color: "#10B981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)" }}
+          >
+            Escrowless
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[["Browse", "listings"], ["Buy", "atomically"], ["Sell", "anytime"]].map(([a, b]) => (
+            <div key={a} className="rounded-xl p-2.5 text-center" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}>
+              <p className="text-[12px] font-bold" style={{ color: "var(--text-1)" }}>{a}</p>
+              <p className="text-[9px] mt-0.5" style={{ color: "var(--text-3)" }}>{b}</p>
+            </div>
+          ))}
+        </div>
+      </PreviewCard>
+    );
+  }
+  // 1 — Browse & buy: a real listing card with the real DiscountBadge
+  if (i === 1) {
+    return (
+      <PreviewCard>
+        <div className="flex items-center justify-between mb-3">
+          <Chip label="veBTC" accent />
+          <span className={`text-[11px] font-mono ${num}`} style={{ color: "var(--text-3)" }}>#1043</span>
+        </div>
+        <div className="flex items-end justify-between">
+          <div>
+            <p className={lbl} style={{ color: "var(--text-3)" }}>Intrinsic value</p>
+            <p className={`text-[15px] font-bold ${num}`} style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>0.0500 BTC</p>
+          </div>
+          <DiscountBadge discountBps={1850} />
+        </div>
+        <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <div>
+            <p className={lbl} style={{ color: "var(--text-3)" }}>Price</p>
+            <p className={`text-[14px] font-bold ${num}`} style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>0.0410 BTC</p>
+          </div>
+          <span className="btn-primary text-[12px] font-bold px-4 py-2 rounded-xl">Buy</span>
+        </div>
+      </PreviewCard>
+    );
+  }
+  // 2 — Sell: a list form (price + currency segmented control)
+  if (i === 2) {
+    return (
+      <PreviewCard>
+        <div className="flex items-center justify-between mb-3">
+          <Chip label="veMEZO" accent />
+          <span className={`text-[11px] font-mono ${num}`} style={{ color: "var(--text-3)" }}>#820</span>
+        </div>
+        <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}>
+          <span className={`text-[15px] font-bold ${num}`} style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>1.25</span>
+          <span className="text-[10px]" style={{ color: "var(--text-3)" }}>set your price</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {["BTC", "MEZO", "MUSD"].map((t) => (
+            <span
+              key={t}
+              className="text-[11px] font-bold py-1.5 rounded-lg text-center"
+              style={
+                t === "MEZO"
+                  ? { color: ACCENT, background: `${ACCENT}14`, border: `1px solid ${ACCENT}2e` }
+                  : { color: "var(--text-3)", background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }
+              }
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      </PreviewCard>
+    );
+  }
+  // 3 — Safe: the atomic swap flow
+  return (
+    <PreviewCard>
+      <div className="space-y-2">
+        {[["NFT", "your wallet"], ["Payment", "the seller"]].map(([a, b]) => (
+          <div key={a} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}>
+            <span className="text-[12px] font-bold" style={{ color: "var(--text-1)" }}>{a}</span>
+            <ArrowRight style={{ width: 14, height: 14, color: ACCENT }} />
+            <span className="text-[12px]" style={{ color: "var(--text-2)" }}>{b}</span>
+            <CheckCircle2 style={{ width: 14, height: 14, color: "#10B981", marginLeft: "auto" }} />
+          </div>
+        ))}
+        <div className="flex items-center gap-2 pt-1">
+          <ShieldCheck style={{ width: 13, height: 13, color: "#10B981", flexShrink: 0 }} />
+          <span className="text-[10px]" style={{ color: "var(--text-3)" }}>One transaction — reverts automatically if anything is off.</span>
+        </div>
+      </div>
+    </PreviewCard>
+  );
+}
 
 export function OnboardingTour() {
   const [open, setOpen] = useState(false);
@@ -155,8 +294,8 @@ export function OnboardingTour() {
           </button>
 
           <div className="px-7 pt-8 pb-7">
-            {/* Animated step body */}
-            <div className="relative min-h-[208px]">
+            {/* Animated step body — real-element preview as the hero, then copy */}
+            <div className="relative min-h-[300px]">
               <AnimatePresence mode="wait" custom={dir}>
                 <motion.div
                   key={i}
@@ -166,24 +305,25 @@ export function OnboardingTour() {
                   exit={{ opacity: 0, x: dir * -slide }}
                   transition={{ duration: reduce ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: `${ACCENT}14`, border: `1px solid ${ACCENT}2e` }}
-                  >
-                    <Icon style={{ width: 22, height: 22, color: ACCENT }} aria-hidden="true" />
+                  <StepVisual i={i} />
+
+                  <div className="mt-5">
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Icon style={{ width: 15, height: 15, color: ACCENT }} aria-hidden="true" />
+                      <span
+                        className="text-[10px] font-black tracking-[0.14em] uppercase px-2 py-0.5 rounded-md"
+                        style={{ color: ACCENT, background: `${ACCENT}12` }}
+                      >
+                        {step.badge}
+                      </span>
+                    </div>
+                    <h2 id="vezo-tour-title" className="text-[21px] font-bold tracking-tight leading-tight" style={{ color: "var(--text-1)" }}>
+                      {step.title}
+                    </h2>
+                    <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                      {step.body}
+                    </p>
                   </div>
-                  <span
-                    className="inline-block text-[10px] font-black tracking-[0.14em] uppercase px-2 py-1 rounded-md mb-3"
-                    style={{ color: ACCENT, background: `${ACCENT}12` }}
-                  >
-                    {step.badge}
-                  </span>
-                  <h2 id="vezo-tour-title" className="text-[22px] font-bold tracking-tight leading-tight" style={{ color: "var(--text-1)" }}>
-                    {step.title}
-                  </h2>
-                  <p className="mt-2.5 text-[13.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-                    {step.body}
-                  </p>
                 </motion.div>
               </AnimatePresence>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useReadContract, useReadContracts, useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNetwork } from "./useNetwork";
 import { computeDiscountBps } from "@/lib/computeDiscount";
 
@@ -854,9 +854,13 @@ export function useActiveListings() {
       }));
     },
     enabled: isMarketplaceReady,
-    // Keep the previous list on the screen while refetching / switching network,
-    // so a reload never flashes back to an empty (0) state.
-    placeholderData: keepPreviousData,
+    // Keep the previous list during a refetch of the SAME network (no flash to 0
+    // on reload), but DROP it when the network changes — otherwise mainnet
+    // listings would linger on screen after switching to testnet.
+    placeholderData: (prev, prevQuery) => {
+      const prevNetwork = (prevQuery?.queryKey as ["active-listings", string] | undefined)?.[1];
+      return prevNetwork === network ? prev : undefined;
+    },
     staleTime: 12_000,
     refetchInterval: 30_000,
     refetchOnWindowFocus: false,
