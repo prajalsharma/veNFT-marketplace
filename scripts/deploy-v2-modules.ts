@@ -228,6 +228,29 @@ async function main() {
     console.log(`      From the ADMIN wallet, call: setAuthorisedCaller(${marketplaceAddress}, true)`);
   }
 
+  // ── 6. SwapPaymentRouter (pay-with-any-token via Velodrome + buyNFT) ─────────
+  // Works with the EXISTING marketplace: the buyer calls swapAndBuy(), it swaps
+  // their token → the listing's ERC-20 quote token (e.g. MUSD) pool-direct through
+  // Mezo's Velodrome-v2 DEX, then calls buyNFT and forwards the NFT. No routePayment
+  // auth wiring needed. Mezo mainnet PoolFactory: 0x83FE469C636C4081b87bA5b3Ae9991c6Ed104248
+  // (has a liquid BTC/MUSD pool; MEZO has no pool and cannot be swapped).
+  console.log("\n6. Deploying SwapPaymentRouter (Velodrome)...");
+  const sprFeeBps   = parseInt(process.env.SWAP_PLATFORM_FEE_BPS || "50"); // <= 100 (1%)
+  const poolFactory = process.env.POOL_FACTORY
+    || (networkName === "mezomainnet" ? "0x83FE469C636C4081b87bA5b3Ae9991c6Ed104248" : "");
+  if (!poolFactory) {
+    console.log("   ⚠️  POOL_FACTORY not set for this network — pass the Velodrome PoolFactory address.");
+  }
+  const SPRFactory = await ethers.getContractFactory("SwapPaymentRouter");
+  const spr        = await SPRFactory.deploy(
+    adminAddress, feeRecipient, marketplaceAddress,
+    poolFactory || "0x0000000000000000000000000000000000000000", sprFeeBps
+  );
+  await spr.waitForDeployment();
+  const sprAddress = await spr.getAddress();
+  console.log("   ✅ SwapPaymentRouter:", sprAddress);
+  console.log("   Velodrome PoolFactory:", poolFactory || "(unset — call setPoolFactory before swaps work)");
+
   // ── Summary ────────────────────────────────────────────────────────────────
   console.log("\n=== DEPLOYMENT COMPLETE ===");
   console.log("\nNew contract addresses:");
@@ -236,6 +259,7 @@ async function main() {
   console.log(`NEXT_PUBLIC_ORACLE_HUB_${networkName === "mezomainnet" ? "MAINNET" : "TESTNET"}=${oracleAddress}`);
   console.log(`NEXT_PUBLIC_QUOTE_ROUTER_${networkName === "mezomainnet" ? "MAINNET" : "TESTNET"}=${quoteAddress}`);
   console.log(`NEXT_PUBLIC_SWAP_ROUTER_${networkName === "mezomainnet" ? "MAINNET" : "TESTNET"}=${swapAddress}`);
+  console.log(`NEXT_PUBLIC_SWAP_PAYMENT_ROUTER_${networkName === "mezomainnet" ? "MAINNET" : "TESTNET"}=${sprAddress}`);
 
   console.log("\nVerify commands:");
   console.log(`npx hardhat verify --network ${networkName} ${biddingAddress} ${routerAddress} ${adminContractAddress}`);
@@ -243,6 +267,7 @@ async function main() {
   console.log(`npx hardhat verify --network ${networkName} ${oracleAddress} ${adminAddress}`);
   console.log(`npx hardhat verify --network ${networkName} ${quoteAddress} ${oracleAddress} ${adminAddress} ${swapFeeBps}`);
   console.log(`npx hardhat verify --network ${networkName} ${swapAddress} ${routerAddress} ${quoteAddress} ${adminAddress}`);
+  console.log(`npx hardhat verify --network ${networkName} ${sprAddress} ${adminAddress} ${feeRecipient} ${marketplaceAddress} ${poolFactory || "0x0000000000000000000000000000000000000000"} ${sprFeeBps}`);
 
   // Save to deployments/
   const fs = await import("fs");
@@ -260,6 +285,7 @@ async function main() {
       PriceOracleHub: oracleAddress,
       QuoteRouter: quoteAddress,
       SwapRouter: swapAddress,
+      SwapPaymentRouter: sprAddress,
     },
   }, null, 2));
   console.log(`\nSaved to ${file}`);
