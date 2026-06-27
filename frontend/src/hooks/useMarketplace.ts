@@ -1,6 +1,7 @@
 "use client";
 
 import { useReadContract, useReadContracts, useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNetwork } from "./useNetwork";
 import { computeDiscountBps } from "@/lib/computeDiscount";
 
@@ -786,256 +787,91 @@ export function useUserVeNFTs() {
 }
 
 // ─── useActiveListings ────────────────────────────────────────────────────────
-// Batch-fetches ALL active listings in 2 contract calls (one per collection)
-// rather than N individual calls. Dramatically reduces RPC load vs the old
-// per-listing approach (was ~715 calls for 143 listings; now 2 calls + 1 batch).
+// Single authoritative source: fetch the fully-filtered active listings from the
+// server route (/api/listings), which scans slots + applies the ownerOf (stale)
+// and intrinsic-value (empty) filters in ONE deterministic server-side pass.
 //
-// Returns the same Listing[] shape as useListing so MarketplaceClient needs
-// minimal changes.
+// This replaces the old client-side approach that chained several dependent
+// multicall batches and rendered optimistic intermediate counts before the
+// ownerOf/intrinsic batches resolved — the cause of the "0 → 16 → 5 on every
+// reload" inconsistency. With a short server cache + React Query keepPreviousData,
+// every reload shows the same stable list instead of re-walking the stages.
 
-const ACTIVE_LISTINGS_LIMIT = 500n; // fetch up to 500 at once
+interface RawListingDTO {
+  listingId: number;
+  seller: string;
+  nftContract: string;
+  collection: "veBTC" | "veMEZO";
+  tokenId: string;
+  price: string;
+  paymentToken: string;
+  active: boolean;
+  createdAt: string;
+  intrinsicValue: string;
+  votingPower: string;
+  lockEnd: string;
+  discountBps: string | null;
+  isGrant: boolean;
+}
 
 export function useActiveListings() {
-  const { contracts, chainId } = useNetwork();
+  const { network, contracts } = useNetwork();
 
   const ZERO = "0x0000000000000000000000000000000000000000";
   const marketplaceAddress = contracts.marketplace as `0x${string}`;
-  const adapterAddress     = contracts.adapter     as `0x${string}`;
-  const veBTCAddress       = contracts.veBTC       as `0x${string}`;
-  const veMEZOAddress      = contracts.veMEZO      as `0x${string}`;
   const isMarketplaceReady = !!marketplaceAddress && marketplaceAddress !== ZERO;
-  const isAdapterReady     = !!adapterAddress     && adapterAddress     !== ZERO;
 
-  console.log(`[VEZO] chainId=${chainId} marketplace=${marketplaceAddress} isReady=${isMarketplaceReady} adapter=${adapterAddress} veBTC=${veBTCAddress} veMEZO=${veMEZOAddress}`);
-
-  // Step 1a: fetch nextListingId so we know how many slots to scan
-  const { data: nextId, refetch: refetchNextId, isError: nextIdIsError, error: nextIdError } = useReadContract({
-    address: marketplaceAddress,
-    abi: MARKETPLACE_ABI,
-    functionName: "nextListingId",
-    chainId,
-    query: { enabled: isMarketplaceReady },
-  });
-
-  console.log(`[VEZO] nextListingId=${nextId?.toString() ?? "undefined"} isError=${nextIdIsError} error=${nextIdError?.message ?? "none"}`);
-
-  const slotCount = nextId ? Number(nextId) : 0;
-
-  // Step 1b: batch-fetch every listing slot [0 .. nextListingId-1] so we get
-  // both the struct data AND the slot index (= listingId). This replaces the
-  // old getActiveListings call which returned structs without their IDs —
-  // causing buyNFT to be called with tokenId instead of the real listingId.
-  const slotCalls = Array.from({ length: Math.min(slotCount, Number(ACTIVE_LISTINGS_LIMIT)) }, (_, i) => ({
-    address: marketplaceAddress,
-    abi: MARKETPLACE_ABI,
-    functionName: "listings" as const,
-    args: [BigInt(i)] as const,
-    chainId,
-  }));
-
-  const { data: slotResults, isLoading: batchLoading, refetch: refetchSlots, isError: slotsIsError, error: slotsError } = useReadContracts({
-    contracts: slotCalls,
-    query: { enabled: isMarketplaceReady && slotCount > 0 },
-  });
-
-  const firstActive = slotResults?.findIndex((s: any) => s?.result?.active === true) ?? -1;
-  const firstResult = slotResults?.[0];
-  console.log(`[VEZO] slotCount=${slotCount} batchLoading=${batchLoading} slotsIsError=${slotsIsError} slotResultsLen=${slotResults?.length ?? "undefined"} firstActiveSlot=${firstActive} slot0status=${(firstResult as any)?.status} slot0active=${(firstResult as any)?.result?.active}`);
-
-  const refetch = async () => {
-    await refetchNextId();
-    await refetchSlots();
-  };
-
-  // NOTE: getActiveListings returns (Listing[], total) — result[0] is the array.
-  type RawListing = {
-    seller:       `0x${string}`;
-    collection:   `0x${string}`;
-    tokenId:      bigint;
-    price:        bigint;
-    paymentToken: `0x${string}`;
-    createdAt:    bigint;
-    active:       boolean;
-  };
-
-  // Build allRaw from slot scan — only active listings for veBTC or veMEZO,
-  // keeping the slot index as the authoritative listingId.
-  const allRaw: (RawListing & { collectionKey: "veBTC" | "veMEZO"; listingSlotId: number })[] = [];
-
-  if (slotResults) {
-    for (let i = 0; i < slotResults.length; i++) {
-      const raw = slotResults[i]?.result as RawListing | undefined;
-      if (!raw || !raw.active) continue;
-      const collLower = raw.collection.toLowerCase();
-      if (collLower === veBTCAddress.toLowerCase()) {
-        allRaw.push({ ...raw, collectionKey: "veBTC",  listingSlotId: i });
-      } else if (collLower === veMEZOAddress.toLowerCase()) {
-        allRaw.push({ ...raw, collectionKey: "veMEZO", listingSlotId: i });
-      } else {
-        console.log("[useActiveListings] slot", i, "active but unknown collection:", raw.collection, "veBTC:", veBTCAddress, "veMEZO:", veMEZOAddress);
-      }
-    }
-  }
-
-  console.log(`[VEZO] allRaw count=${allRaw.length} slots=[${allRaw.map(r => r.listingSlotId).join(",")}] collections=[${allRaw.map(r => r.collectionKey).join(",")}]`);
-
-  // Step 2: batch-fetch intrinsicValue + lockEnd for all active listings
-  const intrinsicCalls = allRaw.map(l => ({
-    address: adapterAddress,
-    abi: ADAPTER_ABI,
-    functionName: "getIntrinsicValue" as const,
-    args: [l.collection, l.tokenId] as const,
-    chainId,
-  }));
-
-  const { data: intrinsicResults, isLoading: intrinsicLoading } = useReadContracts({
-    contracts: intrinsicCalls,
-    query: { enabled: isAdapterReady && allRaw.length > 0 },
-  });
-
-  // Step 3: batch-fetch grant NFT flags
-  const grantManagerCalls = allRaw.map(l => ({
-    address: l.collection,
-    abi: GRANT_NFT_ABI,
-    functionName: "grantManager" as const,
-    args: [l.tokenId] as const,
-    chainId,
-  }));
-  const vestingEndCalls = allRaw.map(l => ({
-    address: l.collection,
-    abi: GRANT_NFT_ABI,
-    functionName: "vestingEnd" as const,
-    args: [l.tokenId] as const,
-    chainId,
-  }));
-
-  const { data: grantManagerResults } = useReadContracts({
-    contracts: grantManagerCalls,
-    query: { enabled: allRaw.length > 0 },
-  });
-  const { data: vestingEndResults } = useReadContracts({
-    contracts: vestingEndCalls,
-    query: { enabled: allRaw.length > 0 },
-  });
-
-  // Step 4: ownerOf cross-check to filter fake / stale listings.
-  // In an escrowless design a seller can transfer the NFT out without cancelling.
-  // We batch-call ownerOf for every active listing and exclude any where the
-  // seller no longer owns the NFT — these listings would revert on buy anyway.
-  const ownerOfCalls = allRaw.map(l => ({
-    address: l.collection,
-    abi: ERC721_ABI,
-    functionName: "ownerOf" as const,
-    args: [l.tokenId] as const,
-    chainId,
-  }));
-
-  const { data: ownerOfResults } = useReadContracts({
-    contracts: ownerOfCalls,
-    query: { enabled: allRaw.length > 0, staleTime: 0 },
-  });
-
-  // Also loading while nextId is in-flight — prevents premature empty-state flash
-  // before the first RPC call fires (batchLoading is false when slotCount=0).
-  const isLoading = !nextId || batchLoading || (allRaw.length > 0 && intrinsicLoading);
-
-  const BTC_TOKEN_ADDR  = "0x7b7c000000000000000000000000000000000000";
-  const MEZO_TOKEN_ADDR = "0x7b7c000000000000000000000000000000000001";
-
-  const listings: Listing[] = allRaw.map((raw, i) => {
-    const ivStatus = intrinsicResults?.[i]?.status;
-    const ivRaw = intrinsicResults?.[i]?.result as [bigint, bigint] | undefined;
-    const [intrinsicValue, lockEnd] = ivRaw ?? [0n, 0n];
-    const isVeBTC    = raw.collectionKey === "veBTC";
-    const votingPower = computeVotingPower(intrinsicValue, lockEnd, isVeBTC);
-
-    // A veNFT whose intrinsic value reads (0 amount, 0 lockEnd) has no locked
-    // balance and no lock — it was withdrawn/merged (burned) or emptied. Such a
-    // listing is unbuyable and renders as "worth 0", so it must be hidden. We
-    // require the adapter read to have SUCCEEDED before trusting the zero: a
-    // transient multicall failure also yields undefined → [0n,0n], and we must
-    // NOT hide (or zero-render) a real, valued listing on an RPC hiccup.
-    const intrinsicKnown = ivStatus === "success" && ivRaw !== undefined;
-    const isEmptyVeNFT   = intrinsicKnown && intrinsicValue === 0n && lockEnd === 0n;
-
-    const grantMgr  = (grantManagerResults?.[i]?.result as string | undefined) ?? ZERO_ADDRESS;
-    const vestingTs = (vestingEndResults?.[i]?.result  as bigint | undefined) ?? 0n;
-    const isGrant   = grantMgr.toLowerCase() !== ZERO_ADDRESS && vestingTs !== 0n;
-
-    const nftLockedTokenAddr = isVeBTC ? BTC_TOKEN_ADDR : MEZO_TOKEN_ADDR;
-    const discountBps = computeDiscountBps(intrinsicValue, nftLockedTokenAddr, raw.price, raw.paymentToken);
-
-    // Cross-check: the seller must still own the NFT, otherwise the listing is
-    // stale and buyNFT would revert. Four states handled:
-    //   • batch not resolved yet (ownerOfResults == null) → optimistically trust
-    //     the contract's active flag to avoid a flash of "inactive"
-    //   • individual call failed (status "failure") → in a multicall this means the
-    //     ownerOf call itself REVERTED, which for ERC-721 means the token no longer
-    //     exists (withdrawn/merged → burned). Such listings show intrinsic value 0
-    //     ("worth 0") and would revert on buy, so hide them. A genuine transport
-    //     error fails the whole query (ownerOfResults == null), not one item, so
-    //     this does not hide valid listings during RPC hiccups.
-    //   • owner is zero address → stale/burned token, hide it
-    //   • otherwise compare the live owner to the seller
-    const ownerResult = ownerOfResults?.[i];
-    const currentOwner = (ownerResult?.result as string | undefined)?.toLowerCase();
-    const sellerStillOwns =
-      ownerOfResults == null            // batch still loading
-        ? true
-        : ownerResult?.status === "failure" // ownerOf reverted → token burned/nonexistent
-          ? false                           // hide stale 0-value listing
-          : currentOwner != null &&
-            currentOwner !== ZERO_ADDRESS &&
-            currentOwner === raw.seller.toLowerCase();
-    // A listing is shown only if the contract marks it active, the seller still
-    // owns the NFT, and the veNFT is not a provably-empty (0-value) position.
-    const isActive = raw.active && sellerStillOwns && !isEmptyVeNFT;
-
-    // Per-listing diagnostic — explains exactly why each active on-chain listing
-    // is shown or hidden, and where a "worth 0" value comes from (genuine empty
-    // veNFT vs a failed intrinsic-value read). Inspect in the browser console.
-    console.log(
-      `[VEZO listing] slot=${raw.listingSlotId} ${raw.collectionKey} #${raw.tokenId} ` +
-      `price=${raw.price.toString()} | ivStatus=${ivStatus ?? "pending"} ` +
-      `iv=${intrinsicValue.toString()} lockEnd=${lockEnd.toString()} isEmpty=${isEmptyVeNFT} | ` +
-      `ownerStatus=${ownerResult?.status ?? "pending"} owner=${currentOwner ?? "?"} ` +
-      `seller=${raw.seller.toLowerCase()} sellerOwns=${sellerStillOwns} ` +
-      `=> ${isActive ? "SHOWN" : "HIDDEN"}`
-    );
-
-    return {
-      listingId:      raw.listingSlotId, // authoritative slot ID from listings[i] scan
-      seller:         raw.seller,
-      nftContract:    raw.collection,
-      collection:     raw.collectionKey,
-      tokenId:        raw.tokenId,
-      price:          raw.price,
-      paymentToken:   raw.paymentToken,
-      active:         isActive,
-      createdAt:      raw.createdAt,
-      intrinsicValue,
-      votingPower,
-      lockEnd,
-      discountBps,
-      isGrant,
-    };
-  });
-
-  // Surface read failures so the UI can distinguish a genuine empty market from
-  // an RPC/contract error (never show a false "no listings" state on failure).
-  const isError = nextIdIsError || slotsIsError;
-  const error = nextIdError ?? slotsError ?? null;
-
-  console.log(`[VEZO] FINAL isLoading=${isLoading} isError=${isError} total=${listings.length} active=${listings.filter(l => l.active).length} slots=[${listings.map(l => `${l.listingId}:${l.active}`).join(",")}]`);
-
-  return {
-    listings,
+  const {
+    data,
     isLoading,
-    refetch,
     isError,
     error,
-    // Resolved address actually queried — exposed so an env-var override that
-    // points at the wrong/empty marketplace is immediately visible in the UI.
+    refetch,
+  } = useQuery({
+    queryKey: ["active-listings", network],
+    queryFn: async (): Promise<Listing[]> => {
+      const res = await fetch(`/api/listings?network=${network}`);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || `Failed to load listings (${res.status})`);
+      }
+      const json = (await res.json()) as { listings: RawListingDTO[] };
+      return json.listings.map((l) => ({
+        listingId: l.listingId,
+        seller: l.seller,
+        nftContract: l.nftContract,
+        collection: l.collection,
+        tokenId: BigInt(l.tokenId),
+        price: BigInt(l.price),
+        paymentToken: l.paymentToken,
+        active: l.active,
+        createdAt: BigInt(l.createdAt),
+        intrinsicValue: BigInt(l.intrinsicValue),
+        votingPower: BigInt(l.votingPower),
+        lockEnd: BigInt(l.lockEnd),
+        discountBps: l.discountBps === null ? null : BigInt(l.discountBps),
+        isGrant: l.isGrant,
+      }));
+    },
+    enabled: isMarketplaceReady,
+    // Keep the previous list on the screen while refetching / switching network,
+    // so a reload never flashes back to an empty (0) state.
+    placeholderData: keepPreviousData,
+    staleTime: 12_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: (n) => Math.min(1000 * 2 ** n, 8000),
+  });
+
+  return {
+    listings: data ?? [],
+    // Only "loading" on the very first fetch (no data yet). After that, reloads
+    // keep showing the prior list — no empty-state flicker.
+    isLoading: isLoading && !data,
+    refetch,
+    isError,
+    error: error ?? null,
     marketplaceAddress,
     isMarketplaceReady,
   };
