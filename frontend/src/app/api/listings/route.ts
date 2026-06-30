@@ -157,9 +157,15 @@ export async function GET(req: NextRequest) {
     const subgraphUrl = process.env.SUBGRAPH_URL;
     if (subgraphUrl) {
       try {
-        rawActive = (await fetchActiveFromSubgraph(subgraphUrl, veBTC, veMEZO)) as Raw[];
-        total = rawActive.length;
-        usedSubgraph = true;
+        const fromGraph = (await fetchActiveFromSubgraph(subgraphUrl, veBTC, veMEZO)) as Raw[];
+        // Only trust the subgraph once it actually has data. While it's still
+        // syncing it returns [] — in that case fall back to the on-chain scan so
+        // the grid is never empty mid-sync.
+        if (fromGraph.length > 0) {
+          rawActive = fromGraph;
+          total = fromGraph.length;
+          usedSubgraph = true;
+        }
       } catch {
         usedSubgraph = false; // fall back to the on-chain scan below
       }

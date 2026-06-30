@@ -221,8 +221,12 @@ export function useActivityFeed(limit = 50) {
             const evs = await fetchActivityFromSubgraph(
               subUrl, limit, chainId, contracts.adapter, contracts.veBTC, contracts.MUSD
             );
-            if (!cancelled) setEvents(evs);
-            return;
+            // Only use the subgraph once it has data; while syncing it returns []
+            // so we fall through to getLogs.
+            if (evs.length > 0) {
+              if (!cancelled) setEvents(evs);
+              return;
+            }
           } catch {
             // fall through to getLogs
           }
