@@ -312,7 +312,7 @@ export default function DocsClient() {
               {
                 icon: Gavel,
                 title: "VeNFTBidding.sol",
-                description: "On-chain offer/bid system. Buyers lock funds via ERC-20 approval; sellers accept at any time within the bid's validity window. Bid structs carry optional intrinsic-value, voting-power, and lock-duration constraints for sophisticated buyers.",
+                description: "On-chain offers. Make a bid on any veNFT — your funds stay in your wallet (only an ERC-20 approval is held), and the owner can accept it on-chain at any time within the bid's validity window. Settlement is atomic and escrowless: the NFT transfers and the fee-split payment routes in one transaction.",
                 href: "https://github.com/prajalsharma/veNFT-marketplace/blob/main/contracts/core/VeNFTBidding.sol",
                 accentColor: "#4A90E2",
               },
@@ -332,9 +332,9 @@ export default function DocsClient() {
               },
               {
                 icon: ArrowLeftRight,
-                title: "QuoteRouter + SwapRouter",
-                description: "Cross-currency settlement layer. QuoteRouter generates 5-minute, slippage-bounded quotes (settlementToken → paymentToken via oracle prices). SwapRouter executes the settlement, pulling buyer tokens and routing to the seller via PaymentRouter. Pluggable DEX adapter (Uniswap v3 / aggregator) for production.",
-                href: "https://github.com/prajalsharma/veNFT-marketplace/blob/main/contracts/swap/SwapRouter.sol",
+                title: "SwapPaymentRouter.sol",
+                description: "Pay with any token. Buy a listing in a currency it isn't priced in — SwapPaymentRouter swaps your token through Mezo's on-chain Velodrome DEX (pool-direct), then settles the purchase via the marketplace's buyNFT in a single transaction. Currently supports BTC↔MUSD pairs (MEZO has no DEX pool).",
+                href: "https://github.com/prajalsharma/veNFT-marketplace/blob/main/contracts/core/SwapPaymentRouter.sol",
                 accentColor: "#FF0040",
               },
             ].map((c, i) => (

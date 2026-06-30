@@ -29,6 +29,8 @@ The Mezo veNFT Marketplace provides a secondary liquidity layer for locked Bitco
 - **List** veBTC and veMEZO positions for sale at any price in BTC, MEZO, or MUSD
 - **Browse** all active listings with real-time intrinsic value, voting power, lock expiry, and discount percentage
 - **Buy** listed positions with a single atomic transaction — NFT and payment swap simultaneously
+- **Bid** — make an offer on any veNFT; the owner accepts it on-chain. Your funds stay in your wallet (only an approval is held) until a bid is accepted
+- **Pay in any token** — buy a listing priced in one currency using another; the swap routes automatically through Mezo's Velodrome DEX
 - **Cancel** listings at any time with no penalty
 - **View** full position details: locked amount, voting weight (with decay), time remaining, price-to-value ratio
 
@@ -54,6 +56,21 @@ Four modular smart contracts — adapted from the OpenXSwap audited pattern for 
 | **`MezoVeNFTAdapter`** | Read-only veNFT value queries (locked amount, decay, voting power) | [contracts/adapters/MezoVeNFTAdapter.sol](./contracts/adapters/MezoVeNFTAdapter.sol) |
 | **`PaymentRouter`** | BTC/MEZO/MUSD payment routing with fee split | [contracts/core/PaymentRouter.sol](./contracts/core/PaymentRouter.sol) |
 | **`MarketplaceAdmin`** | Governance, emergency pause, timelocked fee management | [contracts/core/MarketplaceAdmin.sol](./contracts/core/MarketplaceAdmin.sol) |
+
+### v2 Modules
+
+Additive contracts deployed on top of the core marketplace (the core is unchanged):
+
+| Contract | Role | Mainnet |
+|:---|:---|:---|
+| **`VeNFTBidding`** | On-chain offers/bids — escrowless; `acceptBid` settles the fee split directly | `0xef35dc538b50549e95687a51e8aa542D485ea384` |
+| **`SwapPaymentRouter`** | Pay-with-any-token — swaps via Mezo's Velodrome DEX, then `buyNFT` | `0x638Bab65738bA7BcD47D3c1d6Cb4eaf6CC872617` |
+
+**Bidding flow:** bidder approves the bidding contract → `createBid` (funds stay in wallet) → the NFT owner calls `acceptBid`, which atomically transfers the NFT and pulls payment, routing the protocol fee to the treasury. No escrow.
+
+**Swap flow:** buyer calls `swapAndBuy` → the router swaps their token → the listing's quote token through the Velodrome BTC/MUSD pool (pool-direct, no oracle), then calls the marketplace's `buyNFT` and forwards the NFT. Single transaction. (MEZO has no DEX pool, so MEZO-priced listings are paid in MEZO directly.)
+
+> Listings & activity are served by a **Goldsky subgraph** indexer (`subgraph/`) when `SUBGRAPH_URL` is configured, with an automatic on-chain fallback.
 
 ### Deployment Order
 
