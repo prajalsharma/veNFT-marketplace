@@ -136,12 +136,29 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // FAILSAFE: never surface more than one active listing for the same NFT.
+    // The marketplace contract flips the old listing to active=false on
+    // cancel / buy / re-list, so each token should have exactly one active slot
+    // (verified on-chain: cancelled slots read active=false and are already
+    // dropped above). But as belt-and-suspenders, if a stale active flag ever
+    // slipped through, keep only the most-recently-created listing per
+    // (collection, tokenId) — a cancelled/older slot can never leak into the grid.
+    const latestByToken = new Map<string, Raw>();
+    for (const l of rawActive) {
+      const key = `${l.collKey}:${l.tokenId.toString()}`;
+      const prev = latestByToken.get(key);
+      if (!prev || l.createdAt > prev.createdAt || (l.createdAt === prev.createdAt && l.slot > prev.slot)) {
+        latestByToken.set(key, l);
+      }
+    }
+    const deduped = [...latestByToken.values()];
+
     // 3. enrich + filter each active listing: ownerOf (stale check) + intrinsic
     //    value (empty check) + grant flags. A listing survives only when the
     //    seller still owns it AND it has non-zero value — fully resolved here, so
     //    the client never sees an optimistic intermediate count.
     const enriched = await Promise.all(
-      rawActive.map(async (l) => {
+      deduped.map(async (l) => {
         const collection = l.collKey === "veBTC" ? VEBTC[network] : VEMEZO[network];
         const tokenArg = l.tokenId.toString(16).padStart(64, "0");
         const ivArg = collection.slice(2).toLowerCase().padStart(64, "0") + tokenArg;
