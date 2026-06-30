@@ -12,7 +12,7 @@ dataSources:
     source:
       address: "0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570"
       abi: VeNFTMarketplace
-      startBlock: 0
+      startBlock: 7808472 # VeNFTMarketplace deploy block (verified on-chain)
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -42,7 +42,7 @@ dataSources:
       # after you run the v2 deploy. Current placeholder is the existing one.
       address: "0xB61Ff06218D9784D71072ebc6921C682751cba3C"
       abi: VeNFTBidding
-      startBlock: 0
+      startBlock: 9413536 # current bidding deploy block — UPDATE to the redeployed address + block after the v2 deploy
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

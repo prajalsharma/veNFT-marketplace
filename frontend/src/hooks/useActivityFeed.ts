@@ -118,6 +118,80 @@ async function fetchLogsChunked(
   return allLogs as any;
 }
 
+// ── Subgraph activity (preferred when NEXT_PUBLIC_SUBGRAPH_URL is set) ────────
+// One GraphQL query instead of chunked getLogs — dodges Mezo's getLogs block
+// limit entirely. Intrinsic value is still read live per token for the discount.
+async function fetchActivityFromSubgraph(
+  url: string,
+  limit: number,
+  chainId: number,
+  adapter: string,
+  veBTC: string,
+  musd: string,
+): Promise<ActivityEvent[]> {
+  const query = `{ activityEvents(first: ${limit}, orderBy: timestamp, orderDirection: desc, where: { type_in: ["listed","sale","cancelled"] }) {
+    type listingId collection tokenId price paymentToken from to blockNumber timestamp txHash
+  } }`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error(`subgraph ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error("subgraph query error");
+  const rows = json.data.activityEvents as Record<string, string>[];
+
+  // Intrinsic value per unique (collection, tokenId) for the discount column.
+  const ivMap = new Map<string, bigint>();
+  const lockMap = new Map<string, bigint>();
+  const pairs = Array.from(new Set(rows.map((r) => `${r.collection.toLowerCase()}:${r.tokenId}`)))
+    .map((k) => { const [c, t] = k.split(":"); return { key: k, collection: c, tokenId: BigInt(t) }; });
+  const ivResults = await Promise.allSettled(
+    pairs.map((p) =>
+      withFallback(chainId, (client) =>
+        client.readContract({
+          address: adapter as `0x${string}`,
+          abi: ADAPTER_ABI_IV,
+          functionName: "getIntrinsicValue",
+          args: [p.collection as `0x${string}`, p.tokenId],
+        })
+      )
+    )
+  );
+  pairs.forEach((p, i) => {
+    const r = ivResults[i];
+    if (r.status === "fulfilled") {
+      const [amount, lockEnd] = r.value as [bigint, bigint];
+      ivMap.set(p.key, amount);
+      lockMap.set(p.key, lockEnd);
+    }
+  });
+
+  return rows.map((r) => {
+    const collLower = r.collection.toLowerCase();
+    const isVeBTC = collLower === veBTC.toLowerCase();
+    const key = `${collLower}:${r.tokenId}`;
+    const iv = ivMap.get(key) ?? 0n;
+    const priceWei = BigInt(r.price ?? "0");
+    const nftTokenAddr = isVeBTC ? BTC_ADDR : MEZO_ADDR;
+    return {
+      type: r.type as "sale" | "listed" | "cancelled",
+      listingId: BigInt(r.listingId ?? "0"),
+      collection: isVeBTC ? "veBTC" : "veMEZO",
+      tokenId: BigInt(r.tokenId),
+      price: parseFloat(formatEther(priceWei)).toFixed(4),
+      paymentToken: getPaymentSymbol(r.paymentToken ?? "", musd),
+      discountBps: computeDiscountBpsNumber(iv, nftTokenAddr, priceWei, r.paymentToken ?? "", lockMap.get(key)),
+      from: r.from ?? "",
+      to: r.to ?? null,
+      blockNumber: BigInt(r.blockNumber),
+      transactionHash: r.txHash,
+      timestamp: r.timestamp ? Number(r.timestamp) * 1000 : null,
+    } as ActivityEvent;
+  });
+}
+
 export function useActivityFeed(limit = 50) {
   const { contracts, chainId } = useNetwork();
   const publicClient = usePublicClient();
@@ -139,6 +213,21 @@ export function useActivityFeed(limit = 50) {
       setError(null);
 
       try {
+        // Preferred: read activity from the subgraph index (one query, no getLogs
+        // block-limit). Falls through to the on-chain scan if unset or it fails.
+        const subUrl = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
+        if (subUrl) {
+          try {
+            const evs = await fetchActivityFromSubgraph(
+              subUrl, limit, chainId, contracts.adapter, contracts.veBTC, contracts.MUSD
+            );
+            if (!cancelled) setEvents(evs);
+            return;
+          } catch {
+            // fall through to getLogs
+          }
+        }
+
         // Get current block number via fallback-aware client
         const latestBlock = await withFallback(chainId, (client) =>
           client.getBlockNumber()
