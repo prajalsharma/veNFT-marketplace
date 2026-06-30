@@ -11,8 +11,11 @@ coverage/
 coverage.json
 
 
-# Environment
-# !.env.example  # Removed by Orchids to allow .env files
+# Environment — NEVER commit real secrets / private keys
+.env
+.env.local
+.env.*.local
+# (.env.example and .env.mainnet.example are templates with no secrets — kept tracked)
 .vscode/
 *.swp
 *.swo
