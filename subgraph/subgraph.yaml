@@ -8,7 +8,7 @@ dataSources:
     # Goldsky network slug for Mezo mainnet. Confirm the exact slug in the Goldsky
     # dashboard (custom-chain). startBlock = the marketplace's deploy block (set it
     # to avoid syncing from genesis — see README).
-    network: mezo-mainnet
+    network: mezo
     source:
       address: "0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570"
       abi: VeNFTMarketplace
@@ -36,7 +36,7 @@ dataSources:
 
   - kind: ethereum
     name: VeNFTBidding
-    network: mezo-mainnet
+    network: mezo
     source:
       # Redeployed VeNFTBidding (the acceptBid self-routing fix), live on mainnet.
       address: "0xef35dc538b50549e95687a51e8aa542D485ea384"
