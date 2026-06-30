@@ -289,21 +289,33 @@ export default function MarketplaceClient() {
     const veBTC = active.filter((l) => l.collection === "veBTC");
     const veMEZO = active.filter((l) => l.collection === "veMEZO");
 
-    let veBTCFloor = "—";
-    if (veBTC.length) {
-      const min = veBTC.reduce((m, l) => (l.price < m ? l.price : m), veBTC[0].price);
-      const sym = getPaymentTokenSymbol(veBTC.find((l) => l.price === min)!.paymentToken);
-      veBTCFloor = `${parseFloat(formatEther(min)).toFixed(4)} ${sym}`;
-    }
-
-    let veMEZOFloor = "—";
-    if (veMEZO.length) {
-      const min = veMEZO.reduce((m, l) => (l.price < m ? l.price : m), veMEZO[0].price);
-      const sym = getPaymentTokenSymbol(veMEZO.find((l) => l.price === min)!.paymentToken);
-      const v = parseFloat(formatEther(min));
-      const fmt = v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(4);
-      veMEZOFloor = `${fmt} ${sym}`;
-    }
+    // Floor = the cheapest listing by USD value. Listings can be priced in BTC,
+    // MEZO, or MUSD, so comparing raw price numbers across currencies is wrong (it
+    // would rank a 0.05 BTC listing below an 80,000 MEZO one). Normalise to USD via
+    // the live price ticker, pick the cheapest, then show it in its own currency.
+    const usdOf = (l: Listing): number | null => {
+      const sym = getPaymentTokenSymbol(l.paymentToken);
+      const unit = prices[sym];
+      if (!unit || unit <= 0) return null;
+      return parseFloat(formatEther(l.price)) * unit;
+    };
+    const floorLabel = (group: Listing[]): string => {
+      const priced = group
+        .map((l) => ({ l, usd: usdOf(l) }))
+        .filter((x): x is { l: Listing; usd: number } => x.usd !== null);
+      if (!priced.length) return "—";
+      const cheapest = priced.reduce((a, b) => (b.usd < a.usd ? b : a)).l;
+      const sym = getPaymentTokenSymbol(cheapest.paymentToken);
+      const v = parseFloat(formatEther(cheapest.price));
+      const fmt =
+        v >= 1e6 ? `${(v / 1e6).toFixed(2)}M`
+        : v >= 1000 ? `${(v / 1000).toFixed(1)}k`
+        : v < 1 ? v.toFixed(4)
+        : v.toFixed(2);
+      return `${fmt} ${sym}`;
+    };
+    const veBTCFloor = floorLabel(veBTC);
+    const veMEZOFloor = floorLabel(veMEZO);
 
     // Avg discount from HISTORICAL SALES only (not open listings) — gives buyers
     // an accurate picture of what past trades actually cleared at.
@@ -328,7 +340,7 @@ export default function MarketplaceClient() {
     }
 
     return { veBTCFloor, veMEZOFloor, avgDiscount, tradeCount };
-  }, [searchableListings, activityEvents, listingsLoading]);
+  }, [searchableListings, activityEvents, listingsLoading, prices]);
 
   const activeFilterCount = [
     filters.collectionFilter !== "all",
