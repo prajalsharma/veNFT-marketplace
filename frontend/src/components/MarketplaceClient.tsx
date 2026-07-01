@@ -42,11 +42,11 @@ function StatBar({
   color: string;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <span className="eyebrow">{label}</span>
       <span
-        className="text-sm font-bold tabular-nums"
-        style={{ color, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}
+        className="text-[19px] font-bold tabular-nums leading-none"
+        style={{ color, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em" }}
       >
         {value}
       </span>
@@ -92,10 +92,10 @@ function EmptyState({ variant }: { variant: EmptyVariant }) {
         <Search style={{ width: 18, height: 18, color: "var(--text-3)" }} />
       </div>
       <div>
-        <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
+        <h3 className="text-lg font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
           {title}
         </h3>
-        <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
+        <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
           {body}
         </p>
       </div>
@@ -388,7 +388,7 @@ export default function MarketplaceClient() {
                 Secondary liquidity.
               </h1>
               <p
-                className="text-sm"
+                className="text-[15px] leading-relaxed"
                 style={{ color: "var(--text-2)", maxWidth: "52ch" }}
               >
                 Acquire locked governance positions from the Mezo ecosystem at market rates.
@@ -548,7 +548,7 @@ export default function MarketplaceClient() {
             transition={{ delay: 0.3, duration: 0.4 }}
             className="flex items-center gap-4 mb-6 px-1"
           >
-            <p className="text-xs font-medium" style={{ color: "var(--text-3)" }}>
+            <p className="text-[13px] font-medium" style={{ color: "var(--text-2)" }}>
               <span style={{ color: "var(--text-1)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                 {filteredListings.length}
               </span>{" "}
@@ -572,11 +572,11 @@ export default function MarketplaceClient() {
               Taste-skill: ban 3-col equal grid — use responsive cols that allow
               visual variation. AnimatePresence + layout for smooth re-order. */}
           {showSkeletons ? (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
               {[...Array(6)].map((_, i) => <VeNFTCardSkeleton key={i} />)}
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 stagger">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
               <AnimatePresence mode="popLayout">
                 {filteredListings.map((listing) => (
                   <VeNFTCard

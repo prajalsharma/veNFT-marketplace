@@ -109,7 +109,7 @@ function UserListingItem({
               </span>
             </p>
             <p
-              className="text-[10px] font-bold tabular-nums mt-0.5"
+              className="text-[12px] font-bold tabular-nums mt-0.5"
               style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
             >
               {Number(formatEther(listing.price)).toFixed(4)}{" "}
@@ -120,7 +120,7 @@ function UserListingItem({
 
         <div className="flex items-center gap-3">
           <div
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-black uppercase tracking-widest"
             style={{
               background: "rgba(16,185,129,0.08)",
               border: "1px solid rgba(16,185,129,0.2)",
@@ -132,7 +132,7 @@ function UserListingItem({
           <button
             onClick={() => cancelListing(listingId)}
             disabled={isPending || isConfirming}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-bold transition-all disabled:opacity-50"
             style={{
               background: "rgba(239,68,68,0.08)",
               color: "#EF4444",
@@ -188,7 +188,7 @@ function IncomingBidsForListing({
         style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(74,144,226,0.04)" }}
       >
         <Gavel style={{ width: 12, height: 12, color: "#4A90E2" }} />
-        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#4A90E2" }}>
+        <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: "#4A90E2" }}>
           {bids.length} incoming bid{bids.length !== 1 ? "s" : ""} — Listing #{listingId}
         </span>
       </div>
@@ -208,11 +208,11 @@ function IncomingBidsForListing({
           return (
             <div key={bid.id.toString()} className="flex items-center justify-between px-4 py-2.5">
               <div>
-                <p className="text-xs font-mono" style={{ color: "var(--text-2)" }}>
+                <p className="text-[13px] font-mono" style={{ color: "var(--text-2)" }}>
                   {(bid.bidder as string).slice(0, 6)}…{(bid.bidder as string).slice(-4)}
                 </p>
                 <p
-                  className="text-[10px] tabular-nums mt-0.5"
+                  className="text-[12px] tabular-nums mt-0.5"
                   style={{ color: isExpired ? "#EF4444" : "#10B981", fontVariantNumeric: "tabular-nums" }}
                 >
                   {expiryLabel}
@@ -295,7 +295,7 @@ function WalletNFTCard({
                 #{nft.tokenId.toString()}
               </span>
             </div>
-            <p className="text-[10px]" style={{ color: "var(--text-3)" }}>
+            <p className="text-[12px]" style={{ color: "var(--text-3)" }}>
               Ready to list
             </p>
           </div>
@@ -319,7 +319,7 @@ function WalletNFTCard({
               <TrendingDown style={{ width: 10, height: 10, color: "var(--text-3)" }} />
               <span className="eyebrow">Locked</span>
             </div>
-            <p className="text-xs font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[13px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formattedIV}{" "}
               <span style={{ color: "var(--text-3)", fontWeight: 400 }}>{isVeBTC ? "BTC" : "MEZO"}</span>
             </p>
@@ -329,7 +329,7 @@ function WalletNFTCard({
               <Zap style={{ width: 10, height: 10, color: accentColor }} />
               <span className="eyebrow">Vote Pwr</span>
             </div>
-            <p className="text-xs font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[13px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formattedVP}
             </p>
           </div>
@@ -338,7 +338,7 @@ function WalletNFTCard({
               <Clock style={{ width: 10, height: 10, color: "var(--text-3)" }} />
               <span className="eyebrow">Lock Ends</span>
             </div>
-            <p className="text-xs font-semibold">{lockLabel}</p>
+            <p className="text-[13px] font-semibold">{lockLabel}</p>
           </div>
         </div>
 
@@ -346,10 +346,10 @@ function WalletNFTCard({
           onClick={() => onList(nft)}
           whileTap={{ y: 1, scale: 0.985 }}
           transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-bold"
           style={{
-            background: "#ffffff",
-            color: "#0a0a0a",
+            background: "var(--text-1)",
+            color: "var(--bg)",
             transition: "background 180ms cubic-bezier(0.16,1,0.3,1), color 180ms cubic-bezier(0.16,1,0.3,1)",
           }}
           onMouseEnter={(e) => {
@@ -357,8 +357,8 @@ function WalletNFTCard({
             (e.currentTarget as HTMLElement).style.color = "#fff";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = "#ffffff";
-            (e.currentTarget as HTMLElement).style.color = "#0a0a0a";
+            (e.currentTarget as HTMLElement).style.background = "var(--text-1)";
+            (e.currentTarget as HTMLElement).style.color = "var(--bg)";
           }}
         >
           <Plus style={{ width: 13, height: 13 }} />
@@ -390,7 +390,7 @@ function ConnectPrompt() {
           <h1 className="display-lg mb-3" style={{ color: "var(--text-1)" }}>
             Connect wallet.
           </h1>
-          <p className="text-sm mb-6" style={{ color: "var(--text-2)", maxWidth: "42ch" }}>
+          <p className="text-[15px] leading-relaxed mb-6" style={{ color: "var(--text-2)", maxWidth: "42ch" }}>
             Connect your wallet to manage listed veNFTs and view your trading history.
           </p>
           <ConnectButton />
@@ -439,7 +439,7 @@ export default function MyListingsClient() {
             <h1 className="display-lg mb-2" style={{ color: "var(--text-1)" }}>
               Your positions.
             </h1>
-            <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
+            <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
               Monitor and manage your active sell orders and unlisted positions.
             </p>
           </motion.div>
@@ -470,7 +470,7 @@ export default function MyListingsClient() {
                 <span className="eyebrow" style={{ color: "var(--text-2)" }}>Active Sell Orders</span>
                 {activeListingCount > 0 && (
                   <span
-                    className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                    className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded"
                     style={{ background: "rgba(247,147,26,0.1)", color: "#F7931A", fontVariantNumeric: "tabular-nums" }}
                   >
                     {activeListingCount}
@@ -505,10 +505,10 @@ export default function MyListingsClient() {
                     <Tag style={{ width: 16, height: 16, color: "var(--text-3)" }} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
+                    <h3 className="text-base font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
                       No active listings
                     </h3>
-                    <p className="text-xs" style={{ color: "var(--text-3)", maxWidth: "40ch" }}>
+                    <p className="text-[13px]" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
                       List a veNFT from your wallet below to start selling.
                     </p>
                   </div>
@@ -538,7 +538,7 @@ export default function MyListingsClient() {
                 <span className="eyebrow" style={{ color: "var(--text-2)" }}>In Your Wallet</span>
                 {walletVeNFTs.length > 0 && (
                   <span
-                    className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                    className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded"
                     style={{ background: "rgba(74,144,226,0.1)", color: "#4A90E2", fontVariantNumeric: "tabular-nums" }}
                   >
                     {walletVeNFTs.length}
@@ -585,10 +585,10 @@ export default function MyListingsClient() {
                     <Wallet style={{ width: 16, height: 16, color: "var(--text-3)" }} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
+                    <h3 className="text-base font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
                       No veNFTs found
                     </h3>
-                    <p className="text-xs" style={{ color: "var(--text-3)", maxWidth: "40ch" }}>
+                    <p className="text-[13px]" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
                       No veBTC or veMEZO positions detected in this wallet.
                     </p>
                   </div>
@@ -633,9 +633,9 @@ export default function MyListingsClient() {
                   { label: "Protocol Fee", value: "1.00%", color: "var(--text-2)" },
                 ].map((s) => (
                   <div key={s.label} className="flex items-center justify-between">
-                    <span className="text-xs" style={{ color: "var(--text-3)" }}>{s.label}</span>
+                    <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{s.label}</span>
                     <span
-                      className="text-xs font-bold tabular-nums"
+                      className="text-[13px] font-bold tabular-nums"
                       style={{ color: s.color, fontVariantNumeric: "tabular-nums" }}
                     >
                       {s.value}
@@ -668,7 +668,7 @@ export default function MyListingsClient() {
                     <ShieldCheck
                       style={{ width: 13, height: 13, color: "#10B981", flexShrink: 0, marginTop: 1 }}
                     />
-                    <span className="text-xs leading-relaxed" style={{ color: "var(--text-3)" }}>
+                    <span className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                       {note}
                     </span>
                   </li>

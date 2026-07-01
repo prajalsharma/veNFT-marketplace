@@ -94,7 +94,7 @@ function ContractCard({
         >
           {title}
         </h4>
-        <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>
+        <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
           {description}
         </p>
       </div>
@@ -146,10 +146,10 @@ function IntroCard({
       >
         <Icon style={{ width: 18, height: 18, color: accentColor }} />
       </div>
-      <h3 className="text-sm font-bold mb-2" style={{ letterSpacing: "-0.025em", color: "var(--text-1)" }}>
+      <h3 className="text-[15px] font-bold mb-2" style={{ letterSpacing: "-0.025em", color: "var(--text-1)" }}>
         {title}
       </h3>
-      <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>
+      <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
         {description}
       </p>
     </motion.div>
@@ -369,7 +369,7 @@ export default function DocsClient() {
               ].map((check) => (
                 <div key={check} className="flex items-start gap-2.5">
                   <CheckCircle2 style={{ width: 12, height: 12, color: "#10B981", flexShrink: 0, marginTop: 2 }} />
-                  <span className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>{check}</span>
+                  <span className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>{check}</span>
                 </div>
               ))}
             </div>
@@ -434,7 +434,7 @@ export default function DocsClient() {
                         <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-1)" }}>
                           {item.title}
                         </p>
-                        <p className="text-xs leading-relaxed" style={{ color: "var(--text-2)" }}>
+                        <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                           {item.desc}
                         </p>
                       </div>
@@ -519,7 +519,7 @@ export default function DocsClient() {
             <h2 className="display-md mb-4" style={{ color: "var(--text-1)" }}>
               Contribute to<br />the Ecosystem.
             </h2>
-            <p className="text-sm leading-relaxed mb-8" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
+            <p className="text-[15px] leading-relaxed mb-8" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
               Vezo is fully open-source. Explore the contracts, report bugs, suggest improvements, or fork and adapt for new ecosystems.
             </p>
             <div className="flex flex-wrap gap-3">

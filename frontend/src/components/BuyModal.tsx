@@ -131,7 +131,7 @@ function StepPill({
 
   return (
     <div
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold"
       style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color }}
     >
       {state === "done" ? (
@@ -175,12 +175,12 @@ function AlertBlock({
       className="flex gap-3 p-4 rounded-xl"
       style={{ background: palette.bg, border: `1px solid ${palette.border}` }}
     >
-      <Icon style={{ width: 16, height: 16, color: palette.color, flexShrink: 0, marginTop: 1 }} />
+      <Icon style={{ width: 17, height: 17, color: palette.color, flexShrink: 0, marginTop: 1 }} />
       <div>
-        <p className="text-xs font-semibold mb-0.5" style={{ color: palette.color }}>
+        <p className="text-[13px] font-semibold mb-1" style={{ color: palette.color }}>
           {title}
         </p>
-        <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+        <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
           {body}
         </p>
       </div>
@@ -250,22 +250,22 @@ function CrossCurrencyNote({
         <p className="text-[11px] font-bold" style={{ color: "#4A90E2" }}>USD Context</p>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-        <span className="text-[10px]" style={{ color: "var(--text-3)" }}>You pay</span>
-        <span className="text-[10px] font-bold tabular-nums text-right" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+        <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>You pay</span>
+        <span className="text-[11.5px] font-bold tabular-nums text-right" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
           {formatUSD(priceUSD)}
         </span>
         {ivUSD !== null && (
           <>
-            <span className="text-[10px]" style={{ color: "var(--text-3)" }}>Intrinsic value</span>
-            <span className="text-[10px] font-bold tabular-nums text-right" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+            <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>Intrinsic value</span>
+            <span className="text-[11.5px] font-bold tabular-nums text-right" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
               {formatUSD(ivUSD)}
             </span>
           </>
         )}
         {discountUSD !== null && discountUSD > 0 && (
           <>
-            <span className="text-[10px]" style={{ color: "var(--text-3)" }}>Implied discount</span>
-            <span className="text-[10px] font-bold tabular-nums text-right" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
+            <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>Implied discount</span>
+            <span className="text-[11.5px] font-bold tabular-nums text-right" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
               {discountUSD.toFixed(1)}% off
             </span>
           </>
@@ -275,13 +275,13 @@ function CrossCurrencyNote({
       {/* Cross-currency breakdown */}
       {crossRows.length > 0 && (
         <div className="pt-2 mt-2 space-y-1.5" style={{ borderTop: "1px solid rgba(74,144,226,0.14)" }}>
-          <p className="text-[9.5px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+          <p className="text-[10.5px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
             Equivalent in other currencies
           </p>
           {crossRows.map((row, i) => (
             <div key={row.sym} className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold w-8" style={{ color: "var(--text-3)" }}>{row.sym}</span>
+                <span className="text-[11.5px] font-bold w-8" style={{ color: "var(--text-3)" }}>{row.sym}</span>
                 {i === bestIdx && (
                   <span className="text-[8px] font-black uppercase px-1 py-0.5 rounded" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>
                     best
@@ -289,11 +289,11 @@ function CrossCurrencyNote({
                 )}
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+                <span className="text-[11.5px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
                   {row.amt}
                 </span>
                 {row.disc && (
-                  <span className="ml-1.5 text-[9.5px] font-bold" style={{ color: "#10B981" }}>
+                  <span className="ml-1.5 text-[10.5px] font-bold" style={{ color: "#10B981" }}>
                     {row.disc}% off IV
                   </span>
                 )}
@@ -318,12 +318,12 @@ function SwapNote({ paySymbol }: { paySymbol: string }) {
       <div className="flex items-start gap-2.5">
         <ArrowLeftRight style={{ width: 13, height: 13, color: "#FF0040", flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p className="text-[11px] font-bold mb-0.5" style={{ color: "#FF0040" }}>
+          <p className="text-[12.5px] font-bold mb-1" style={{ color: "#FF0040" }}>
             Don&apos;t have {paySymbol}?
           </p>
-          <p className="text-[10px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+          <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-2)" }}>
             The on-chain swap router lets you pay with{" "}
-            <span style={{ color: "var(--text-2)", fontWeight: 600 }}>
+            <span style={{ color: "var(--text-1)", fontWeight: 600 }}>
               {otherTokens.join(" or ")}
             </span>{" "}
             — it swaps to the listed currency automatically and adds a small routing
@@ -558,7 +558,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
               style={{ borderBottom: "1px solid var(--border-subtle)" }}
             >
               <div>
-                <h2 className="text-base font-semibold" style={{ letterSpacing: "-0.02em" }}>
+                <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
                   Buy {listing.collection}{" "}
                   <span
                     className="tabular-nums"
@@ -567,7 +567,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     #{listing.tokenId.toString()}
                   </span>
                 </h2>
-                <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
+                <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
                   {isNative
                     ? "Single transaction — pay and receive NFT atomically."
                     : alreadyApproved
@@ -597,11 +597,11 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     label: "You pay",
                     value: (
                       <span
-                        className="tabular-nums font-bold"
+                        className="tabular-nums font-bold text-[16px]"
                         style={{ fontVariantNumeric: "tabular-nums" }}
                       >
                         {formattedPrice}{" "}
-                        <span className="text-[10px] font-semibold" style={{ color: "var(--text-3)" }}>
+                        <span className="text-[12px] font-semibold" style={{ color: "var(--text-2)" }}>
                           {paymentSymbol}
                         </span>
                       </span>
@@ -628,8 +628,8 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     color: "var(--text-3)",
                   },
                 ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between items-center text-xs">
-                    <span style={{ color: "var(--text-3)" }}>{label}</span>
+                  <div key={label} className="flex justify-between items-center text-[13.5px]">
+                    <span style={{ color: "var(--text-2)" }}>{label}</span>
                     {value}
                   </div>
                 ))}

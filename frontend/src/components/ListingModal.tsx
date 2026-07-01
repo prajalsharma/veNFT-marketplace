@@ -140,7 +140,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
               style={{ borderBottom: "1px solid var(--border-subtle)" }}
             >
               <div>
-                <h2 className="text-base font-semibold" style={{ letterSpacing: "-0.02em" }}>
+                <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
                   List {veNFT.collection}{" "}
                   <span
                     className="tabular-nums"
@@ -149,7 +149,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     #{veNFT.tokenId.toString()}
                   </span>
                 </h2>
-                <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
+                <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
                   Configure your secondary market listing.
                 </p>
               </div>
@@ -182,9 +182,9 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     className="p-4 rounded-xl"
                     style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
                   >
-                    <p className="eyebrow mb-1">{stat.label}</p>
+                    <p className="eyebrow mb-1.5">{stat.label}</p>
                     <p
-                      className="text-sm font-bold tabular-nums"
+                      className="text-[16px] font-bold tabular-nums"
                       style={{ fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}
                     >
                       {stat.value}
@@ -199,7 +199,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   <label className="eyebrow">Set Asking Price</label>
                   {price && discount > 0 && (
                     <span
-                      className="text-[10px] font-bold tabular-nums"
+                      className="text-[11.5px] font-bold tabular-nums"
                       style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}
                     >
                       {discount.toFixed(1)}% discount vs spot
@@ -230,7 +230,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                       <button
                         key={token.symbol}
                         onClick={() => setPaymentToken(token.symbol)}
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all"
+                        className="px-3 py-1.5 rounded-lg text-[11.5px] font-black transition-all"
                         style={{
                           background:
                             paymentToken === token.symbol ? "#FF0040" : "var(--bg-3)",
@@ -262,10 +262,10 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                 >
                   <GitMerge style={{ width: 14, height: 14, color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <p className="text-xs font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
+                    <p className="text-[13px] font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
                       Grant NFT — Cannot be Merged or Split
                     </p>
-                    <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                    <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                       This position was distributed as a grant. It can be listed and sold normally, but merge and split operations are disabled on-chain.
                     </p>
                   </div>
@@ -282,10 +282,10 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
               >
                 <ShieldCheck style={{ width: 15, height: 15, color: "#FF0040", flexShrink: 0, marginTop: 1 }} />
                 <div>
-                  <p className="text-xs font-semibold mb-0.5" style={{ letterSpacing: "-0.01em" }}>
+                  <p className="text-[13px] font-semibold mb-0.5" style={{ letterSpacing: "-0.01em" }}>
                     Escrowless Listing
                   </p>
-                  <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                  <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-3)" }}>
                     The NFT stays in your wallet. You keep earning rewards and voting power until the moment it is sold.
                   </p>
                 </div>
@@ -298,7 +298,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   style={{ background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.18)" }}
                 >
                   <CheckCircle2 style={{ width: 13, height: 13, color: "#10B981" }} />
-                  <span className="text-[11px] font-semibold" style={{ color: "#10B981" }}>
+                  <span className="text-[12.5px] font-semibold" style={{ color: "#10B981" }}>
                     Marketplace approved — ready to list
                   </span>
                 </div>
@@ -318,7 +318,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     }}
                   >
                     <AlertCircle style={{ width: 14, height: 14, color: "#EF4444", flexShrink: 0, marginTop: 1 }} />
-                    <p className="text-[11px] leading-relaxed" style={{ color: "#EF4444" }}>
+                    <p className="text-[12.5px] leading-relaxed" style={{ color: "#EF4444" }}>
                       {txError}
                     </p>
                   </motion.div>
@@ -336,7 +336,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     }}
                   >
                     <CheckCircle2 style={{ width: 14, height: 14, color: "#10B981", flexShrink: 0, marginTop: 1 }} />
-                    <p className="text-xs font-semibold" style={{ color: "#10B981" }}>
+                    <p className="text-[13px] font-semibold" style={{ color: "#10B981" }}>
                       Listing successfully created!
                     </p>
                   </motion.div>

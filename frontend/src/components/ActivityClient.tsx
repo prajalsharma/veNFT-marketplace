@@ -46,7 +46,7 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
   if (discountBps === null) return <span style={{ color: "var(--text-3)" }}>—</span>;
   if (discountBps === 0) return (
     <span
-      className="text-[10px] font-bold tabular-nums"
+      className="text-[11.5px] font-bold tabular-nums"
       style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
     >
       Par
@@ -56,7 +56,7 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
   if (discountBps > 0) {
     return (
       <span
-        className="text-[10px] font-black tabular-nums"
+        className="text-[11.5px] font-black tabular-nums"
         style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}
       >
         {pct}% off
@@ -65,7 +65,7 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
   }
   return (
     <span
-      className="text-[10px] font-black tabular-nums"
+      className="text-[11.5px] font-black tabular-nums"
       style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}
     >
       +{pct}% prem
@@ -85,7 +85,7 @@ function EventPill({ type }: { type: "sale" | "listed" | "cancelled" }) {
 
   return (
     <div
-      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11.5px] font-black uppercase tracking-widest"
       style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
     >
       <Icon style={{ width: 10, height: 10 }} />
@@ -111,10 +111,10 @@ function StateBlock({ icon: Icon, title, sub }: { icon: any; title: string; sub:
         <Icon style={{ width: 18, height: 18, color: "var(--text-3)" }} />
       </div>
       <div>
-        <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
+        <h3 className="text-lg font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
           {title}
         </h3>
-        <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
+        <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
           {sub}
         </p>
       </div>
@@ -155,7 +155,7 @@ function MobileActivityCard({ activity, explorer }: { activity: any; explorer: s
         </div>
         <div className="text-right shrink-0">
           <p className="text-[15px] font-bold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {activity.price}<span className="text-[10px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
+            {activity.price}<span className="text-[11.5px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
           </p>
           <div className="mt-0.5">{formatDiscount(activity.discountBps)}</div>
         </div>
@@ -185,7 +185,7 @@ export default function ActivityClient() {
             <h1 className="display-lg mb-2" style={{ color: "var(--text-1)" }}>
               Global activity.
             </h1>
-            <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
+            <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
               Real-time trading and listing history on Mezo{" "}
               {network === "testnet" ? "Testnet" : "Mainnet"}.
             </p>
@@ -197,7 +197,7 @@ export default function ActivityClient() {
             transition={{ delay: 0.2, duration: 0.4 }}
             className="flex items-center gap-4 pb-1"
           >
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest" style={{ color: "#10B981" }}>
+            <div className="flex items-center gap-2 text-[10.5px] font-black uppercase tracking-widest" style={{ color: "#10B981" }}>
               <ShieldCheckIcon style={{ width: 11, height: 11 }} />
               On-chain verified
             </div>
@@ -206,7 +206,7 @@ export default function ActivityClient() {
               href={contracts.explorer}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[10px] font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold transition-colors"
               style={{ color: "var(--text-3)" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -317,7 +317,7 @@ export default function ActivityClient() {
                           >
                             {activity.price}
                           </span>
-                          <span className="text-[10px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>
+                          <span className="text-[11.5px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>
                             {activity.paymentToken}
                           </span>
                         </td>
@@ -435,10 +435,10 @@ export default function ActivityClient() {
               <ShieldCheckIcon style={{ width: 14, height: 14, color: "#10B981" }} />
             </div>
             <div>
-              <p className="text-xs font-semibold" style={{ letterSpacing: "-0.01em" }}>
+              <p className="text-[13.5px] font-semibold" style={{ letterSpacing: "-0.01em" }}>
                 Verifiable Trading History
               </p>
-              <p className="text-[10px]" style={{ color: "var(--text-3)" }}>
+              <p className="text-[12px]" style={{ color: "var(--text-2)" }}>
                 Every transaction corresponds to an atomic on-chain event on the Mezo EVM.
               </p>
             </div>
