@@ -71,16 +71,16 @@
   --bg-5: #2a2a2a;
 
   /* Borders */
-  --border:        rgba(255,255,255,0.07);
-  --border-subtle: rgba(255,255,255,0.04);
-  --border-strong: rgba(255,255,255,0.13);
-  --border-accent: rgba(255,0,64,0.28);
+  --border:        rgba(255,255,255,0.10);
+  --border-subtle: rgba(255,255,255,0.065);
+  --border-strong: rgba(255,255,255,0.18);
+  --border-accent: rgba(255,0,64,0.30);
 
-  /* Typography */
-  --text-1: #f0f0f0;
-  --text-2: #858585;
-  --text-3: rgba(255,255,255,0.25);
-  --text-4: rgba(255,255,255,0.12);
+  /* Typography — text-2/3 lifted for readability on the near-black surface */
+  --text-1: #f2f2f2;
+  --text-2: #a3a3a3;
+  --text-3: rgba(255,255,255,0.46);
+  --text-4: rgba(255,255,255,0.22);
 
   /* Tinted cinematic shadows */
   --shadow-xs: 0 1px 4px rgba(0,0,0,0.4);
@@ -133,15 +133,17 @@
   --bg-4: #D8D1C6;
   --bg-5: #CCC4B8;
 
-  --border:        rgba(0,0,0,0.075);
-  --border-subtle: rgba(0,0,0,0.045);
-  --border-strong: rgba(0,0,0,0.13);
-  --border-accent: rgba(232,0,58,0.26);
+  --border:        rgba(0,0,0,0.12);
+  --border-subtle: rgba(0,0,0,0.075);
+  --border-strong: rgba(0,0,0,0.18);
+  --border-accent: rgba(232,0,58,0.30);
 
+  /* Text — all pass WCAG AA on the ivory surfaces.
+     text-1 21:1 · text-2 ~9:1 · text-3 ~4.9:1 (AA body) · text-4 decorative */
   --text-1: #0d0d0d;
-  --text-2: #606060;
-  --text-3: rgba(0,0,0,0.35);
-  --text-4: rgba(0,0,0,0.17);
+  --text-2: #474747;
+  --text-3: #6b6b6b;
+  --text-4: rgba(0,0,0,0.30);
 
   /* Warm tinted shadows */
   --shadow-xs: 0 1px 4px rgba(0,0,0,0.06);
@@ -300,12 +302,30 @@
   }
 
   .eyebrow {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 700;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--text-3);
     line-height: 1;
+  }
+
+  /* ── Readable body scale — floors raised so copy never drops below ~14px ── */
+  .body-lg {
+    font-size: 1.0625rem;      /* 17px */
+    line-height: 1.6;
+    color: var(--text-2);
+    letter-spacing: -0.005em;
+  }
+  .body {
+    font-size: 0.9375rem;      /* 15px */
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+  .body-sm {
+    font-size: 0.875rem;       /* 14px — smallest body copy allowed */
+    line-height: 1.55;
+    color: var(--text-2);
   }
 
   .label-mono {
@@ -782,17 +802,17 @@ select option {
   .marquee-track { animation: none; }
 }
 
-/* ─── NFT card — restrained, pure-CSS hover (no JS tilt/spotlight) ────────── */
+/* ─── NFT card — real presence (defined border + depth, not a ghost) ──────── */
 .nft-card {
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
   transition: transform 0.22s var(--ease-spring), border-color 0.22s ease, box-shadow 0.22s ease;
 }
 @media (hover: hover) {
   .nft-card:not(.nft-card--disabled):hover {
     transform: translateY(-3px);
-    border-color: var(--border-strong);
-    box-shadow: var(--shadow-md);
+    border-color: var(--border-accent);
+    box-shadow: var(--shadow-lg);
   }
 }
 .nft-card--disabled {

@@ -112,7 +112,7 @@ function FeatureRow({
         >
           {title}
         </h4>
-        <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "50ch" }}>
+        <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "50ch" }}>
           {desc}
         </p>
       </div>
@@ -350,7 +350,7 @@ export default function HomeClient() {
     <div className="relative min-h-[100dvh]">
 
       {/* ══ HERO ══ */}
-      <section className="relative pt-28 pb-16 lg:pt-44 lg:pb-32 px-4 md:px-8 overflow-hidden">
+      <section className="relative pt-24 pb-14 lg:pt-40 lg:pb-24 px-4 md:px-8 overflow-hidden">
 
         {/* Subtle grid */}
         <div aria-hidden className="absolute inset-0 pointer-events-none grid-overlay" />
@@ -480,8 +480,8 @@ export default function HomeClient() {
       </section>
 
       {/* ══ FEATURES ══ */}
-      <section className="py-28 px-4 md:px-8 relative">
-        <div className="max-w-[1400px] mx-auto mb-20">
+      <section className="py-20 px-4 md:px-8 relative">
+        <div className="max-w-[1400px] mx-auto mb-14">
           <div className="rule-fade" />
         </div>
 
@@ -501,7 +501,7 @@ export default function HomeClient() {
               <h2 className="display-lg mb-6" style={{ color: "var(--text-1)" }}>
                 Built on<br />security &<br />fairness.
               </h2>
-              <p className="text-sm leading-relaxed mb-8" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
+              <p className="text-[15px] leading-relaxed mb-8" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
                 The Mezo ecosystem needed a way to exit locked positions without surrendering voting rights until the final moment. Vezo makes that possible.
               </p>
 
@@ -570,14 +570,14 @@ export default function HomeClient() {
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
-      <section className="py-28 px-4 md:px-8">
+      <section className="py-20 px-4 md:px-8">
         <div className="max-w-[1400px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center mb-20"
+            className="text-center mb-14"
           >
             <div className="section-header justify-center mb-5">
               <span className="eyebrow">How it works</span>
@@ -585,34 +585,38 @@ export default function HomeClient() {
             <h2 className="display-lg mb-4" style={{ color: "var(--text-1)" }}>
               Everything you can do on Vezo.
             </h2>
-            <p className="text-sm mx-auto" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
+            <p className="text-[15px] leading-relaxed mx-auto" style={{ color: "var(--text-2)", maxWidth: "56ch" }}>
               Buy, sell, bid, or pay in any token. Every action settles atomically on-chain — you keep custody until the trade completes.
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 icon: ShoppingBag,
                 title: "Buy",
+                color: "#FF0040",
                 desc: "Purchase a listed veBTC or veMEZO at a market-set discount to its locked value.",
-                detail: "The NFT and your payment swap in one atomic transaction.",
+                detail: "NFT and payment swap in one atomic transaction.",
               },
               {
                 icon: Tag,
                 title: "Sell",
+                color: "#F7931A",
                 desc: "List your position at any price in BTC, MEZO, or MUSD. It stays in your wallet until it sells.",
                 detail: "Escrowless — cancel anytime, no penalty.",
               },
               {
                 icon: Gavel,
                 title: "Bid",
-                desc: "Don't see your price? Make an offer on any veNFT. The owner accepts it on-chain.",
-                detail: "Your funds stay in your wallet until a bid is accepted.",
+                color: "#10B981",
+                desc: "Don't see your price? Make an offer on any veNFT and the owner accepts it on-chain.",
+                detail: "Your funds stay put until a bid is accepted.",
               },
               {
                 icon: ArrowLeftRight,
                 title: "Pay in any token",
+                color: "#4A90E2",
                 desc: "Pay with BTC even when a listing is priced in MUSD — Vezo routes the swap for you.",
                 detail: "Converted through Mezo's on-chain DEX automatically.",
               },
@@ -625,23 +629,35 @@ export default function HomeClient() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="nft-card p-6 rounded-2xl"
+                  className="nft-card p-7 rounded-2xl relative overflow-hidden"
                   style={{ background: "var(--bg-1)" }}
                 >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: "rgba(255,0,64,0.08)", border: "1px solid rgba(255,0,64,0.16)" }}
+                  {/* Step number */}
+                  <span
+                    className="absolute top-6 right-6 text-[15px] font-black tabular-nums"
+                    style={{ color: item.color, fontVariantNumeric: "tabular-nums", opacity: 0.9 }}
                   >
-                    <Icon style={{ width: 18, height: 18, color: "#FF0040" }} />
+                    0{i + 1}
+                  </span>
+
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                    style={{ background: `${item.color}14`, border: `1px solid ${item.color}33` }}
+                  >
+                    <Icon style={{ width: 22, height: 22, color: item.color }} />
                   </div>
-                  <h3 className="text-[17px] font-bold mb-2" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
+                  <h3 className="text-[21px] font-bold mb-2.5" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
                     {item.title}
                   </h3>
-                  <p className="text-[13.5px] leading-relaxed mb-3" style={{ color: "var(--text-2)" }}>
+                  <p className="text-[15px] leading-relaxed mb-4" style={{ color: "var(--text-2)" }}>
                     {item.desc}
                   </p>
-                  <p className="text-[12px] leading-relaxed pt-3" style={{ color: "var(--text-3)", borderTop: "1px solid var(--border-subtle)" }}>
-                    {item.detail}
+                  <p
+                    className="text-[13.5px] leading-relaxed pt-4 flex items-start gap-2.5"
+                    style={{ color: "var(--text-3)", borderTop: "1px solid var(--border-subtle)" }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full mt-[6px] shrink-0" style={{ background: item.color }} />
+                    <span>{item.detail}</span>
                   </p>
                 </motion.div>
               );
@@ -658,7 +674,7 @@ export default function HomeClient() {
             style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
           >
             <ShieldCheck style={{ width: 18, height: 18, color: "#10B981", flexShrink: 0, marginTop: 1 }} />
-            <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <p className="text-[14.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
               <span className="font-semibold" style={{ color: "var(--text-1)" }}>Escrowless and atomic.</span>{" "}
               Sellers keep custody until the moment of sale — the NFT transfers first, then payment routes, in a single transaction. If anything is off, the whole trade reverts. No custody, no counterparty risk.
             </p>
@@ -667,7 +683,7 @@ export default function HomeClient() {
       </section>
 
       {/* ══ CTA ══ */}
-      <section className="py-28 px-4 md:px-8">
+      <section className="py-20 px-4 md:px-8">
         <div className="max-w-[1400px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 26 }}

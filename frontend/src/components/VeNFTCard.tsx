@@ -33,9 +33,9 @@ interface VeNFTCardProps {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-      <span className="text-[12px]" style={{ color: "var(--text-3)" }}>{label}</span>
-      <span className="text-[12.5px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+    <div className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{label}</span>
+      <span className="text-[13.5px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
         {value}
       </span>
     </div>
@@ -89,9 +89,9 @@ export function VeNFTCard({
         {/* Header — collection + id, discount badge */}
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
-            <span className="text-[13px] font-semibold" style={{ color: "var(--text-2)" }}>{collection}</span>
-            <span className="text-[13px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>#{tokenId.toString()}</span>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: dot }} />
+            <span className="text-[14px] font-bold" style={{ color: "var(--text-1)" }}>{collection}</span>
+            <span className="text-[14px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>#{tokenId.toString()}</span>
             {isGrant && (
               <span className="text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0" style={{ color: "#F59E0B", background: "rgba(245,158,11,0.1)" }}>
                 Grant
@@ -103,15 +103,15 @@ export function VeNFTCard({
 
         {/* Price — the focal point */}
         <div className="mb-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--text-3)" }}>Price</p>
+          <p className="text-[10.5px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-3)" }}>Price</p>
           <div className="flex items-baseline gap-1.5">
-            <span className="font-bold tabular-nums" style={{ fontSize: "1.7rem", letterSpacing: "-0.04em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+            <span className="font-bold tabular-nums" style={{ fontSize: "1.95rem", letterSpacing: "-0.04em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
               {formattedPrice}
             </span>
-            <span className="text-[13px] font-semibold" style={{ color: "var(--text-2)" }}>{paySymbol}</span>
+            <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paySymbol}</span>
           </div>
           {discountPct > 0 && (
-            <p className="text-[11.5px] font-semibold mt-1" style={{ color: "#10B981" }}>
+            <p className="text-[12.5px] font-semibold mt-1.5" style={{ color: "#10B981" }}>
               {discountPct.toFixed(1)}% below intrinsic value
             </p>
           )}
