@@ -189,7 +189,7 @@ function IncomingBidsForListing({
       >
         <Gavel style={{ width: 12, height: 12, color: "#4A90E2" }} />
         <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: "#4A90E2" }}>
-          {bids.length} incoming bid{bids.length !== 1 ? "s" : ""} — Listing #{listingId}
+          {bids.length} incoming bid{bids.length !== 1 ? "s" : ""} on Listing #{listingId}
         </span>
       </div>
       <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
@@ -662,7 +662,7 @@ export default function MyListingsClient() {
                 {[
                   "Your NFTs never leave your wallet during listing.",
                   "Fee claims and voting power continue until sale.",
-                  "Atomic settlement — you get paid at the exact block.",
+                  "Atomic settlement: you get paid at the exact block.",
                 ].map((note, i) => (
                   <li key={i} className="flex gap-2.5">
                     <ShieldCheck

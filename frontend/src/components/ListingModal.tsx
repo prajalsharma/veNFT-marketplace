@@ -263,7 +263,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   <GitMerge style={{ width: 14, height: 14, color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
                   <div>
                     <p className="text-[13px] font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
-                      Grant NFT — Cannot be Merged or Split
+                      Grant NFT: Cannot be Merged or Split
                     </p>
                     <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                       This position was distributed as a grant. It can be listed and sold normally, but merge and split operations are disabled on-chain.
@@ -299,7 +299,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                 >
                   <CheckCircle2 style={{ width: 13, height: 13, color: "#10B981" }} />
                   <span className="text-[12.5px] font-semibold" style={{ color: "#10B981" }}>
-                    Marketplace approved — ready to list
+                    Marketplace approved, ready to list
                   </span>
                 </div>
               )}

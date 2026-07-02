@@ -286,7 +286,7 @@ export default function DocsClient() {
               {
                 icon: Route,
                 title: "PaymentRouter.sol",
-                description: "Routes payments from buyer to seller with a 1% default protocol fee. Supports native BTC and ERC-20 tokens (MEZO, MUSD). Restricted to marketplace-only calls — no external address can trigger payment routing.",
+                description: "Routes payments from buyer to seller with a 1% default protocol fee. Supports native BTC and ERC-20 tokens (MEZO, MUSD). Restricted to marketplace-only calls, so no external address can trigger payment routing.",
                 href: "https://github.com/prajalsharma/veNFT-marketplace/blob/main/contracts/core/PaymentRouter.sol",
                 accentColor: "#10B981",
               },
@@ -312,7 +312,7 @@ export default function DocsClient() {
               {
                 icon: Gavel,
                 title: "VeNFTBidding.sol",
-                description: "On-chain offers. Make a bid on any veNFT — your funds stay in your wallet (only an ERC-20 approval is held), and the owner can accept it on-chain at any time within the bid's validity window. Settlement is atomic and escrowless: the NFT transfers and the fee-split payment routes in one transaction.",
+                description: "On-chain offers. Make a bid on any veNFT and your funds stay in your wallet (only an ERC-20 approval is held), and the owner can accept it on-chain at any time within the bid's validity window. Settlement is atomic and escrowless: the NFT transfers and the fee-split payment routes in one transaction.",
                 href: "https://github.com/prajalsharma/veNFT-marketplace/blob/main/contracts/core/VeNFTBidding.sol",
                 accentColor: "#4A90E2",
               },
@@ -333,7 +333,7 @@ export default function DocsClient() {
               {
                 icon: ArrowLeftRight,
                 title: "SwapPaymentRouter.sol",
-                description: "Pay with any token. Buy a listing in a currency it isn't priced in — SwapPaymentRouter swaps your token through Mezo's on-chain Velodrome DEX (pool-direct), then settles the purchase via the marketplace's buyNFT in a single transaction. Currently supports BTC↔MUSD pairs (MEZO has no DEX pool).",
+                description: "Pay with any token. Buy a listing in a currency it isn't priced in, and SwapPaymentRouter swaps your token through Mezo's on-chain Velodrome DEX (pool-direct), then settles the purchase via the marketplace's buyNFT in a single transaction. Currently supports BTC↔MUSD pairs (MEZO has no DEX pool).",
                 href: "https://github.com/prajalsharma/veNFT-marketplace/blob/main/contracts/core/SwapPaymentRouter.sol",
                 accentColor: "#FF0040",
               },
@@ -358,13 +358,13 @@ export default function DocsClient() {
             <p className="eyebrow mb-4" style={{ color: "#4A90E2" }}>v2 Security Properties</p>
             <div className="grid sm:grid-cols-2 gap-3">
               {[
-                "CEI preserved in acceptBid() — state updated before external calls",
+                "CEI preserved in acceptBid(): state updated before external calls",
                 "ReentrancyGuard on all bid write paths",
                 "SafeERC20 on bid fund pulls and settlements",
-                "Snapshot store is write-once per listingId — no overwrite attack surface",
-                "Oracle feeds have configurable staleness windows — stale prices revert",
+                "Snapshot store is write-once per listingId, with no overwrite attack surface",
+                "Oracle feeds have configurable staleness windows; stale prices revert",
                 "QuoteRouter fee capped at MAX_SWAP_FEE_BPS = 300 bps (3%)",
-                "SwapRouter onlyAuthorised caller guard — arbitrary execution blocked",
+                "SwapRouter onlyAuthorised caller guard blocks arbitrary execution",
                 "viaIR optimizer enabled for stack-deep bid structs (11 params)",
               ].map((check) => (
                 <div key={check} className="flex items-start gap-2.5">

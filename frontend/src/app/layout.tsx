@@ -44,14 +44,14 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "Vezo — veNFT Marketplace",
+    title: "Vezo | veNFT Marketplace",
     description: "Trade veBTC and veMEZO NFTs at a discount on Mezo Network",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vezo — veNFT Marketplace",
+    title: "Vezo | veNFT Marketplace",
     description: "Trade veBTC and veMEZO NFTs at a discount on Mezo Network",
   },
 };

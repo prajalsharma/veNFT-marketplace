@@ -406,7 +406,7 @@ export default function HomeClient() {
                 style={{ color: "var(--text-2)", maxWidth: "46ch" }}
               >
                 Buy and sell vote-escrowed BTC and MEZO positions.
-                Governance NFTs at market-determined discounts — atomic, escrowless, on Mezo.
+                Governance NFTs at market-determined discounts. Atomic, escrowless, on Mezo.
               </motion.p>
 
               {/* CTAs */}
@@ -559,7 +559,7 @@ export default function HomeClient() {
               {
                 icon: MousePointer2,
                 title: "Open market, no gatekeeping",
-                desc: "Any holder can list. Price discovery is driven by live bids and asks — no whitelists or curation.",
+                desc: "Any holder can list. Price discovery is driven by live bids and asks, with no whitelists or curation.",
                 color: "#4A90E2",
               },
             ].map((f, i) => (
@@ -586,7 +586,7 @@ export default function HomeClient() {
               Everything you can do on Vezo.
             </h2>
             <p className="text-[15px] leading-relaxed mx-auto" style={{ color: "var(--text-2)", maxWidth: "56ch" }}>
-              Buy, sell, bid, or pay in any token. Every action settles atomically on-chain — you keep custody until the trade completes.
+              Buy, sell, bid, or pay in any token. Every action settles atomically on-chain, and you keep custody until the trade completes.
             </p>
           </motion.div>
 
@@ -604,7 +604,7 @@ export default function HomeClient() {
                 title: "Sell",
                 color: "#F7931A",
                 desc: "List your position at any price in BTC, MEZO, or MUSD. It stays in your wallet until it sells.",
-                detail: "Escrowless — cancel anytime, no penalty.",
+                detail: "Escrowless. Cancel anytime, no penalty.",
               },
               {
                 icon: Gavel,
@@ -617,7 +617,7 @@ export default function HomeClient() {
                 icon: ArrowLeftRight,
                 title: "Pay in any token",
                 color: "#4A90E2",
-                desc: "Pay with BTC even when a listing is priced in MUSD — Vezo routes the swap for you.",
+                desc: "Pay with BTC even when a listing is priced in MUSD. Vezo routes the swap for you.",
                 detail: "Converted through Mezo's on-chain DEX automatically.",
               },
             ].map((item, i) => {
@@ -676,7 +676,7 @@ export default function HomeClient() {
             <ShieldCheck style={{ width: 18, height: 18, color: "#10B981", flexShrink: 0, marginTop: 1 }} />
             <p className="text-[14.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
               <span className="font-semibold" style={{ color: "var(--text-1)" }}>Escrowless and atomic.</span>{" "}
-              Sellers keep custody until the moment of sale — the NFT transfers first, then payment routes, in a single transaction. If anything is off, the whole trade reverts. No custody, no counterparty risk.
+              Sellers keep custody until the moment of sale. The NFT transfers first, then payment routes, in a single transaction. If anything is off, the whole trade reverts. No custody, no counterparty risk.
             </p>
           </motion.div>
         </div>

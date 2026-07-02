@@ -82,18 +82,18 @@ function parseError(raw: string): string {
     return "You rejected the transaction in your wallet.";
   if (msg.includes("selfpurchase")) return "You cannot buy your own listing.";
   if (msg.includes("listingnotactive"))
-    return "This listing is no longer active — it may have been sold or cancelled.";
+    return "This listing is no longer active. It may have been sold or cancelled.";
   if (msg.includes("expiredvenft"))
     return "This veNFT's lock has expired and cannot be traded.";
   if (msg.includes("notowner"))
-    return "The seller no longer owns this NFT — the listing is stale.";
+    return "The seller no longer owns this NFT, so the listing is stale.";
   if (
     msg.includes("notapproved") ||
     msg.includes("not approved") ||
     msg.includes("erc721insufficientapproval") ||
     msg.includes("caller is not token owner or approved")
   )
-    return "The seller has not approved the marketplace. The listing is stale — seller needs to re-list.";
+    return "The seller has not approved the marketplace. The listing is stale; the seller needs to re-list.";
   if (msg.includes("insufficientpayment")) return "Insufficient payment sent. Please try again.";
   if (msg.includes("invalidamount") || msg.includes("invalid amount"))
     return "Payment amount mismatch. Please try again.";
@@ -111,7 +111,7 @@ function parseError(raw: string): string {
   if (msg.includes("insufficient funds"))
     return "Your wallet doesn't have enough balance to pay for this NFT.";
   if (msg.includes("network") || msg.includes("rpc") || msg.includes("fetch"))
-    return "Network error — please check your connection and try again.";
+    return "Network error. Please check your connection and try again.";
   return raw.length > 200 ? raw.slice(0, 200) + "…" : raw;
 }
 
@@ -325,8 +325,8 @@ function SwapNote({ paySymbol }: { paySymbol: string }) {
             The on-chain swap router lets you pay with{" "}
             <span style={{ color: "var(--text-1)", fontWeight: 600 }}>
               {otherTokens.join(" or ")}
-            </span>{" "}
-            — it swaps to the listed currency automatically and adds a small routing
+            </span>
+            . It swaps to the listed currency automatically and adds a small routing
             fee on top of the listed price.
           </p>
         </div>
@@ -484,7 +484,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     }
 
     if (!isNftApproved) {
-      setErrorMsg("The seller has not approved the marketplace. Listing is stale — seller needs to re-approve or re-list.");
+      setErrorMsg("The seller has not approved the marketplace. Listing is stale; the seller needs to re-approve or re-list.");
       setStep("error");
       return;
     }
@@ -569,9 +569,9 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 </h2>
                 <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
                   {isNative
-                    ? "Single transaction — pay and receive NFT atomically."
+                    ? "Single transaction: pay and receive the NFT atomically."
                     : alreadyApproved
-                    ? "Allowance ready — one transaction to purchase."
+                    ? "Allowance ready. One transaction to purchase."
                     : "Two steps: approve token spend, then purchase."}
                 </p>
               </div>

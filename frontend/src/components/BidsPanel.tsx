@@ -97,7 +97,7 @@ function PlaceBidForm({
       // selector would pass `undefined` straight into viem ("Address \"undefined\"
       // is invalid"). paymentToken should always be one of the contract addresses.
       if (!paymentToken) { setError("Select a payment token"); return; }
-      if (!publicClient) { setError("Network not ready — try again"); return; }
+      if (!publicClient) { setError("Network not ready. Try again."); return; }
       const bidding = contracts.bidding as `0x${string}`;
       try {
         const amountWei = parseUnits(amount || "0", 18);
@@ -146,7 +146,7 @@ function PlaceBidForm({
         style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#10B981" }}
       >
         <CheckCircle2 style={{ width: 13, height: 13, flexShrink: 0 }} />
-        Bid submitted — waiting for confirmation…
+        Bid submitted. Waiting for confirmation…
       </div>
     );
   }

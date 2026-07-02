@@ -86,7 +86,7 @@ export function useSwapAndBuy() {
   const swapAndBuy = useCallback(
     async (params: SwapAndBuyParams) => {
       if (!isSwapDeployed || !spr) throw new Error("Swap router not deployed on this network");
-      if (!publicClient) throw new Error("Network not ready — try again");
+      if (!publicClient) throw new Error("Network not ready. Try again.");
       const { listingId, payToken, maxAmountIn, amountOutMin, stable = false, buyerAddress } = params;
 
       const allowance = (await publicClient.readContract({

@@ -105,7 +105,7 @@ export function BidListModal({ isOpen, onClose, collection, tokenId, collectionN
                 <span className="text-[10px] font-black tracking-[0.12em] uppercase px-2 py-0.5 rounded-md" style={{ color: accent, background: `${accent}12` }}>{collectionName}</span>
               </div>
               <h2 className="text-[21px] font-bold tracking-tight">Active Bids <span style={{ color: accent }}>#{tokenId.toString()}</span></h2>
-              <p className="text-[12.5px] text-white/32 mt-1">{activeBids.length} active bid{activeBids.length !== 1 ? "s" : ""} — sorted by value</p>
+              <p className="text-[12.5px] text-white/32 mt-1">{activeBids.length} active bid{activeBids.length !== 1 ? "s" : ""}, sorted by value</p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/[0.06] rounded-xl transition-colors text-white/32 hover:text-white mt-1"><X className="w-5 h-5" /></button>
           </div>

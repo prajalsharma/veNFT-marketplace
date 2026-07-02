@@ -35,19 +35,19 @@ const STEPS: Step[] = [
     icon: Sparkles,
     badge: "Welcome",
     title: "Trade locked BTC & MEZO positions",
-    body: "Vezo is a peer-to-peer marketplace for veBTC and veMEZO vote-escrow NFTs. It unlocks liquidity on positions that are otherwise locked for months — buy, sell, or browse in a few clicks.",
+    body: "Vezo is a peer-to-peer marketplace for veBTC and veMEZO vote-escrow NFTs. It unlocks liquidity on positions that are otherwise locked for months. Buy, sell, or browse in a few clicks.",
   },
   {
     icon: Eye,
     badge: "Browse & buy",
     title: "See real value before you buy",
-    body: "Every listing shows intrinsic value, voting power, lock expiry, and the discount to fair value. Pay in BTC, MEZO, or MUSD — the NFT and your payment swap together in one atomic transaction.",
+    body: "Every listing shows intrinsic value, voting power, lock expiry, and the discount to fair value. Pay in BTC, MEZO, or MUSD, and the NFT and your payment swap together in one atomic transaction.",
   },
   {
     icon: Tag,
     badge: "Sell",
     title: "List in seconds, keep custody",
-    body: "Own a veNFT? List it at any price. It stays in your wallet until it sells — no escrow, no lock-up — and you can cancel anytime with no penalty.",
+    body: "Own a veNFT? List it at any price. It stays in your wallet until it sells, with no escrow and no lock-up, and you can cancel anytime with no penalty.",
   },
   {
     icon: ShieldCheck,
@@ -188,7 +188,7 @@ function StepVisual({ i }: { i: number }) {
         ))}
         <div className="flex items-center gap-2 pt-1">
           <ShieldCheck style={{ width: 13, height: 13, color: "#10B981", flexShrink: 0 }} />
-          <span className="text-[10px]" style={{ color: "var(--text-3)" }}>One transaction — reverts automatically if anything is off.</span>
+          <span className="text-[10px]" style={{ color: "var(--text-3)" }}>One transaction. Reverts automatically if anything is off.</span>
         </div>
       </div>
     </PreviewCard>

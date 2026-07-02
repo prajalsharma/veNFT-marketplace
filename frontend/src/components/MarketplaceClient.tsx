@@ -69,7 +69,7 @@ function EmptyState({ variant }: { variant: EmptyVariant }) {
     },
     unavailable: {
       title: "No buyable listings right now",
-      body: "There are listings on-chain, but they’re all expired, sold, or otherwise unavailable to purchase.",
+      body: "There are listings on-chain, but they're all expired, sold, or otherwise unavailable to purchase.",
     },
     empty: {
       title: "No active listings yet",
@@ -131,12 +131,12 @@ function LoadFailureState({
       </div>
       <div>
         <h3 className="text-base font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
-          {notDeployed ? "Marketplace not configured for this network" : "Couldn’t load listings"}
+          {notDeployed ? "Marketplace not configured for this network" : "Couldn't load listings"}
         </h3>
         <p className="text-sm" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
           {notDeployed
             ? "No marketplace address is set for the selected network. This is a configuration issue, not an empty market."
-            : "The marketplace contract couldn’t be read. This is a network/RPC error — listings may exist but can’t be fetched right now."}
+            : "The marketplace contract couldn't be read. This is a network/RPC error, so listings may exist but can't be fetched right now."}
         </p>
         {marketplaceAddress && (
           <p className="text-[11px] mt-2 font-mono" style={{ color: "var(--text-3)" }}>
