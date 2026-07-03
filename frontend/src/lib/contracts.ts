@@ -11,33 +11,41 @@ const addr = (key: string, fallback: string): `0x${string}` => {
   return value as `0x${string}`;
 };
 
+// Hardcoded on-chain address — intentionally NOT env-overridable.
+// The testnet deployment is fixed and live; hardcoding it means a stale or
+// mismatched deployment env var (e.g. a testnet var pointed at the mainnet
+// address) can never make the app read the wrong contract. See route.ts, which
+// hardcodes the same testnet marketplace/adapter for the server-side listing scan.
+const hard = (v: string): `0x${string}` => v as `0x${string}`;
+
 export const CONTRACTS = {
   testnet: {
+    // Testnet addresses are HARDCODED (not env-overridable) to keep the app
+    // pinned to the live testnet deployment regardless of env configuration.
     chainId: 31611,
     rpcUrl: "https://rpc.test.mezo.org",
     explorer: "https://explorer.test.mezo.org",
 
-    BTC:  addr("NEXT_PUBLIC_BTC_ADDRESS",  "0x7b7c000000000000000000000000000000000000"),
-    MEZO: addr("NEXT_PUBLIC_MEZO_ADDRESS", "0x7b7c000000000000000000000000000000000001"),
-    MUSD: addr("NEXT_PUBLIC_MUSD_TESTNET", "0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503"),
+    BTC:  hard("0x7b7c000000000000000000000000000000000000"),
+    MEZO: hard("0x7b7c000000000000000000000000000000000001"),
+    MUSD: hard("0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503"),
 
-    veBTC:  addr("NEXT_PUBLIC_VEBTC_TESTNET",  "0x38E35d92E6Bfc6787272A62345856B13eA12130a"),
-    veMEZO: addr("NEXT_PUBLIC_VEMEZO_TESTNET", "0xaCE816CA2bcc9b12C59799dcC5A959Fb9b98111b"),
+    veBTC:  hard("0x38E35d92E6Bfc6787272A62345856B13eA12130a"),
+    veMEZO: hard("0xaCE816CA2bcc9b12C59799dcC5A959Fb9b98111b"),
 
-    marketplace:   addr("NEXT_PUBLIC_MARKETPLACE_TESTNET",    "0xF18016FbadfA732c58814b6341054484FcDBF26f"),
-    adapter:       addr("NEXT_PUBLIC_ADAPTER_TESTNET",        "0x526A542F7B2809376391CD7f884Daf4967fFEb14"),
-    router:        addr("NEXT_PUBLIC_ROUTER_TESTNET",         "0x157ed850E41e0f220549005da8b55bBE2AE32d7D"),
-    admin:         addr("NEXT_PUBLIC_ADMIN_TESTNET",          "0xdBBc692828866ab0ee8BC8C2e6B7d911F7B89Ed4"),
-    bidding:       addr("NEXT_PUBLIC_BIDDING_TESTNET",        "0x779cE3EE7A9eA6B4C717DA229644Cf8168c0d4eF"),
-    snapshotStore: addr("NEXT_PUBLIC_SNAPSHOT_STORE_TESTNET", "0x8131676B5c12C0927cF910dd57c6BC16c7Db1957"),
-    oracleHub:     addr("NEXT_PUBLIC_ORACLE_HUB_TESTNET",     "0x9C991f037FEDd7a6025aA2e402b8354c044D056c"),
-    quoteRouter:   addr("NEXT_PUBLIC_QUOTE_ROUTER_TESTNET",   "0x85E881F000DC10Eb53e7d3896DaAC12B9073142F"),
-    swapRouter:    addr("NEXT_PUBLIC_SWAP_ROUTER_TESTNET",    "0x0F16b6B253B968B8B6fe6554E32453935De22698"),
-    // SwapPaymentRouter (pay-with-any-token via Velodrome + buyNFT). Not yet deployed;
-    // set NEXT_PUBLIC_SWAP_PAYMENT_ROUTER_TESTNET after deploy to enable the swap UI.
-    swapPaymentRouter: addr("NEXT_PUBLIC_SWAP_PAYMENT_ROUTER_TESTNET", ZERO_ADDRESS),
-    // Velodrome-v2 PoolFactory on testnet (set via env if/when available).
-    poolFactory: addr("NEXT_PUBLIC_POOL_FACTORY_TESTNET", ZERO_ADDRESS),
+    marketplace:   hard("0xF18016FbadfA732c58814b6341054484FcDBF26f"),
+    adapter:       hard("0x526A542F7B2809376391CD7f884Daf4967fFEb14"),
+    router:        hard("0x157ed850E41e0f220549005da8b55bBE2AE32d7D"),
+    admin:         hard("0xdBBc692828866ab0ee8BC8C2e6B7d911F7B89Ed4"),
+    bidding:       hard("0x779cE3EE7A9eA6B4C717DA229644Cf8168c0d4eF"),
+    snapshotStore: hard("0x8131676B5c12C0927cF910dd57c6BC16c7Db1957"),
+    oracleHub:     hard("0x9C991f037FEDd7a6025aA2e402b8354c044D056c"),
+    quoteRouter:   hard("0x85E881F000DC10Eb53e7d3896DaAC12B9073142F"),
+    swapRouter:    hard("0x0F16b6B253B968B8B6fe6554E32453935De22698"),
+    // SwapPaymentRouter (pay-with-any-token via Velodrome + buyNFT) — not deployed on testnet.
+    swapPaymentRouter: hard(ZERO_ADDRESS),
+    // Velodrome-v2 PoolFactory — not available on testnet.
+    poolFactory: hard(ZERO_ADDRESS),
   },
   mainnet: {
     chainId: 31612,

@@ -20,13 +20,18 @@ const RPC: Record<string, string> = {
   testnet: process.env.RPC_TESTNET || "https://rpc.test.mezo.org",
 };
 
+// Testnet marketplace/adapter are HARDCODED (not env-overridable). A stale
+// NEXT_PUBLIC_*_TESTNET var pointed at the mainnet address previously made this
+// server-side scan read the wrong marketplace, so the grid showed 0 listings
+// while My Listings (client, correct address) showed them. Pinning the testnet
+// deployment here keeps the server and client on the same contract.
 const MARKETPLACE: Record<string, string> = {
   mainnet: process.env.NEXT_PUBLIC_MARKETPLACE_MAINNET || "0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570",
-  testnet: process.env.NEXT_PUBLIC_MARKETPLACE_TESTNET || "0xF18016FbadfA732c58814b6341054484FcDBF26f",
+  testnet: "0xF18016FbadfA732c58814b6341054484FcDBF26f",
 };
 const ADAPTER: Record<string, string> = {
   mainnet: process.env.NEXT_PUBLIC_ADAPTER_MAINNET || "0x8EC595099030aB282511c87cAF104E734418Eff5",
-  testnet: process.env.NEXT_PUBLIC_ADAPTER_TESTNET || "0x526A542F7B2809376391CD7f884Daf4967fFEb14",
+  testnet: "0x526A542F7B2809376391CD7f884Daf4967fFEb14",
 };
 const VEMEZO: Record<string, string> = {
   mainnet: "0xb90fdAd3DFD180458D62Cc6acedc983D78E20122",
