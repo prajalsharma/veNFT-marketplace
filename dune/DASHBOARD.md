@@ -1,7 +1,9 @@
-# Vezo — Dune Dashboard (Mezo mainnet)
+# Vezo — Dune Analytics Dashboard (Mezo mainnet)
 
-Ready-to-paste Dune SQL. Chain: **Mezo mainnet** (Dune indexes Mezo mainnet, not testnet — so
-all queries target the mainnet contracts).
+A professional, growth-style dashboard for the Vezo veNFT marketplace — counters, cumulative growth
+areas, stacked daily bars, donut breakdowns, leaderboards, and interactive parameters.
+
+Chain: **Mezo mainnet** (Dune indexes Mezo mainnet, not testnet).
 
 ## Contracts (Mezo mainnet)
 
@@ -16,145 +18,264 @@ all queries target the mainnet contracts).
 | MEZO | `0x7b7c000000000000000000000000000000000001` |
 | MUSD | `0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186` |
 
-All token amounts have **18 decimals** (divide by 1e18).
+Token amounts have **18 decimals** (divide by 1e18). Decoded tables use the names chosen at decode time:
+the marketplace was decoded as **`Marketplace`** → `vezo_mezo.Marketplace_evt_<Event>`.
+
+> Submit contracts for decoding at **https://dune.com/contracts/new**, namespace `vezo`, one at a time.
 
 ---
 
-## Step 1 — Submit contracts for decoding (namespace `vezo`)
+## Decoded tables you have
 
-Submit each contract for decoding at **https://dune.com/contracts/new** (one at a time), namespace
-**`vezo`**. The decoded tables resolve to `vezo_mezo.<ContractName>_evt_<Event>`.
+- `vezo_mezo.Marketplace_evt_Listed(listingId, seller, collection, tokenId, price, paymentToken, …)`
+- `vezo_mezo.Marketplace_evt_Purchased(listingId, buyer, seller, price, …)`
+- `vezo_mezo.Marketplace_evt_Cancelled(listingId, …)`
+- `vezo_mezo.Marketplace_evt_ListedWithSnapshot(… intrinsicValueAtListing, discountBpsAtListing …)`
+- `vezo_mezo.Marketplace_evt_CancelledWithContext(… originalPrice …)`
+- `vezo_mezo.Marketplace_evt_PurchasedWithAnalytics(… collection, tokenId, price, paymentToken, protocolFee, discountBpsAtSale …)`
 
-> **The marketplace was decoded under the contract name `Marketplace`**, so its tables are
-> `vezo_mezo.Marketplace_evt_<Event>` — that is what the queries below use. If you decode the bidding
-> and swap contracts under different names than shown, adjust those table prefixes to match.
-
-| Address | Namespace | Contract name | ABI source |
-|---|---|---|---|
-| `0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570` | `vezo` | `Marketplace` | compile `contracts/core/VeNFTMarketplace.sol` |
-| `0xef35dc538b50549e95687a51e8aa542D485ea384` | `vezo` | `VeNFTBidding` | `contracts/core/VeNFTBidding.sol` |
-| `0x638Bab65738bA7BcD47D3c1d6Cb4eaf6CC872617` | `vezo` | `SwapPaymentRouter` | `contracts/core/SwapPaymentRouter.sol` |
-
-Decoding takes up to ~24h after approval, and tables can appear empty during backfill. Until then, use
-the **raw** query in Step 2.
+Every decoded table also has `evt_block_time`, `evt_block_number`, `evt_tx_hash`, `evt_index`, `contract_address`.
 
 ---
 
-## Step 2 — Immediate raw query (works NOW, before decoding)
+## Reusable label expressions
 
-Verifies data exists and gives a live activity feed labelled by event type.
+Paste these `case` blocks wherever a token or collection column is used:
 
 ```sql
--- Vezo · Raw marketplace activity (no decoding needed)
-select
-  block_time,
-  tx_hash,
-  case topic0
-    when 0xc34eca5bc6c01e6aa4dff622e2dffa03644e52a66ff85131b3753573aadc2889 then 'Listed'
-    when 0xc41d93b8bfbf9fd7cf5bfe271fd649ab6a6fec0ea101c23b82a2a28eca2533a9 then 'Cancelled'
-    when 0x3fb02bfbf01f7dc3a4c6903acc6b06ca1d9af7647282593f46cbacefc288b602 then 'Purchased'
-    when 0x9975ccf0baed2e5d36764f8fc5e89a919501b5e43caaed798c2a7fc2a5c7f630 then 'PurchasedWithAnalytics'
-    when 0x0795db3173719c9ab9b624b79bab872386e26d032ed703dde5faf103e23cc6d2 then 'ListedWithSnapshot'
-    else '0x' || to_hex(topic0)
-  end as event
-from mezo.logs
-where contract_address = 0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570
-order by block_time desc
-limit 200
+-- token label (from a paymentToken column)
+case paymentToken
+  when 0x7b7c000000000000000000000000000000000000 then 'BTC'
+  when 0x7b7c000000000000000000000000000000000001 then 'MEZO'
+  when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD'
+  else 'OTHER' end
+-- collection label (from a collection column)
+case collection
+  when 0x3D4b1b884A7a1E59fE8589a3296EC8f8cBB6f279 then 'veBTC'
+  when 0xb90fdAd3DFD180458D62Cc6acedc983D78E20122 then 'veMEZO'
+  else 'OTHER' end
 ```
 
-If this returns rows → data is there and decoding will work. If it returns nothing, the marketplace
-simply has no on-chain events yet on mainnet (check with a wider `mezo.transactions` scan).
+---
+
+## Interactive parameters (optional but recommended)
+
+Dune auto-detects `{{name}}` in SQL and turns it into a control. When two queries share a param name,
+one dashboard control drives both. Add these to any query:
+
+- **Start date** — a `Text`/`Date` param named `start_date` (default `2026-01-01`):
+  `where evt_block_time >= timestamp '{{start_date}}'`
+- **Collection filter** — a `List` param named `collection` with values `All, veBTC, veMEZO`:
+  `and ('{{collection}}' = 'All' or <collection label> = '{{collection}}')`
+
+Example, parameterized daily volume:
+```sql
+select date_trunc('day', evt_block_time) as day,
+       case paymentToken
+         when 0x7b7c000000000000000000000000000000000000 then 'BTC'
+         when 0x7b7c000000000000000000000000000000000001 then 'MEZO'
+         when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD' else 'OTHER' end as token,
+       sum(cast(price as double))/1e18 as volume
+from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
+where evt_block_time >= timestamp '{{start_date}}'
+group by 1, 2
+order by 1
+```
 
 ---
 
-## Step 3 — The dashboard queries (decoded)
+## The query set
 
-Create each as a **New query**, run it, then **Add to dashboard** with the suggested visualization.
+Create each as a **New query** (Dune SQL), Run, Save with a `vezo · …` name, then add a visualization.
 
-### 1. Headline KPIs (Counter visualizations)
+### Section 1 — Headline counters
 
+**Q1 · Core KPIs** → 4× **Counter**
 ```sql
--- Vezo · KPIs
 select
-  (select count(*) from vezo_mezo.Marketplace_evt_Listed)                as listings_created,
-  (select count(*) from vezo_mezo.Marketplace_evt_Purchased)             as total_sales,
-  (select count(*) from vezo_mezo.Marketplace_evt_Cancelled)             as cancellations,
-  (select count(distinct seller) from vezo_mezo.Marketplace_evt_Listed)    as unique_sellers,
-  (select count(distinct buyer)  from vezo_mezo.Marketplace_evt_Purchased) as unique_buyers
+  (select count(*) from vezo_mezo.Marketplace_evt_Purchased) as total_sales,
+  (select count(*) from vezo_mezo.Marketplace_evt_Listed)    as total_listings,
+  (select count(*) from vezo_mezo.Marketplace_evt_Cancelled) as total_cancels,
+  (select count(distinct actor) from (
+     select seller as actor from vezo_mezo.Marketplace_evt_Listed
+     union
+     select buyer  as actor from vezo_mezo.Marketplace_evt_Purchased
+  ) t) as unique_traders
 ```
 
-### 2. Volume & protocol revenue by token (Table / Bar)
-
+**Q2 · Volume & revenue by token** → **Table** + **Bar** (X=token, Y=volume) + **Donut** (label=token, value=volume)
 ```sql
--- Vezo · Volume + protocol revenue by payment token
 select
   case paymentToken
     when 0x7b7c000000000000000000000000000000000000 then 'BTC'
     when 0x7b7c000000000000000000000000000000000001 then 'MEZO'
-    when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD'
-    else '0x' || to_hex(paymentToken)
-  end as token,
+    when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD' else 'OTHER' end as token,
   count(*)                              as sales,
   sum(cast(price as double))/1e18       as volume,
   sum(cast(protocolFee as double))/1e18 as protocol_revenue
 from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
 group by 1
-order by sales desc
+order by volume desc
 ```
 
-### 3. Sales & volume over time (Bar + line, X = day)
+### Section 2 — Growth over time (the centerpiece)
 
+**Q3 · Daily volume, stacked by token** → **Bar chart**, X=`day`, Y=`volume`, series/“group by”=`token`, **enable stacking**
 ```sql
--- Vezo · Daily sales & volume
-select
-  date_trunc('day', evt_block_time)  as day,
-  count(*)                           as sales,
-  sum(cast(price as double))/1e18    as volume
+select date_trunc('day', evt_block_time) as day,
+       case paymentToken
+         when 0x7b7c000000000000000000000000000000000000 then 'BTC'
+         when 0x7b7c000000000000000000000000000000000001 then 'MEZO'
+         when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD' else 'OTHER' end as token,
+       sum(cast(price as double))/1e18 as volume
 from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
+group by 1, 2
+order by 1
+```
+
+**Q4 · Cumulative volume by token** → **Area chart**, X=`day`, Y=`cumulative_volume`, series=`token`, **stacked area**
+```sql
+select day, token,
+       sum(volume) over (partition by token order by day) as cumulative_volume
+from (
+  select date_trunc('day', evt_block_time) as day,
+         case paymentToken
+           when 0x7b7c000000000000000000000000000000000000 then 'BTC'
+           when 0x7b7c000000000000000000000000000000000001 then 'MEZO'
+           when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD' else 'OTHER' end as token,
+         sum(cast(price as double))/1e18 as volume
+  from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
+  group by 1, 2
+) t
+order by day
+```
+
+**Q5 · Cumulative listings vs sales** → **Area/Line**, X=`day`, series=`cumulative_listed`,`cumulative_sold`
+```sql
+with daily as (
+  select day, sum(listed) as listed, sum(sold) as sold
+  from (
+    select date_trunc('day', evt_block_time) as day, 1 as listed, 0 as sold from vezo_mezo.Marketplace_evt_Listed
+    union all
+    select date_trunc('day', evt_block_time) as day, 0 as listed, 1 as sold from vezo_mezo.Marketplace_evt_Purchased
+  ) u
+  group by 1
+)
+select day,
+       sum(listed) over (order by day) as cumulative_listed,
+       sum(sold)   over (order by day) as cumulative_sold
+from daily
+order by day
+```
+
+**Q6 · Daily sales & new listings** → **Bar** (listings) + **Line** (sales), X=`day`
+```sql
+with s as (select date_trunc('day', evt_block_time) d, count(*) sales    from vezo_mezo.Marketplace_evt_Purchased group by 1),
+     l as (select date_trunc('day', evt_block_time) d, count(*) listings from vezo_mezo.Marketplace_evt_Listed    group by 1)
+select coalesce(s.d, l.d) as day, coalesce(sales,0) as sales, coalesce(listings,0) as listings
+from s full outer join l on s.d = l.d
+order by 1
+```
+
+### Section 3 — Users / adoption
+
+**Q7 · Cumulative unique traders** → **Area** (`cumulative_traders`) + **Bar** (`new_traders`), X=`day`
+```sql
+with first_seen as (
+  select actor, min(day) as d
+  from (
+    select seller as actor, date_trunc('day', evt_block_time) as day from vezo_mezo.Marketplace_evt_Listed
+    union
+    select buyer  as actor, date_trunc('day', evt_block_time) as day from vezo_mezo.Marketplace_evt_Purchased
+  ) u
+  group by 1
+)
+select d as day,
+       count(*)                     as new_traders,
+       sum(count(*)) over (order by d) as cumulative_traders
+from first_seen
+group by d
+order by d
+```
+
+**Q8 · Daily active traders** → **Line/Bar**, X=`day`, Y=`active_traders`
+```sql
+select day, count(distinct actor) as active_traders
+from (
+  select date_trunc('day', evt_block_time) as day, seller as actor from vezo_mezo.Marketplace_evt_Listed
+  union
+  select date_trunc('day', evt_block_time) as day, buyer  as actor from vezo_mezo.Marketplace_evt_Purchased
+) u
 group by 1
 order by 1
 ```
 
-### 4. New listings over time (Bar, X = day)
+### Section 4 — Breakdowns
 
+**Q9 · Sales & volume by collection** → **Donut** (label=collection, value=sales) + **Table**
 ```sql
--- Vezo · Daily new listings
-select date_trunc('day', evt_block_time) as day, count(*) as listings
-from vezo_mezo.Marketplace_evt_Listed
-group by 1
-order by 1
-```
-
-### 5. Breakdown by collection (Pie / Bar)
-
-```sql
--- Vezo · Sales by collection
 select
   case collection
     when 0x3D4b1b884A7a1E59fE8589a3296EC8f8cBB6f279 then 'veBTC'
-    when 0xb90fdAd3DFD180458D62Cc6acedc983D78E20122 then 'veMEZO'
-    else '0x' || to_hex(collection)
-  end as collection,
+    when 0xb90fdAd3DFD180458D62Cc6acedc983D78E20122 then 'veMEZO' else 'OTHER' end as collection,
   count(*)                        as sales,
   sum(cast(price as double))/1e18 as volume
 from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
 group by 1
+order by sales desc
 ```
 
-### 6. Average discount at sale (Counter)
-
+**Q10 · Listing outcome funnel** → **Bar**, X=`stage`, Y=`n`
 ```sql
--- Vezo · Avg discount % at sale (negative = sold at a premium)
-select avg(cast(discountBpsAtSale as double))/100 as avg_discount_pct
+select stage, n from (
+  select 'Listed'    as stage, 1 as ord, count(*) as n from vezo_mezo.Marketplace_evt_Listed
+  union all select 'Sold',      2, count(*) from vezo_mezo.Marketplace_evt_Purchased
+  union all select 'Cancelled', 3, count(*) from vezo_mezo.Marketplace_evt_Cancelled
+) t
+order by ord
+```
+
+**Q11 · Discount distribution at sale** → **Bar** (histogram), X=`bucket`, Y=`sales`
+```sql
+select bucket, sales from (
+  select
+    case
+      when d < 0     then '01 · premium (<0%)'
+      when d < 1000  then '02 · 0–10%'
+      when d < 2500  then '03 · 10–25%'
+      when d < 5000  then '04 · 25–50%'
+      else                '05 · 50%+'
+    end as bucket,
+    count(*) as sales
+  from (select cast(discountBpsAtSale as double) as d from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics)
+  group by 1
+) t
+order by bucket
+```
+
+### Section 5 — Leaderboards & feed
+
+**Q12 · Top sellers** → **Table**
+```sql
+select seller,
+       count(*)                        as sales,
+       sum(cast(price as double))/1e18 as volume
 from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
+group by 1 order by volume desc limit 15
 ```
 
-### 7. Full activity feed (Table)
-
+**Q13 · Top buyers** → **Table**
 ```sql
--- Vezo · Unified activity feed
-select evt_block_time as time, 'Listed'    as action, seller as actor,
+select buyer,
+       count(*)                        as purchases,
+       sum(cast(price as double))/1e18 as volume
+from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
+group by 1 order by volume desc limit 15
+```
+
+**Q14 · Live activity feed** → **Table**
+```sql
+select evt_block_time as time, 'Listed' as action, seller as actor,
        cast(tokenId as varchar) as token, cast(price as double)/1e18 as amount, evt_tx_hash
 from vezo_mezo.Marketplace_evt_ListedWithSnapshot
 union all
@@ -169,48 +290,19 @@ order by time desc
 limit 200
 ```
 
-### 8. Top sellers (Table)
+### Section 6 — Bidding & swaps (add once those contracts are decoded)
 
+**Q15 · Bids created vs accepted (daily)** → **Bar**, X=`day`, series=`created`,`accepted`
 ```sql
--- Vezo · Top sellers by volume
-select seller,
-       count(*)                        as sales,
-       sum(cast(price as double))/1e18 as volume
-from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
-group by 1
-order by volume desc
-limit 20
-```
-
-### 9. Bidding activity (Counters)
-
-```sql
--- Vezo · Bidding
-select
-  (select count(*) from vezo_mezo.VeNFTBidding_evt_BidCreated)              as bids_created,
-  (select count(*) from vezo_mezo.VeNFTBidding_evt_BidAcceptedWithAnalytics) as bids_accepted,
-  (select sum(cast(amount as double))/1e18
-     from vezo_mezo.VeNFTBidding_evt_BidAcceptedWithAnalytics)              as bid_volume,
-  (select sum(cast(protocolFee as double))/1e18
-     from vezo_mezo.VeNFTBidding_evt_BidAcceptedWithAnalytics)              as bid_fees
-```
-
-### 10. Pay-with-any-token swaps (Bar)
-
-```sql
--- Vezo · Swap-and-buy volume
-select date_trunc('day', evt_block_time) as day,
-       count(*)                          as swaps,
-       sum(cast(amountIn as double))/1e18 as volume_in
-from vezo_mezo.SwapPaymentRouter_evt_SwapAndPurchase
-group by 1
+with c as (select date_trunc('day', evt_block_time) d, count(*) created  from vezo_mezo.VeNFTBidding_evt_BidCreated              group by 1),
+     a as (select date_trunc('day', evt_block_time) d, count(*) accepted from vezo_mezo.VeNFTBidding_evt_BidAcceptedWithAnalytics group by 1)
+select coalesce(c.d,a.d) as day, coalesce(created,0) as created, coalesce(accepted,0) as accepted
+from c full outer join a on c.d = a.d
 order by 1
 ```
 
-### 11. Total protocol revenue (Counter — marketplace + bidding fees, per token)
-
+**Q16 · Total protocol revenue by token (sales + accepted bids)** → **Counter/Bar**
 ```sql
--- Vezo · Total protocol revenue by token (sales + accepted bids)
 with fees as (
   select paymentToken, protocolFee from vezo_mezo.Marketplace_evt_PurchasedWithAnalytics
   union all
@@ -220,84 +312,73 @@ select
   case paymentToken
     when 0x7b7c000000000000000000000000000000000000 then 'BTC'
     when 0x7b7c000000000000000000000000000000000001 then 'MEZO'
-    when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD'
-    else '0x' || to_hex(paymentToken)
-  end as token,
+    when 0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186 then 'MUSD' else 'OTHER' end as token,
   sum(cast(protocolFee as double))/1e18 as protocol_revenue
 from fees
-group by 1
-order by protocol_revenue desc
+group by 1 order by protocol_revenue desc
 ```
 
 ---
 
-## Step 4 — Assemble & publish the dashboard
+## Build & publish (current Dune UI)
 
-Decoding creates *tables*. A dashboard is built separately from *queries + their visualizations*.
-Order of operations: **save each query → give it a visualization → add that visualization to a dashboard.**
+**A. Each query → visualization**
+1. `+ Create → Query`, engine **Dune SQL**, paste, **Run** (⌘/Ctrl+Enter).
+2. **Save** with a `vezo · …` name.
+3. Below results → **New visualization** → pick type (see each Q above) → configure axes → **Save**.
+   A query can hold multiple visualizations (e.g. Q2 → table + bar + donut).
 
-### 4a. Turn each query into a visualization
-For every query in Step 3:
-1. Paste it into a **New query** (top-left `+ Create → Query`, or `dune.com/queries` → New).
-2. Click **Run** (⌘/Ctrl+Enter). Confirm rows come back.
-3. Click **Save** (top right) and give it a clear name, e.g. `vezo · kpis`, `vezo · daily sales`.
-4. Below the results grid, open the **New visualization** button and pick a type:
-   - KPIs (query #1, #6, #9, #11) → **Counter** (pick the column to display).
-   - By-token / by-collection / top-sellers (#2, #5, #8) → **Bar chart** or **Table**.
-   - Over-time (#3, #4, #10) → **Bar chart** (X = `day`, Y = `sales`/`volume`/`listings`).
-   - Activity feed (#7) → **Table**.
-5. Configure the axes/columns in the viz settings, then **Save** the query again.
-   A query can hold several visualizations — add more with **New visualization** if you want both a
-   counter and a chart from the same query.
-
-### 4b. Create the dashboard (name = permanent URL slug!)
-1. Top-left **`+ Create → Dashboard`** (or `dune.com` → New Dashboard).
-2. **Name it deliberately** — the name becomes the URL slug and **cannot be changed later**.
-   e.g. naming it `Vezo Marketplace` → `dune.com/vezo/vezo-marketplace`.
+**B. Create the dashboard — name = permanent URL slug**
+1. `+ Create → Dashboard`.
+2. Name it deliberately (slug is **not editable later**): `Vezo Marketplace` → `dune.com/vezo/vezo-marketplace`.
 3. **Save and open**.
 
-### 4c. Add your visualizations as widgets
-Two ways:
-- **From the query:** open a saved query → select the visualization tab → **Add to dashboard** →
-  choose your dashboard. The widget lands at the bottom.
-- **From the dashboard:** click **Edit** (top right) → **Add widget** → **Visualization** →
-  search your saved query → pick the visualization.
+**C. Add widgets**
+- From a query: open it → select the visualization → **Add to dashboard** → pick the dashboard; **or**
+- From the dashboard: **Edit** (top-right) → **Add widget** → **Visualization** → search `vezo` → pick.
+- Add a **Text** widget at the top for the title (Markdown supported).
+- Add **Parameter** widgets (the `start_date` / `collection` controls) so viewers can filter.
 
-Repeat for all 11. Also add a **Text widget** (Edit → Add widget → Text) at the top for a title/intro —
-it supports Markdown, e.g.:
-```markdown
-# Vezo — veNFT Marketplace on Mezo
-Escrowless secondary market for veBTC & veMEZO. Live on-chain metrics.
-```
-
-### 4d. Lay it out & publish
-1. In **Edit** mode, drag widgets to arrange; resize from the bottom-right corner. Put KPI counters in
-   a row across the top, charts below, the activity table full-width at the bottom.
-2. Click **Done / Save** to exit edit mode.
-3. Click **Publish** (or toggle the dashboard from *private* to *public*) so anyone can view it.
-4. Share the URL: `dune.com/vezo/<your-slug>`.
+**D. Layout → publish**
+1. In **Edit** mode, drag/resize widgets.
+2. **Done/Save**, then **Publish** (set visibility **Public**).
+3. Share `dune.com/vezo/<slug>`.
 
 ### Suggested layout
 ```
-┌───────────── Text: title / intro ─────────────┐
-│  [Sales] [Volume] [Revenue] [Unique buyers]    │  ← counters (queries 1, 2, 11)
-├───────────────────────┬────────────────────────┤
-│  Daily sales & volume │  New listings / day     │  ← bar charts (queries 3, 4)
-├───────────────────────┼────────────────────────┤
-│  Volume by token      │  Sales by collection    │  ← bar/pie (queries 2, 5)
-├───────────────────────┴────────────────────────┤
-│  Activity feed (full width table)               │  ← query 7
-└─────────────────────────────────────────────────┘
+┌──────────────── Text: title + one-liner ────────────────┐
+│  params:  [ start_date ▸ ]     [ collection ▾ ]          │
+├──────────┬──────────┬──────────┬──────────────────────────┤
+│  Sales   │  Volume  │ Revenue  │  Unique traders          │  Q1 / Q2 / Q16 counters
+├──────────┴──────────┴──────────┴──────────────────────────┤
+│  Cumulative volume by token (stacked area) — Q4           │  hero chart, full width
+├───────────────────────────┬───────────────────────────────┤
+│  Daily volume (stacked)-Q3│  Cumulative traders (area)-Q7  │
+├───────────────────────────┼───────────────────────────────┤
+│  Listings vs sales (Q5)   │  Daily active traders (Q8)     │
+├───────────────────────────┼───────────────────────────────┤
+│  Volume by token (donut)Q2│  Sales by collection (donut)Q9 │
+├───────────────────────────┼───────────────────────────────┤
+│  Outcome funnel (Q10)     │  Discount distribution (Q11)   │
+├───────────────────────────┴───────────────────────────────┤
+│  Top sellers (Q12)   │   Top buyers (Q13)                  │
+├────────────────────────────────────────────────────────────┤
+│  Live activity feed (Q14) — full width table               │
+└────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Notes
 
-- **USD values:** amounts above are in native token units. MUSD ≈ $1 (stablecoin), so MUSD figures
-  are ~USD directly. BTC/MEZO would need a price feed to convert; Dune's `prices.usd` may not cover
-  Mezo-native tokens, so keep headline numbers per-token unless you wire in a price source.
-- **`discountBpsAtSale`** can be negative when an item sold above intrinsic value (a premium).
-- Column names come straight from the Solidity event params, so casing matters
-  (`paymentToken`, `protocolFee`, `tokenId`, `evt_block_time`, `evt_tx_hash`).
-- If you named the decoding namespace something other than `vezo`, find/replace `vezo_mezo.` in every query.
+- **Mixing tokens:** never `sum(price)` across BTC+MEZO+MUSD into one number — they're different units.
+  Always split by token (stacked bars / per-series area), as the queries above do. For a single blended
+  figure you'd need USD conversion (see below).
+- **USD (optional):** Dune's `prices.usd` may not cover Mezo-native tokens. MUSD ≈ $1, so MUSD figures
+  are ~USD directly. For BTC/MEZO, join a price source by symbol/minute if available; otherwise keep
+  native. Don't ship a USD widget that renders empty.
+- **`discountBpsAtSale`** can be negative → sold above intrinsic value (a premium).
+- Column names come straight from the Solidity event params — casing matters (`paymentToken`,
+  `protocolFee`, `tokenId`, `evt_block_time`, `evt_tx_hash`).
+- If you decoded a contract under a different name than `Marketplace`/`VeNFTBidding`/`SwapPaymentRouter`,
+  find/replace the table prefix accordingly.
