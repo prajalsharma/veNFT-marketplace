@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { VezoLogoMark } from "@/components/Header";
+import { VEZO_FAQS } from "@/components/JsonLd";
 
 // ─── Contract card ────────────────────────────────────────────────────────────
 function ContractCard({
@@ -480,6 +481,49 @@ export default function DocsClient() {
             </div>
           </motion.div>
         </section>
+
+        {/* ── FAQ (visible copy — mirrors FAQPage schema for AEO) ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-8"
+        >
+          <div className="flex items-center gap-3 mb-8">
+            <div className="section-header">
+              <span className="eyebrow">FAQ</span>
+            </div>
+            <h2 className="display-md" style={{ color: "var(--text-1)" }}>
+              Frequently Asked Questions
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {VEZO_FAQS.map((faq) => (
+              <div
+                key={faq.q}
+                className="rounded-2xl p-6"
+                style={{
+                  background: "var(--bg-1)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+              >
+                <h3
+                  className="text-[16px] font-semibold mb-2 flex items-start gap-2"
+                  style={{ color: "var(--text-1)" }}
+                >
+                  <ChevronRight
+                    style={{ width: 16, height: 16, marginTop: 3, color: "var(--vezo-red)", flexShrink: 0 }}
+                  />
+                  {faq.q}
+                </h3>
+                <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                  {faq.a}
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
 
         {/* ── CTA ── */}
         <motion.section
