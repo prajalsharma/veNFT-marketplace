@@ -2,6 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import dynamic from "next/dynamic";
+import { OrganizationJsonLd } from "@/components/JsonLd";
+import {
+  SITE_URL,
+  SITE_NAME,
+  TITLE_SUFFIX,
+  DEFAULT_DESCRIPTION,
+  KEYWORDS,
+  TWITTER_HANDLE,
+} from "@/lib/seo";
 
 const Providers = dynamic(() => import("@/components/Providers"), {
   ssr: false,
@@ -29,11 +38,33 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "vezo | veNFT Marketplace",
-  description:
-    "The premier marketplace for trading veBTC and veMEZO NFTs on Mezo Network. Buy vote-escrowed NFTs at a discount and unlock voting power.",
-  keywords: ["Mezo", "veNFT", "veBTC", "veMEZO", "NFT", "marketplace", "DeFi", "voting power", "Vezo"],
-  authors: [{ name: "Vezo" }],
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} | ${TITLE_SUFFIX}`,
+    // Child routes set only their page name; this appends the brand.
+    template: `%s | ${TITLE_SUFFIX}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  keywords: KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "finance",
+  alternates: { canonical: SITE_URL },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  formatDetection: { telephone: false, email: false, address: false },
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -44,15 +75,28 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "Vezo | veNFT Marketplace",
-    description: "Trade veBTC and veMEZO NFTs at a discount on Mezo Network",
+    title: `${SITE_NAME} — veNFT Marketplace on Mezo`,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Vezo — the veNFT marketplace for veBTC & veMEZO on Mezo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vezo | veNFT Marketplace",
-    description: "Trade veBTC and veMEZO NFTs at a discount on Mezo Network",
+    title: `${SITE_NAME} — veNFT Marketplace on Mezo`,
+    description: DEFAULT_DESCRIPTION,
+    site: TWITTER_HANDLE,
+    creator: TWITTER_HANDLE,
+    images: ["/opengraph-image"],
   },
 };
 
@@ -76,6 +120,8 @@ export default function RootLayout({
         className={`${outfit.variable} font-sans min-h-[100dvh] antialiased`}
         style={{ background: "var(--bg)", color: "var(--text-1)" }}
       >
+        {/* Entity graph for search engines & AI answer engines (GEO). */}
+        <OrganizationJsonLd />
         <Providers>
           <ClientLayout>{children}</ClientLayout>
         </Providers>

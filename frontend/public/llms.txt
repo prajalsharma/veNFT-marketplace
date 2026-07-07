@@ -1,0 +1,63 @@
+# Vezo
+
+> Vezo is the escrowless, non-custodial peer-to-peer marketplace for trading
+> veBTC and veMEZO vote-escrowed NFTs (veNFTs) on Mezo, Bitcoin's Layer 2
+> network. Buyers acquire voting power and locked BTC/MEZO at a discount to
+> intrinsic value; the veNFT never leaves the seller's wallet until a single
+> atomic settlement transaction.
+
+Vezo is a Web3 / DeFi application. It is live at https://www.vezo.exchange and
+runs on Mezo Network (a Bitcoin Layer 2). Payments settle in BTC, MEZO, or MUSD.
+
+## What Vezo is
+
+- **Escrowless & non-custodial:** The seller keeps the veNFT and the buyer keeps
+  their funds (only an ERC-20 approval is held) until one transaction transfers
+  the NFT and routes the fee-split payment simultaneously. No custody, no
+  third-party lock.
+- **veNFTs:** On Mezo, users lock BTC or MEZO to mint veBTC or veMEZO NFTs. Each
+  veNFT carries an intrinsic value (from the locked amount), a lock duration, and
+  live voting power that decays over time.
+- **Discount marketplace:** Sellers list veNFTs for immediate liquidity, often
+  below intrinsic value. Buyers get voting power and locked assets for less than
+  minting directly. Every listing shows intrinsic value, voting power, lock
+  duration, and discount.
+
+## Key facts
+
+- Product: veNFT marketplace
+- Network: Mezo (Bitcoin Layer 2)
+- Assets traded: veBTC, veMEZO (vote-escrowed NFTs)
+- Payment tokens: BTC, MEZO, MUSD
+- Custody model: escrowless / non-custodial (atomic swap on purchase)
+- Also supports: onchain bidding, and paying with any token via an integrated
+  Velodrome swap router
+- Website: https://www.vezo.exchange
+
+## Pages
+
+- [Home](https://www.vezo.exchange/): Overview of Vezo and how veNFT trading works.
+- [Marketplace](https://www.vezo.exchange/marketplace): Live veBTC/veMEZO
+  listings with intrinsic value, voting power, lock duration, and discount.
+- [Activity](https://www.vezo.exchange/activity): Real-time sales, listings, and
+  cancellations across the marketplace.
+- [Docs](https://www.vezo.exchange/docs): veNFT mechanics, the escrowless trade
+  flow, and the smart contracts securing each trade.
+
+## FAQ
+
+- **What is Vezo?** An escrowless P2P marketplace for veBTC and veMEZO veNFTs on
+  Mezo, Bitcoin's Layer 2.
+- **What is a veNFT?** A vote-escrowed NFT minted by locking BTC or MEZO on Mezo;
+  it holds intrinsic value, a lock duration, and decaying voting power.
+- **How do discounts work?** Sellers list below intrinsic value for liquidity, so
+  buyers acquire voting power and locked assets for less than minting.
+- **Is it custodial?** No. The NFT and funds stay with their owners until a single
+  atomic settlement transaction.
+- **Which tokens?** Trades veBTC and veMEZO; pays in BTC, MEZO, or MUSD.
+- **Risks?** Voting power decays toward lock expiry and expired locks can't be
+  traded — check remaining lock duration and intrinsic value before buying.
+
+## Source
+
+- [GitHub — veNFT-marketplace](https://github.com/prajalsharma/veNFT-marketplace)
