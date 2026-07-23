@@ -32,9 +32,11 @@ import {
   TrendingDown,
   Clock,
   Gavel,
+  Loader2,
 } from "lucide-react";
 import { useMarketplace, useListing, useUserVeNFTs, computeVotingPower } from "@/hooks/useMarketplace";
-import { useActiveTokenBids } from "@/hooks/useBidding";
+import { useActiveTokenBids, useBidding } from "@/hooks/useBidding";
+import { parseBiddingError } from "@/lib/biddingErrors";
 import { ListingModal } from "@/components/ListingModal";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 
@@ -167,7 +169,35 @@ function IncomingBidsForListing({
   collection: `0x${string}`;
   tokenId: bigint;
 }) {
-  const { data: bids, isLoading } = useActiveTokenBids(collection, tokenId);
+  const { address } = useAccount();
+  const { data: bids, isLoading, refetch } = useActiveTokenBids(collection, tokenId);
+  const { acceptBidWithApproval } = useBidding();
+
+  const [busyBidId,   setBusyBidId]   = useState<bigint | null>(null);
+  const [busyLabel,   setBusyLabel]   = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const handleAccept = useCallback(async (bidId: bigint) => {
+    if (!address) return;
+    setActionError(null);
+    setBusyBidId(bidId);
+    try {
+      await acceptBidWithApproval({
+        bidId,
+        collection,
+        tokenId,
+        owner: address,
+        onStage: (s) => setBusyLabel(s === "approving" ? "Approving…" : "Accepting…"),
+      });
+      refetch();
+    } catch (e) {
+      setActionError(parseBiddingError(e));
+    } finally {
+      setBusyBidId(null);
+      setBusyLabel("");
+    }
+  }, [acceptBidWithApproval, address, collection, tokenId, refetch]);
+
   if (isLoading) return null;
   if (!bids || bids.length === 0) return null;
 
@@ -205,8 +235,10 @@ function IncomingBidsForListing({
             ? `${hoursLeft}h left`
             : `${Math.floor(hoursLeft / 24)}d left`;
 
+          const busy = busyBidId === bid.id;
+
           return (
-            <div key={bid.id.toString()} className="flex items-center justify-between px-4 py-2.5">
+            <div key={bid.id.toString()} className="flex items-center justify-between gap-3 px-4 py-2.5">
               <div>
                 <p className="text-[13px] font-mono" style={{ color: "var(--text-2)" }}>
                   {(bid.bidder as string).slice(0, 6)}…{(bid.bidder as string).slice(-4)}
@@ -218,16 +250,47 @@ function IncomingBidsForListing({
                   {expiryLabel}
                 </p>
               </div>
-              <p
-                className="text-sm font-bold tabular-nums"
-                style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
-              >
-                {parseFloat(formatEther(bid.amount as bigint)).toFixed(4)}
-              </p>
+              <div className="flex items-center gap-3">
+                <p
+                  className="text-sm font-bold tabular-nums"
+                  style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {parseFloat(formatEther(bid.amount as bigint)).toFixed(4)}
+                </p>
+                {!isExpired && (
+                  <button
+                    onClick={() => handleAccept(bid.id as bigint)}
+                    disabled={busyBidId !== null}
+                    className="px-3 py-1.5 rounded-lg text-[12px] font-bold inline-flex items-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981]"
+                    style={{
+                      background: "rgba(16,185,129,0.12)",
+                      border: "1px solid rgba(16,185,129,0.25)",
+                      color: "#10B981",
+                    }}
+                  >
+                    {busy ? (
+                      <><Loader2 style={{ width: 11, height: 11 }} className="animate-spin" />{busyLabel || "Working…"}</>
+                    ) : (
+                      "Accept"
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
+
+      {actionError && (
+        <p className="px-4 py-2.5 text-[12px] leading-relaxed" style={{ color: "#EF4444" }} role="alert">
+          {actionError}
+        </p>
+      )}
+
+      <p className="px-4 pb-3 text-[11.5px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+        Accepting sends the veNFT and pulls payment in one transaction. The first
+        accept also asks for a one-time approval of the bidding contract.
+      </p>
     </motion.div>
   );
 }

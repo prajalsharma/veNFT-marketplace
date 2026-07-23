@@ -25,7 +25,7 @@ import {
 import { parseUnits, erc20Abi } from "viem";
 import { useNetwork } from "./useNetwork";
 import { getContracts } from "../lib/contracts";
-import { VeNFTBiddingABI } from "../lib/abis";
+import { VeNFTBiddingABI, ERC721ABI } from "../lib/abis";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -147,6 +147,88 @@ export function useBidding() {
     [biddingAddress, writeContractAsync]
   );
 
+  // ── acceptBid + the NFT approval it requires ──────────────────────────────
+
+  /**
+   * Accept a bid, granting the bidding contract NFT approval first if needed.
+   *
+   * `acceptBid()` pulls the veNFT with safeTransferFrom, so the bidding contract
+   * must be an approved operator. Listing an NFT only ever approves the
+   * MARKETPLACE, so a seller who has only listed will always hit `NotApproved()`
+   * here. We check both approval paths (per-token and operator-wide) and grant
+   * setApprovalForAll once when neither is present.
+   *
+   * Waits for each receipt so callers can drive a truthful progress UI, and
+   * throws on an on-chain revert instead of silently resolving.
+   */
+  const acceptBidWithApproval = useCallback(
+    async (params: {
+      bidId:      bigint;
+      collection: `0x${string}`;
+      tokenId:    bigint;
+      owner:      `0x${string}`;
+      onStage?:   (stage: "approving" | "accepting") => void;
+    }) => {
+      const { bidId, collection, tokenId, owner, onStage } = params;
+
+      if (!biddingAddress || biddingAddress === "0x0000000000000000000000000000000000000000") {
+        throw new Error("Bidding contract not deployed on this network");
+      }
+      if (!publicClient) throw new Error("Network not ready. Try again.");
+
+      const [approvedAll, approvedSingle] = await Promise.all([
+        publicClient.readContract({
+          address: collection, abi: ERC721ABI, functionName: "isApprovedForAll",
+          args: [owner, biddingAddress],
+        }) as Promise<boolean>,
+        publicClient.readContract({
+          address: collection, abi: ERC721ABI, functionName: "getApproved",
+          args: [tokenId],
+        }) as Promise<`0x${string}`>,
+      ]);
+
+      const alreadyApproved =
+        approvedAll || approvedSingle.toLowerCase() === biddingAddress.toLowerCase();
+
+      if (!alreadyApproved) {
+        onStage?.("approving");
+        const approveHash = await writeContractAsync({
+          address:      collection,
+          abi:          ERC721ABI,
+          functionName: "setApprovalForAll",
+          args:         [biddingAddress, true],
+        });
+        const approveReceipt = await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        if (approveReceipt.status !== "success") throw new Error("Approval transaction reverted.");
+      }
+
+      onStage?.("accepting");
+      const hash = await writeContractAsync({
+        address:      biddingAddress,
+        abi:          VeNFTBiddingABI,
+        functionName: "acceptBid",
+        args:         [bidId],
+      });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error("Accept transaction reverted.");
+      return hash;
+    },
+    [biddingAddress, writeContractAsync, publicClient]
+  );
+
+  // ── cancelBid, waiting for the receipt ────────────────────────────────────
+
+  const cancelBidAndWait = useCallback(
+    async (bidId: bigint) => {
+      if (!publicClient) throw new Error("Network not ready. Try again.");
+      const hash = await cancelBid(bidId);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error("Cancel transaction reverted.");
+      return hash;
+    },
+    [cancelBid, publicClient]
+  );
+
   // ── emitWatchlist ─────────────────────────────────────────────────────────
 
   const toggleWatchlist = useCallback(
@@ -169,7 +251,9 @@ export function useBidding() {
     // Write actions
     createBid,
     cancelBid,
+    cancelBidAndWait,
     acceptBid,
+    acceptBidWithApproval,
     toggleWatchlist,
 
     // Write state

@@ -8,7 +8,8 @@ import { mezoMainnet, mezoTestnet } from "@/lib/wagmi";
 import { computeDiscountBpsNumber } from "@/lib/computeDiscount";
 
 export interface ActivityEvent {
-  type: "sale" | "listed" | "cancelled";
+  // Bid variants are produced by ActivityContext from the VeNFTBidding contract.
+  type: "sale" | "listed" | "cancelled" | "bid-placed" | "bid-accepted" | "bid-cancelled";
   listingId: bigint;
   collection: "veBTC" | "veMEZO";
   tokenId: bigint;

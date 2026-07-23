@@ -391,6 +391,23 @@ export const VeNFTBiddingABI = [
     name: "WatchlistUpdated",
     type: "event",
   },
+
+  // ── Custom errors ─────────────────────────────────────────────────────────
+  // Without these entries viem cannot decode a revert and surfaces a raw
+  // selector like "0xc19f17a9" to the user. Keep in sync with VeNFTBidding.sol.
+  { inputs: [], name: "Paused",                  type: "error" },
+  { inputs: [], name: "PauseCheckFailed",        type: "error" },
+  { inputs: [], name: "BidNotActive",            type: "error" },
+  { inputs: [], name: "BidExpired",              type: "error" },
+  { inputs: [], name: "NotBidder",               type: "error" },
+  { inputs: [], name: "NotOwner",                type: "error" },
+  { inputs: [], name: "NotApproved",             type: "error" },
+  { inputs: [], name: "SelfBid",                 type: "error" },
+  { inputs: [], name: "ZeroAmount",              type: "error" },
+  { inputs: [], name: "ZeroExpiry",              type: "error" },
+  { inputs: [], name: "UnsupportedPaymentToken", type: "error" },
+  { inputs: [], name: "InsufficientAllowance",   type: "error" },
+  { inputs: [], name: "InsufficientBalance",     type: "error" },
 ] as const;
 
 // ─── ListingSnapshotStore ABI (new module) ────────────────────────────────────
@@ -487,6 +504,19 @@ export const ERC721ABI = [
     name: "balanceOf",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
+    type: "function",
+  },
+  // Required by the bid-accept flow: VeNFTBidding.acceptBid() pulls the NFT via
+  // safeTransferFrom, so the seller must approve the BIDDING contract. Listing
+  // only ever approves the marketplace, so accepting a bid needs its own grant.
+  {
+    inputs: [
+      { internalType: "address", name: "operator", type: "address" },
+      { internalType: "bool",    name: "approved", type: "bool"    },
+    ],
+    name: "setApprovalForAll",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
 ] as const;

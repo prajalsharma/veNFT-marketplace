@@ -17,8 +17,9 @@ import { useBidding, useActiveTokenBids } from "../hooks/useBidding";
 import { useNetwork } from "../hooks/useNetwork";
 import { getContracts } from "../lib/contracts";
 import { PAYMENT_TOKENS } from "../lib/contracts";
-import { Gavel, CheckCircle2, X, Clock, Loader2 } from "lucide-react";
+import { Gavel, CheckCircle2, X, Clock, Loader2, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { parseBiddingError } from "../lib/biddingErrors";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -77,16 +78,18 @@ function PlaceBidForm({
   const { address }  = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
-  const { createBid, isWritePending, isConfirming } = useBidding();
+  const { createBid } = useBidding();
 
   const [amount,       setAmount]       = useState("");
   const [paymentToken, setPaymentToken] = useState<`0x${string}`>(contracts.MUSD);
   const [expiryDays,   setExpiryDays]   = useState("7");
   const [error,        setError]        = useState<string | null>(null);
-  const [submitted,    setSubmitted]    = useState(false);
-  const [stage,        setStage]        = useState<"idle" | "approving" | "submitting">("idle");
+  const [txHash,       setTxHash]       = useState<`0x${string}` | null>(null);
+  // "confirming" waits on the receipt; "done" means the bid is live on-chain.
+  // Never leave the user on a state that has no exit — that was the old bug.
+  const [stage,        setStage]        = useState<"idle" | "approving" | "submitting" | "confirming" | "done">("idle");
 
-  const busy = stage !== "idle" || isWritePending || isConfirming;
+  const busy = stage === "approving" || stage === "submitting" || stage === "confirming";
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -126,27 +129,61 @@ function PlaceBidForm({
 
         setStage("submitting");
         const expiryTs = BigInt(Math.floor(Date.now() / 1000) + Number(expiryDays) * 86400);
-        await createBid({ collection, tokenId, paymentToken, amount: amountWei, expiry: expiryTs });
-        setSubmitted(true);
+        const hash = await createBid({ collection, tokenId, paymentToken, amount: amountWei, expiry: expiryTs });
+        setTxHash(hash);
+
+        // Wait for the actual receipt. Previously we flipped straight to a
+        // "waiting for confirmation" screen that nothing ever cleared, so a
+        // successful bid looked identical to a failed one — forever.
+        setStage("confirming");
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        if (receipt.status !== "success") throw new Error("Bid transaction reverted onchain.");
+
+        setStage("done");
         onSuccess();
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(msg.length > 140 ? msg.slice(0, 140) + "…" : msg);
-      } finally {
+        setError(parseBiddingError(err));
         setStage("idle");
       }
     },
     [address, amount, paymentToken, expiryDays, collection, tokenId, createBid, onSuccess, publicClient, writeContractAsync, contracts.bidding]
   );
 
-  if (submitted) {
+  if (stage === "done") {
     return (
       <div
-        className="flex items-center gap-2 p-3 rounded-xl text-[13px] font-medium"
-        style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#10B981" }}
+        className="p-3 rounded-xl space-y-2"
+        style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}
       >
-        <CheckCircle2 style={{ width: 13, height: 13, flexShrink: 0 }} />
-        Bid submitted. Waiting for confirmation…
+        <div className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "#10B981" }}>
+          <CheckCircle2 style={{ width: 13, height: 13, flexShrink: 0 }} />
+          Bid is live on-chain.
+        </div>
+        <p className="text-[12px]" style={{ color: "var(--text-2)" }}>
+          The owner can accept it until it expires. You keep your funds until then.
+        </p>
+        <div className="flex items-center gap-3">
+          {txHash && (
+            <a
+              href={`${contracts.explorer}/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              style={{ color: "#10B981" }}
+            >
+              View transaction
+              <ExternalLink style={{ width: 10, height: 10 }} />
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={() => { setStage("idle"); setTxHash(null); setAmount(""); setError(null); }}
+            className="text-[12px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            style={{ color: "var(--text-2)" }}
+          >
+            Place another bid
+          </button>
+        </div>
       </div>
     );
   }
@@ -244,7 +281,10 @@ function PlaceBidForm({
         }}
       >
         {busy ? (
-          <><Loader2 style={{ width: 12, height: 12 }} className="animate-spin" />{stage === "approving" ? "Approving…" : "Submitting…"}</>
+          <>
+            <Loader2 style={{ width: 12, height: 12 }} className="animate-spin" />
+            {stage === "approving" ? "Approving…" : stage === "confirming" ? "Confirming…" : "Submitting…"}
+          </>
         ) : !address ? (
           "Connect wallet to bid"
         ) : (
@@ -260,13 +300,19 @@ function PlaceBidForm({
 function BidRow({
   bid,
   isOwner,
+  busy,
+  busyLabel,
+  anyBusy,
   onAccept,
   onCancel,
 }: {
-  bid:      Bid;
-  isOwner:  boolean;
-  onAccept: (id: bigint) => void;
-  onCancel: (id: bigint) => void;
+  bid:       Bid;
+  isOwner:   boolean;
+  busy:      boolean;
+  busyLabel: string;
+  anyBusy:   boolean;
+  onAccept:  (id: bigint) => void;
+  onCancel:  (id: bigint) => void;
 }) {
   const { address } = useAccount();
   const isBidder    = address?.toLowerCase() === bid.bidder.toLowerCase();
@@ -305,23 +351,26 @@ function BidRow({
         {isOwner && !expired && (
           <button
             onClick={() => onAccept(bid.id)}
-            className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
+            disabled={anyBusy}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981]"
             style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)", color: "#10B981" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.22)"; }}
+            onMouseEnter={(e) => { if (!anyBusy) (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.22)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.12)"; }}
           >
-            Accept
+            {busy ? <><Loader2 style={{ width: 10, height: 10 }} className="animate-spin" />{busyLabel || "Working…"}</> : "Accept"}
           </button>
         )}
         {isBidder && (
           <button
             onClick={() => onCancel(bid.id)}
-            className="px-2 py-1 rounded-lg text-[11px] font-bold transition-all"
+            disabled={anyBusy}
+            aria-label="Cancel bid"
+            className="px-2 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-3)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; }}
+            onMouseEnter={(e) => { if (!anyBusy) (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; }}
           >
-            <X style={{ width: 10, height: 10 }} />
+            {busy ? <Loader2 style={{ width: 10, height: 10 }} className="animate-spin" /> : <X style={{ width: 10, height: 10 }} />}
           </button>
         )}
       </div>
@@ -333,8 +382,11 @@ function BidRow({
 
 export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPanelProps) {
   const { address }  = useAccount();
-  const { cancelBid, acceptBid } = useBidding();
+  const { cancelBidAndWait, acceptBidWithApproval } = useBidding();
   const [, setRefreshKey] = useState(0);
+  const [busyBidId,   setBusyBidId]   = useState<bigint | null>(null);
+  const [busyLabel,   setBusyLabel]   = useState<string>("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const isOwner =
     !!address &&
@@ -343,13 +395,44 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
 
   const { data: activeBids, isLoading, refetch } = useActiveTokenBids(collection, tokenId);
 
+  // Accepting needs the bidding contract approved as an NFT operator — listing
+  // only approves the marketplace, so this is a separate one-time grant. Errors
+  // used to be swallowed into console.error, which made Accept look inert.
   const handleAccept = useCallback(async (bidId: bigint) => {
-    try { await acceptBid(bidId); refetch(); } catch (e) { console.error("acceptBid:", e); }
-  }, [acceptBid, refetch]);
+    if (!address) return;
+    setActionError(null);
+    setBusyBidId(bidId);
+    try {
+      await acceptBidWithApproval({
+        bidId,
+        collection,
+        tokenId,
+        owner: address,
+        onStage: (s) => setBusyLabel(s === "approving" ? "Approving…" : "Accepting…"),
+      });
+      refetch();
+    } catch (e) {
+      setActionError(parseBiddingError(e));
+    } finally {
+      setBusyBidId(null);
+      setBusyLabel("");
+    }
+  }, [acceptBidWithApproval, refetch, address, collection, tokenId]);
 
   const handleCancel = useCallback(async (bidId: bigint) => {
-    try { await cancelBid(bidId); refetch(); } catch (e) { console.error("cancelBid:", e); }
-  }, [cancelBid, refetch]);
+    setActionError(null);
+    setBusyBidId(bidId);
+    setBusyLabel("Cancelling…");
+    try {
+      await cancelBidAndWait(bidId);
+      refetch();
+    } catch (e) {
+      setActionError(parseBiddingError(e));
+    } finally {
+      setBusyBidId(null);
+      setBusyLabel("");
+    }
+  }, [cancelBidAndWait, refetch]);
 
   const bids = (activeBids as Bid[] | undefined) ?? [];
 
@@ -391,11 +474,27 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
               key={bid.id.toString()}
               bid={bid}
               isOwner={isOwner}
+              busy={busyBidId === bid.id}
+              busyLabel={busyLabel}
+              anyBusy={busyBidId !== null}
               onAccept={handleAccept}
               onCancel={handleCancel}
             />
           ))}
         </div>
+      )}
+
+      {actionError && (
+        <p className="text-[12px] leading-relaxed" style={{ color: "#EF4444" }} role="alert">
+          {actionError}
+        </p>
+      )}
+
+      {isOwner && bids.length > 0 && (
+        <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+          Accepting an offer needs a one-time approval for the bidding contract, so
+          the first accept asks for two signatures.
+        </p>
       )}
 
       {/* Place bid form — shown to non-owners only */}
