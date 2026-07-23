@@ -13,6 +13,7 @@ import { DiscountBadge } from "./DiscountBadge";
 import { CountdownCompact } from "./CountdownTimer";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import BidsPanel from "./BidsPanel";
+import { useActiveTokenBids } from "@/hooks/useBidding";
 
 interface VeNFTCardProps {
   listingId: number;
@@ -74,6 +75,15 @@ export function VeNFTCard({
   const dot = isVeBTC ? "#F7931A" : "#4A90E2";
 
   const [bidsOpen, setBidsOpen] = useState(false);
+
+  // Live offer count for the collapsed row. Reads batch through Multicall3, so
+  // one call covers every card on screen rather than one request per card.
+  const { data: activeBids } = useActiveTokenBids(
+    nftContract as `0x${string}` | undefined,
+    tokenId
+  );
+  const offerCount = Array.isArray(activeBids) ? activeBids.length : 0;
+  const hasOffers  = offerCount > 0;
 
   return (
     <motion.div
@@ -145,14 +155,35 @@ export function VeNFTCard({
       {/* Offers / Bids — subtle, collapsible */}
       {nftContract && (
         <div className="px-5 pb-5">
+          {/* The collapsed row has to earn the click. With live offers it goes
+              accent-tinted and states the count; with none it reads as an
+              invitation rather than an empty drawer. */}
           <button
             onClick={() => setBidsOpen((o) => !o)}
             aria-expanded={bidsOpen}
-            className="w-full flex items-center justify-between py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-            style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }}
+            aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, show details` : "Make an offer"}
+            className="w-full flex items-center justify-between py-3 px-4 rounded-xl text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            style={
+              hasOffers
+                ? { background: "rgba(255,0,64,0.06)", border: "1px solid rgba(255,0,64,0.22)", color: "var(--text-1)" }
+                : { background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }
+            }
           >
-            <span className="flex items-center gap-2"><Gavel style={{ width: 12, height: 12 }} /> Offers</span>
-            <ChevronDown style={{ width: 12, height: 12, transform: bidsOpen ? "rotate(180deg)" : "none", transition: "transform 220ms ease" }} />
+            <span className="flex items-center gap-2.5">
+              <Gavel style={{ width: 14, height: 14, color: hasOffers ? "#FF0040" : "currentColor" }} />
+              {hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}` : "Make an offer"}
+            </span>
+            <span className="flex items-center gap-2">
+              {hasOffers && (
+                <span
+                  className="min-w-[22px] h-[22px] px-1.5 inline-flex items-center justify-center rounded-full text-[12px] font-black tabular-nums"
+                  style={{ background: "#FF0040", color: "#fff", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {offerCount}
+                </span>
+              )}
+              <ChevronDown style={{ width: 14, height: 14, transform: bidsOpen ? "rotate(180deg)" : "none", transition: "transform 220ms ease" }} />
+            </span>
           </button>
           <AnimatePresence>
             {bidsOpen && (

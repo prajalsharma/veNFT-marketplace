@@ -169,8 +169,8 @@ export default function ActivityClient() {
   const { events, isLoading, error, isDeployed } = useActivityFeed(100);
 
   return (
-    <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-4 md:px-8">
-      <div className="max-w-[1400px] mx-auto">
+    <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-5 md:px-10 lg:px-16">
+      <div className="max-w-[1280px] mx-auto">
 
         {/* ── Header — left-aligned, asymmetric ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">

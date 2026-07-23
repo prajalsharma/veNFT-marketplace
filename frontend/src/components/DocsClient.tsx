@@ -196,7 +196,7 @@ function SectionHeading({
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function DocsClient() {
   return (
-    <div className="min-h-[100dvh] pt-32 pb-24 px-4 md:px-8 page-enter">
+    <div className="min-h-[100dvh] pt-32 pb-24 px-5 md:px-10 lg:px-16 page-enter">
       <div className="max-w-[1100px] mx-auto">
 
         {/* ── Hero ── */}

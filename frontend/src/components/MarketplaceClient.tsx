@@ -368,8 +368,8 @@ export default function MarketplaceClient() {
         }}
       />
 
-      <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-4 md:px-8">
-        <div className="max-w-[1400px] mx-auto">
+      <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-5 md:px-10 lg:px-16">
+        <div className="max-w-[1280px] mx-auto">
 
           {/* ── Page header — left-aligned, asymmetric two-part ── */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
@@ -572,11 +572,11 @@ export default function MarketplaceClient() {
               Taste-skill: ban 3-col equal grid — use responsive cols that allow
               visual variation. AnimatePresence + layout for smooth re-order. */}
           {showSkeletons ? (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start stagger">
               {[...Array(6)].map((_, i) => <VeNFTCardSkeleton key={i} />)}
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 stagger">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start stagger">
               <AnimatePresence mode="popLayout">
                 {filteredListings.map((listing) => (
                   <VeNFTCard

@@ -90,11 +90,11 @@ function FeatureRow({
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-start gap-5 py-7"
+      className="flex items-start gap-6 py-8"
       style={{ borderBottom: "1px solid var(--border-subtle)" }}
     >
       <motion.div
-        className="shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center mt-0.5"
+        className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center mt-0.5"
         style={{
           background: `${accentColor}10`,
           border: `1px solid ${accentColor}22`,
@@ -103,16 +103,16 @@ function FeatureRow({
         whileHover={{ scale: 1.1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
-        <Icon style={{ color: accentColor, width: 18, height: 18 }} />
+        <Icon style={{ color: accentColor, width: 20, height: 20 }} />
       </motion.div>
       <div className="flex-1 min-w-0">
         <h4
-          className="font-semibold text-base mb-1.5"
+          className="font-semibold text-[19px] mb-2"
           style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}
         >
           {title}
         </h4>
-        <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "50ch" }}>
+        <p className="text-[16px] leading-[1.6]" style={{ color: "var(--text-2)", maxWidth: "58ch", textWrap: "pretty" }}>
           {desc}
         </p>
       </div>
@@ -350,12 +350,12 @@ export default function HomeClient() {
     <div className="relative min-h-[100dvh]">
 
       {/* ══ HERO ══ */}
-      <section className="relative pt-24 pb-14 lg:pt-40 lg:pb-24 px-4 md:px-8 overflow-hidden">
+      <section className="relative pt-24 pb-14 lg:pt-40 lg:pb-24 px-5 md:px-10 lg:px-16 overflow-hidden">
 
         {/* Subtle grid */}
         <div aria-hidden className="absolute inset-0 pointer-events-none grid-overlay" />
 
-        <div className="max-w-[1400px] mx-auto relative" style={{ zIndex: 1 }}>
+        <div className="max-w-[1280px] mx-auto relative" style={{ zIndex: 1 }}>
           <div className="grid lg:grid-cols-[1fr_460px] xl:grid-cols-[1fr_500px] gap-16 xl:gap-24 items-center">
 
             {/* ── Left: headline + CTA ── */}
@@ -457,8 +457,8 @@ export default function HomeClient() {
       </section>
 
       {/* ══ TRUST STRIP ══ */}
-      <section className="py-10 px-4 md:px-8">
-        <div className="max-w-[1400px] mx-auto">
+      <section className="py-10 px-5 md:px-10 lg:px-16">
+        <div className="max-w-[1280px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -480,12 +480,15 @@ export default function HomeClient() {
       </section>
 
       {/* ══ FEATURES ══ */}
-      <section className="py-20 px-4 md:px-8 relative">
-        <div className="max-w-[1400px] mx-auto mb-14">
+      <section className="py-20 px-5 md:px-10 lg:px-16 relative">
+        <div className="max-w-[1280px] mx-auto mb-14">
           <div className="rule-fade" />
         </div>
 
-        <div className="max-w-[1400px] mx-auto grid lg:grid-cols-[1fr_560px] gap-20 xl:gap-32 items-start">
+        {/* Near-even split. The old [1fr_560px] with gap-32 left the heading
+            stranded on the far left and the rows on the far right, with a dead
+            band down the middle at desktop widths. */}
+        <div className="max-w-[1280px] mx-auto grid lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)] gap-12 xl:gap-16 items-start">
 
           {/* Left sticky label */}
           <div className="lg:sticky lg:top-32">
@@ -501,7 +504,7 @@ export default function HomeClient() {
               <h2 className="display-lg mb-6" style={{ color: "var(--text-1)" }}>
                 Built on<br />security &<br />fairness.
               </h2>
-              <p className="text-[15px] leading-relaxed mb-8" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
+              <p className="text-[17px] leading-[1.65] mb-8" style={{ color: "var(--text-2)", maxWidth: "34ch", textWrap: "pretty" }}>
                 The Mezo ecosystem needed a way to exit locked positions without surrendering voting rights until the final moment. Vezo makes that possible.
               </p>
 
@@ -524,7 +527,7 @@ export default function HomeClient() {
                 ].map((m) => (
                   <div
                     key={m.label}
-                    className="flex items-center gap-2.5 text-xs font-semibold"
+                    className="flex items-center gap-2.5 text-[14px] font-semibold"
                     style={{ color: "var(--text-2)" }}
                   >
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: m.color }} />
@@ -570,8 +573,8 @@ export default function HomeClient() {
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
-      <section className="py-20 px-4 md:px-8">
-        <div className="max-w-[1400px] mx-auto">
+      <section className="py-20 px-5 md:px-10 lg:px-16">
+        <div className="max-w-[1280px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -683,8 +686,8 @@ export default function HomeClient() {
       </section>
 
       {/* ══ CTA ══ */}
-      <section className="py-20 px-4 md:px-8">
-        <div className="max-w-[1400px] mx-auto">
+      <section className="py-20 px-5 md:px-10 lg:px-16">
+        <div className="max-w-[1280px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 26 }}
             whileInView={{ opacity: 1, y: 0 }}

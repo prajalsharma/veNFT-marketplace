@@ -145,7 +145,7 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
       </div>
 
       {/* Desktop — static row */}
-      <div className="hidden sm:flex max-w-[1400px] mx-auto h-full px-6 lg:px-8 items-center gap-5">
+      <div className="hidden sm:flex max-w-[1280px] mx-auto h-full px-5 md:px-10 lg:px-16 items-center gap-5">
         <div className="flex items-center gap-1.5 shrink-0" style={{ color: "var(--text-3)" }}>
           <TrendingUp style={{ width: 11, height: 11 }} />
           <span className="text-xs font-black uppercase tracking-widest">Live Prices</span>
@@ -207,7 +207,7 @@ export function Header() {
         transition: "background 380ms var(--ease-spring), border-color 380ms var(--ease-spring)",
       }}
     >
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16">
         <div className="flex items-center h-[56px] lg:h-[68px] gap-2 sm:gap-3">
 
           {/* ── Mobile hamburger — LEFT ── */}

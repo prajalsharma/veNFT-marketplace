@@ -56,7 +56,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           }}
         />
 
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16 py-12">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
 
             {/* ── Brand ── */}
