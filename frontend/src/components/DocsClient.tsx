@@ -208,9 +208,6 @@ export default function DocsClient() {
             className="flex items-center gap-2.5 mb-8"
           >
             <VezoLogoMark size={28} />
-            <div className="section-header">
-              <span className="eyebrow">Documentation</span>
-            </div>
           </motion.div>
 
           <motion.h1
@@ -491,9 +488,6 @@ export default function DocsClient() {
           className="mb-8"
         >
           <div className="flex items-center gap-3 mb-8">
-            <div className="section-header">
-              <span className="eyebrow">FAQ</span>
-            </div>
             <h2 className="display-md" style={{ color: "var(--text-1)" }}>
               Frequently Asked Questions
             </h2>
@@ -556,9 +550,6 @@ export default function DocsClient() {
           <div className="relative z-10 max-w-lg">
             <div className="flex items-center gap-3 mb-6">
               <VezoLogoMark size={36} />
-              <div className="section-header">
-                <span className="eyebrow">Open Source</span>
-              </div>
             </div>
             <h2 className="display-md mb-4" style={{ color: "var(--text-1)" }}>
               Contribute to<br />the Ecosystem.

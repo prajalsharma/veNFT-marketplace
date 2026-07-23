@@ -116,12 +116,6 @@ function FeatureRow({
           {desc}
         </p>
       </div>
-      <span
-        className="shrink-0 text-[9px] font-black tabular-nums mt-1.5"
-        style={{ color: accentColor, letterSpacing: "0.05em" }}
-      >
-        0{index + 1}
-      </span>
     </motion.div>
   );
 }
@@ -498,9 +492,6 @@ export default function HomeClient() {
               viewport={{ once: true }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="section-header mb-4">
-                <span className="eyebrow">Why Vezo</span>
-              </div>
               <h2 className="display-lg mb-6" style={{ color: "var(--text-1)" }}>
                 Built on<br />security &<br />fairness.
               </h2>
@@ -582,13 +573,10 @@ export default function HomeClient() {
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-14"
           >
-            <div className="section-header justify-center mb-5">
-              <span className="eyebrow">How it works</span>
-            </div>
             <h2 className="display-lg mb-4" style={{ color: "var(--text-1)" }}>
               Everything you can do on Vezo.
             </h2>
-            <p className="text-[15px] leading-relaxed mx-auto" style={{ color: "var(--text-2)", maxWidth: "56ch" }}>
+            <p className="text-[17px] leading-[1.65] mx-auto" style={{ color: "var(--text-2)", maxWidth: "58ch", textWrap: "pretty" }}>
               Buy, sell, bid, or pay in any token. Every action settles atomically on-chain, and you keep custody until the trade completes.
             </p>
           </motion.div>
@@ -635,14 +623,6 @@ export default function HomeClient() {
                   className="nft-card p-7 rounded-2xl relative overflow-hidden"
                   style={{ background: "var(--bg-1)" }}
                 >
-                  {/* Step number */}
-                  <span
-                    className="absolute top-6 right-6 text-[15px] font-black tabular-nums"
-                    style={{ color: item.color, fontVariantNumeric: "tabular-nums", opacity: 0.9 }}
-                  >
-                    0{i + 1}
-                  </span>
-
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
                     style={{ background: `${item.color}14`, border: `1px solid ${item.color}33` }}
@@ -652,7 +632,7 @@ export default function HomeClient() {
                   <h3 className="text-[21px] font-bold mb-2.5" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
                     {item.title}
                   </h3>
-                  <p className="text-[15px] leading-relaxed mb-4" style={{ color: "var(--text-2)" }}>
+                  <p className="text-[16px] leading-[1.6] mb-4" style={{ color: "var(--text-2)", textWrap: "pretty" }}>
                     {item.desc}
                   </p>
                   <p

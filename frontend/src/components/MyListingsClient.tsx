@@ -496,9 +496,6 @@ export default function MyListingsClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="section-header mb-3">
-              <span className="eyebrow">My Portfolio</span>
-            </div>
             <h1 className="display-lg mb-2" style={{ color: "var(--text-1)" }}>
               Your positions.
             </h1>
