@@ -128,9 +128,11 @@ h1[data-page-title] {
   font-size: 1rem;
   font-weight: 700;
 }
-/* Heading anchor links: spaced away from the text, quiet until hover */
+/* Heading anchor links: small gap via Starlight's own spacing system */
+sl-heading-wrapper {
+  --sl-anchor-icon-gap: 0.3em;
+}
 .sl-markdown-content .sl-anchor-link {
-  margin-inline-start: 0.45em;
   opacity: 0.35;
   border-bottom: none;
   transition: opacity 150ms ease, color 150ms ease;
