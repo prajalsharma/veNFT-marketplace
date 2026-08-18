@@ -108,23 +108,25 @@ header.header {
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* ── Typography: heavy display headings, tight tracking ── */
-.sl-markdown-content h1,
-.sl-markdown-content h2,
-.sl-markdown-content h3,
+/* ── Typography: modest, consistent docs scale ── */
 h1[data-page-title] {
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-h1[data-page-title] {
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  letter-spacing: -0.04em;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .sl-markdown-content h2 {
-  font-size: 1.55rem;
-  margin-top: 2.5rem;
-  padding-top: 1.75rem;
-  border-top: 1px solid var(--vz-border-subtle);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.sl-markdown-content h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.sl-markdown-content h4 {
+  font-size: 1rem;
+  font-weight: 700;
 }
 .sl-markdown-content a:not(:where(.not-content *, .sl-link-card *)) {
   color: var(--vz-red);
@@ -183,20 +185,18 @@ button[data-open-modal] {
 
 /* ── Cards: rounded-2xl surfaces with hover lift, like listing cards ── */
 .card {
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--vz-border-subtle);
   background: var(--vz-surface);
   padding: 1.35rem;
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease, border-color 220ms ease;
+  transition: border-color 180ms ease;
 }
 .card:hover {
-  transform: translateY(-3px);
   border-color: var(--vz-red-border);
-  box-shadow: var(--vz-shadow-card);
 }
 .card .title {
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 .card .icon {
   color: var(--vz-red);
@@ -206,23 +206,22 @@ button[data-open-modal] {
   padding: 0.35rem;
 }
 
-/* ── LinkCards (landing directory): uniform, aligned, app-style hover ── */
+/* ── LinkCards: quiet, uniform ── */
 .sl-link-card {
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--vz-border-subtle);
   background: var(--vz-surface);
   box-shadow: none;
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease, border-color 220ms ease;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 .sl-link-card:hover {
-  transform: translateY(-3px);
   border-color: var(--vz-red-border);
-  box-shadow: var(--vz-shadow-card);
   background: var(--vz-surface);
 }
 .sl-link-card .title {
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
 }
 .sl-link-card .description {
   font-size: 0.85rem;
@@ -238,7 +237,7 @@ button[data-open-modal] {
   border-collapse: separate;
   border-spacing: 0;
   border: 1px solid var(--vz-border-subtle);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   width: 100%;
 }
@@ -278,7 +277,7 @@ button[data-open-modal] {
 
 /* ── Code blocks ── */
 .sl-markdown-content pre {
-  border-radius: 1rem !important;
+  border-radius: 0.75rem !important;
   border: 1px solid var(--vz-border-subtle) !important;
 }
 .sl-markdown-content code:not(:where(pre *)) {
@@ -291,7 +290,7 @@ button[data-open-modal] {
 
 /* ── Asides: quiet tinted cards, no side-tab ── */
 .starlight-aside {
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--vz-border-subtle);
   border-inline-start: 1px solid var(--vz-border-subtle);
   background: var(--vz-surface-2);
@@ -307,53 +306,12 @@ button[data-open-modal] {
 
 /* ── Pagination links (prev/next) ── */
 .pagination-links a {
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--vz-border-subtle);
   box-shadow: none;
   transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms ease;
 }
 .pagination-links a:hover {
-  transform: translateY(-2px);
   border-color: var(--vz-red-border);
 }
 
-/* ── Landing stats strip (used in index.mdx) ── */
-.vz-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0;
-  border: 1px solid var(--vz-border-subtle);
-  border-radius: 1.25rem;
-  background: var(--vz-surface);
-  overflow: hidden;
-  margin-top: 2.5rem;
-}
-.vz-stat {
-  flex: 1 1 7rem;
-  padding: 1rem 1.2rem;
-  border-inline-end: 1px solid var(--vz-border-subtle);
-}
-.vz-stat:last-child {
-  border-inline-end: none;
-}
-.vz-stat .k {
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--sl-color-gray-3);
-  margin-bottom: 0.3rem;
-}
-.vz-stat .v {
-  font-size: 1.02rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--sl-color-white);
-}
-.vz-stat .v.red {
-  color: var(--vz-red);
-}
-.vz-stat .v.green {
-  color: #10b981;
-}

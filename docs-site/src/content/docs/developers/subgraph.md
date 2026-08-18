@@ -3,10 +3,10 @@ title: Subgraph & Data
 description: Query Vezo listings, bids, and marketplace activity through the Goldsky subgraph, with the on-chain fallback pattern.
 ---
 
-Bulk queries — "all active listings", "sales in the last week", "everything this wallet has done" — are slow over raw RPC. Vezo ships a **subgraph** (in [`subgraph/`](https://github.com/prajalsharma/veNFT-marketplace/tree/main/subgraph)) that indexes marketplace events into a GraphQL API, hosted on Goldsky.
+Bulk queries ("all active listings", "sales in the last week", "everything this wallet has done") are slow over raw RPC. Vezo ships a subgraph (in [`subgraph/`](https://github.com/prajalsharma/veNFT-marketplace/tree/main/subgraph)) that indexes marketplace events into a GraphQL API, hosted on Goldsky.
 
 :::note
-The subgraph is a read-path optimization, not a dependency. The official frontend automatically **falls back to direct on-chain reads** (`getActiveListings` pagination) whenever the subgraph is unconfigured or unreachable — an integration pattern worth copying. The endpoint URL is deployment-specific configuration (`SUBGRAPH_URL`); deploy your own from the `subgraph/` sources with the Goldsky CLI, or read on-chain as shown in [Contract Integration](/developers/integrate/).
+The subgraph is a read-path optimization, not a dependency. The official frontend automatically falls back to direct on-chain reads (`getActiveListings` pagination) whenever the subgraph is unconfigured or unreachable, and that pattern is worth copying. The endpoint URL is deployment-specific configuration (`SUBGRAPH_URL`); deploy your own from the `subgraph/` sources with the Goldsky CLI, or read on-chain as shown in [Contract Integration](/developers/integrate/).
 :::
 
 ## Entities
@@ -22,7 +22,7 @@ The schema ([`subgraph/schema.graphql`](https://github.com/prajalsharma/veNFT-ma
 | `collection` | Bytes | veBTC or veMEZO contract address |
 | `tokenId` | BigInt | |
 | `price` / `paymentToken` | BigInt / Bytes | Price in the payment token's smallest unit |
-| `active` / `sold` / `cancelled` | Boolean | `active` flips false on sale **or** cancel — check which via the other two flags |
+| `active` / `sold` / `cancelled` | Boolean | `active` flips false on sale or cancel; check which via the other two flags |
 | `createdAt` / `updatedAt` | BigInt | Block timestamps |
 
 ### `Bid`
@@ -31,7 +31,7 @@ Same shape for the bidding module: `bidId`, `bidder`, `collection`, `tokenId`, `
 
 ### `ActivityEvent`
 
-An immutable event log (id = `txHash-logIndex`) powering activity feeds — one row per listing, sale, cancellation, or bid event.
+An immutable event log (id = `txHash-logIndex`) powering activity feeds, with one row per listing, sale, cancellation, or bid event.
 
 ## Example queries
 
@@ -97,10 +97,10 @@ Open bids on a specific veNFT:
 
 ## What the subgraph can't tell you
 
-Indexed data is *event* data. Three things must always come from the chain (or the [marketplace read functions](/developers/integrate/#reading-listings)) at decision time:
+Indexed data is event data. Three things must always come from the chain (or the [marketplace read functions](/developers/integrate/#reading-listings)) at decision time:
 
-1. **Intrinsic value, voting power, and discount** — computed live from the vote-escrow contracts; they change every block as voting power decays.
-2. **Current ownership** — a seller can transfer a listed NFT away; only `ownerOf` is authoritative.
-3. **Buyability** — expiry, pause state, and allowance are enforced at `buyNFT` time, not in the index.
+1. **Intrinsic value, voting power, and discount.** These are computed live from the vote-escrow contracts and change every block as voting power decays.
+2. **Current ownership.** A seller can transfer a listed NFT away; only `ownerOf` is authoritative.
+3. **Buyability.** Expiry, pause state, and allowance are enforced at `buyNFT` time, not in the index.
 
-The robust pattern, used by the official frontend: **discover with the subgraph, verify with the chain** — query candidates via GraphQL, then call `getListingWithValue` on the ones you act on. Public aggregate metrics (volume, sale counts, discount trends) are also charted on the [Dune dashboard](https://dune.com/vezo/vezo), built from the same on-chain events (`dune/` in the repo).
+The robust pattern, used by the official frontend, is to discover with the subgraph and verify with the chain: query candidates via GraphQL, then call `getListingWithValue` on the ones you act on. Public aggregate metrics (volume, sale counts, discount trends) are also charted on the [Dune dashboard](https://dune.com/vezo/vezo), built from the same on-chain events (`dune/` in the repo).

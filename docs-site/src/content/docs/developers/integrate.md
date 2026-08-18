@@ -1,9 +1,9 @@
 ---
 title: Contract Integration
-description: Integrate Vezo on-chain — chain configuration, key function signatures, and viem code samples for reading listings and executing purchases.
+description: Integrate Vezo on-chain - chain configuration, key function signatures, and viem code samples for reading listings and executing purchases.
 ---
 
-This page is for developers integrating Vezo's contracts directly — bots, aggregators, portfolio trackers, or alternative frontends. All function signatures below are taken from the deployed source in [`contracts/`](https://github.com/prajalsharma/veNFT-marketplace/tree/main/contracts). Addresses for both networks are in [Smart Contracts → Deployed addresses](/architecture/contracts/#deployed-addresses).
+This page is for developers integrating Vezo's contracts directly: bots, aggregators, portfolio trackers, or alternative frontends. All function signatures below are taken from the deployed source in [`contracts/`](https://github.com/prajalsharma/veNFT-marketplace/tree/main/contracts). Addresses for both networks are in [Smart Contracts → Deployed addresses](/architecture/contracts/#deployed-addresses).
 
 ## Chain configuration
 
@@ -42,7 +42,7 @@ Listings priced in native BTC use the sentinel address `0x7b7c…0000` as `payme
 
 ## Reading listings
 
-The marketplace exposes paginated reads — no indexer required (though the [subgraph](/developers/subgraph/) is faster for bulk queries):
+The marketplace exposes paginated reads, so no indexer is required (though the [subgraph](/developers/subgraph/) is faster for bulk queries):
 
 ```solidity
 function getActiveListings(address collection, uint256 offset, uint256 limit)
@@ -68,7 +68,7 @@ const [listing, intrinsicValue, lockEnd, votingPower, discountBps] =
   });
 ```
 
-`discountBps` is computed on-chain by the adapter — 310 means 3.1% below intrinsic value.
+`discountBps` is computed on-chain by the adapter. A value of 310 means 3.1% below intrinsic value.
 
 ## Buying
 
@@ -79,7 +79,7 @@ function buyNFT(uint256 listingId) external payable;
 Two payment paths, decided by the listing's `paymentToken`:
 
 ```ts
-// BTC-priced listing → send value
+// BTC-priced listing: send value
 await wallet.writeContract({
   address: ADDRESSES.marketplace,
   abi: marketplaceAbi,
@@ -88,7 +88,7 @@ await wallet.writeContract({
   value: listing.price,
 });
 
-// MEZO/MUSD-priced listing → approve first, then buy (no value)
+// MEZO/MUSD-priced listing: approve first, then buy (no value)
 await wallet.writeContract({
   address: listing.paymentToken,
   abi: erc20Abi,
@@ -103,7 +103,7 @@ await wallet.writeContract({
 });
 ```
 
-The call reverts (entire transaction, funds returned) if the listing is inactive, the seller no longer owns the NFT, the veNFT's lock has expired, the buyer is the seller, the allowance is insufficient, or the marketplace is paused. You do not need to pre-validate these — but reading first saves gas on doomed transactions.
+The call reverts (entire transaction, funds returned) if the listing is inactive, the seller no longer owns the NFT, the veNFT's lock has expired, the buyer is the seller, the allowance is insufficient, or the marketplace is paused. You do not need to pre-validate these, but reading first saves gas on doomed transactions.
 
 ## Listing and cancelling
 
@@ -114,7 +114,7 @@ function listNFT(address collection, uint256 tokenId, uint256 price, address pay
 function cancelListing(uint256 listingId) external;
 ```
 
-Before `listNFT`, the seller must `approve` (or `setApprovalForAll`) the marketplace on the veNFT contract. The NFT stays in the seller's wallet — listing only records the order and verifies ownership + approval.
+Before `listNFT`, the seller must `approve` (or `setApprovalForAll`) the marketplace on the veNFT contract. The NFT stays in the seller's wallet; listing only records the order and verifies ownership plus approval.
 
 ## Bidding
 
@@ -122,7 +122,7 @@ Before `listNFT`, the seller must `approve` (or `setApprovalForAll`) the marketp
 function createBid(
     address collection,
     uint256 tokenId,          // 0 = collection-wide bid, any token
-    address paymentToken,     // ERC-20 only — native BTC bids are rejected
+    address paymentToken,     // ERC-20 only; native BTC bids are rejected
     uint256 amount,
     uint256 expiry,           // unix timestamp, must be in the future
     BidFilter calldata filter,
@@ -137,7 +137,7 @@ function cancelBid(uint256 bidId) external;
 function acceptBid(uint256 bidId) external;   // called by the NFT owner
 ```
 
-Bids are escrowless: `createBid` holds only an ERC-20 approval, and `acceptBid` pulls payment and transfers the NFT atomically with the fee split enforced. Note that **native BTC cannot be a bid currency** — escrowless settlement needs `transferFrom`, which native value doesn't have; bid in MEZO or MUSD instead. The filter parameters let a bidder target positions by intrinsic value, voting power, and remaining lock, enabling collection-wide standing offers.
+Bids are escrowless: `createBid` holds only an ERC-20 approval, and `acceptBid` pulls payment and transfers the NFT atomically with the fee split enforced. Note that native BTC cannot be a bid currency, because escrowless settlement needs `transferFrom` and native value doesn't have one. Bid in MEZO or MUSD instead. The filter parameters let a bidder target positions by intrinsic value, voting power, and remaining lock, which enables collection-wide standing offers.
 
 ## Paying with a different token
 
@@ -145,14 +145,14 @@ Bids are escrowless: `createBid` holds only an ERC-20 approval, and `acceptBid` 
 function swapAndBuy(
     uint256 listingId,
     address payToken,      // the token the buyer holds
-    uint256 maxAmountIn,   // slippage bound — reverts if the swap needs more
+    uint256 maxAmountIn,   // slippage bound; reverts if the swap needs more
     uint256 amountOutMin,  // minimum swap output accepted
     bool    stable         // Velodrome pool type flag
 ) external;
 ```
 
-Routes `payToken` through the on-chain BTC/MUSD pool, then executes `buyNFT` and forwards the NFT — one transaction, atomic end to end. MEZO has no pool, so MEZO-priced listings are direct-pay only. See [Pay With Any Token](/concepts/pay-with-any-token/) for the design rationale.
+Routes `payToken` through the on-chain BTC/MUSD pool, then executes `buyNFT` and forwards the NFT in one atomic transaction. MEZO has no pool, so MEZO-priced listings are direct-pay only. See [Pay With Any Token](/concepts/pay-with-any-token/) for the design rationale.
 
 ## Getting ABIs
 
-Full ABIs are generated from source — clone the [repository](https://github.com/prajalsharma/veNFT-marketplace), run `npm install && npm run compile`, and read them from `artifacts/`. The frontend's minimal inline ABIs (`frontend/src/hooks/`) are a good reference for the read paths shown above.
+Full ABIs are generated from source. Clone the [repository](https://github.com/prajalsharma/veNFT-marketplace), run `npm install && npm run compile`, and read them from `artifacts/`. The frontend's minimal inline ABIs (`frontend/src/hooks/`) are a good reference for the read paths shown above.

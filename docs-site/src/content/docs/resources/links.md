@@ -1,6 +1,6 @@
 ---
 title: Links & Addresses
-description: Every official Vezo and Mezo link in one place — app, analytics, source code, explorers, RPCs, and contract addresses.
+description: Every official Vezo and Mezo link in one place - app, analytics, source code, explorers, RPCs, and contract addresses.
 ---
 
 ## Vezo
@@ -18,12 +18,12 @@ description: Every official Vezo and Mezo link in one place — app, analytics, 
 | Chain ID | `31612` | `31611` |
 | RPC | `https://rpc.mezo.org` | `https://rpc.test.mezo.org` |
 | Explorer | [explorer.mezo.org](https://explorer.mezo.org) | [explorer.test.mezo.org](https://explorer.test.mezo.org) |
-| Faucet | — | [faucet.test.mezo.org](https://faucet.test.mezo.org) |
+| Faucet | n/a | [faucet.test.mezo.org](https://faucet.test.mezo.org) |
 | Website | [mezo.org](https://mezo.org) | |
 
 ## Contract addresses
 
-The authoritative, always-current tables live in [Smart Contracts → Deployed addresses](/architecture/contracts/#deployed-addresses). Quick copy of the mainnet core:
+The authoritative tables live in [Smart Contracts → Deployed addresses](/architecture/contracts/#deployed-addresses). Quick copy of the mainnet core:
 
 ```
 VeNFTMarketplace    0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570
