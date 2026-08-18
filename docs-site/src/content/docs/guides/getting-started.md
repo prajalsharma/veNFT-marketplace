@@ -22,7 +22,7 @@ The Vezo app will prompt you to add and switch networks automatically when you c
 
 ```
 Network Name:   Mezo
-RPC URL:        https://rpc.mezo.org
+RPC URL:        https://mainnet.mezo.public.validationcloud.io
 Chain ID:       31612
 Currency:       BTC
 Explorer:       https://explorer.mezo.org

@@ -119,7 +119,7 @@ Additive contracts deployed on top of the core marketplace (the core is unchange
 | **MezoVeNFTAdapter** | **`0x8EC595099030aB282511c87cAF104E734418Eff5`** |
 | **PaymentRouter** | **`0xA4098F23aA2883DA13A714982d89BFB403718fb9`** |
 | **MarketplaceAdmin** | **`0x5bBc2d83D0786Bf2Bc56096d832e6B7cfcca9396`** |
-| RPC | `https://rpc.mezo.org` |
+| RPC | `https://mainnet.mezo.public.validationcloud.io` |
 | Explorer | `https://explorer.mezo.org` |
 
 ---

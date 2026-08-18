@@ -23,7 +23,7 @@ Mezo describes itself as **Bitcoin's Economic Layer**: an EVM-compatible, Bitcoi
 | | Mainnet | Testnet |
 |---|---|---|
 | Chain ID | `31612` | `31611` |
-| RPC | `https://rpc.mezo.org` | `https://rpc.test.mezo.org` |
+| RPC | `https://mainnet.mezo.public.validationcloud.io` | `https://rpc.test.mezo.org` |
 | Explorer | [explorer.mezo.org](https://explorer.mezo.org) | [explorer.test.mezo.org](https://explorer.test.mezo.org) |
 | Faucet | n/a | [faucet.test.mezo.org](https://faucet.test.mezo.org) |
 

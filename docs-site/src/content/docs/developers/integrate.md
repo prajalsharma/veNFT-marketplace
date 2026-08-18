@@ -16,7 +16,7 @@ export const mezo = defineChain({
   id: 31612,
   name: "Mezo",
   nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.mezo.org"] } },
+  rpcUrls: { default: { http: ["https://mainnet.mezo.public.validationcloud.io"] } },
   blockExplorers: { default: { name: "Mezo Explorer", url: "https://explorer.mezo.org" } },
 });
 
@@ -137,7 +137,11 @@ function cancelBid(uint256 bidId) external;
 function acceptBid(uint256 bidId) external;   // called by the NFT owner
 ```
 
-Bids are escrowless: `createBid` holds only an ERC-20 approval, and `acceptBid` pulls payment and transfers the NFT atomically with the fee split enforced. Note that native BTC cannot be a bid currency, because escrowless settlement needs `transferFrom` and native value doesn't have one. Bid in MEZO or MUSD instead. The filter parameters let a bidder target positions by intrinsic value, voting power, and remaining lock, which enables collection-wide standing offers.
+Bids are escrowless: `createBid` holds only an ERC-20 approval, and `acceptBid` pulls payment and transfers the NFT atomically, reading the canonical fee configuration from the `PaymentRouter` so bids and listings pay the same protocol fee. Note that native BTC cannot be a bid currency, because escrowless settlement needs `transferFrom` and native value doesn't have one. Bid in MEZO or MUSD instead.
+
+:::caution[Filter criteria are hints, not on-chain constraints]
+The filter parameters (intrinsic value range, voting power, lock duration) are **stored on-chain but not enforced by `acceptBid`**. They exist so indexers and UIs can surface a collection-wide bid against matching positions; the contract does not currently reject an acceptance that violates them. If your integration relies on the filters, validate the position yourself before treating a bid as matched.
+:::
 
 ## Paying with a different token
 
