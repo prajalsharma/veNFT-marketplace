@@ -4,7 +4,7 @@ description: An introduction to Mezo, Bitcoin's Economic Layer, the EVM-compatib
 ---
 
 :::note
-You don't need to know anything about Mezo to read this page. If you already use Mezo, skip ahead to [Vote-Escrow & veNFTs](/introduction/vote-escrow/).
+New to Mezo? This page covers the basics. Already familiar? Skip ahead to [Vote-Escrow & veNFTs](/introduction/vote-escrow/).
 :::
 
 Mezo is **Bitcoin's Economic Layer**: an EVM-compatible, Bitcoin-native blockchain where Bitcoin holders can borrow, earn, spend, and take part in governance without selling their BTC. Instead of sitting idle in a wallet, Bitcoin on Mezo is working capital.
