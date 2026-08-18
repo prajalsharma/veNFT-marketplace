@@ -1,0 +1,67 @@
+---
+// Replaces Starlight's SocialIcons slot with a proper top navigation.
+// Rendered in the desktop header (right side) and inside the mobile menu.
+---
+
+<nav class="vz-nav" aria-label="Vezo">
+  <a class="vz-link" href="https://www.vezo.exchange/marketplace">Marketplace</a>
+  <a class="vz-link" href="https://dune.com/vezo/vezo">Analytics</a>
+  <a class="vz-link" href="https://github.com/prajalsharma/veNFT-marketplace">GitHub</a>
+  <a class="vz-cta" href="https://www.vezo.exchange">
+    Open App
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</nav>
+
+<style>
+  .vz-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .vz-link {
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+    padding: 0.4rem 0.65rem;
+    border-radius: 0.75rem;
+    transition: color 180ms ease, background 180ms ease;
+    white-space: nowrap;
+  }
+  .vz-link:hover {
+    color: var(--sl-color-white);
+    background: var(--vz-nav-hover);
+  }
+  .vz-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--sl-text-sm);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #fff;
+    background: #ff0040;
+    text-decoration: none;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    margin-inline-start: 0.35rem;
+    box-shadow: 0 4px 16px rgba(255, 0, 64, 0.28);
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms ease, background 180ms ease;
+    white-space: nowrap;
+  }
+  .vz-cta:hover {
+    background: #e8003a;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255, 0, 64, 0.38);
+  }
+  .vz-cta svg { transition: transform 180ms ease; }
+  .vz-cta:hover svg { transform: translateX(2px); }
+
+  /* Tight header space on mid-size screens: keep only the CTA */
+  @media (min-width: 50rem) and (max-width: 66rem) {
+    .vz-link { display: none; }
+  }
+</style>

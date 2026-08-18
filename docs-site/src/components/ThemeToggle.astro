@@ -1,0 +1,54 @@
+---
+// Replaces Starlight's Auto/Light/Dark <select> with a one-click toggle,
+// matching the app's sun/moon button.
+---
+
+<button class="vz-theme" type="button" aria-label="Toggle light/dark theme">
+  <svg class="vz-sun" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.2"/>
+    <path d="M12 2v2.4M12 19.6V22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2 12h2.4M19.6 12H22M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"/>
+  </svg>
+  <svg class="vz-moon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z"/>
+  </svg>
+</button>
+
+<script>
+  const apply = (theme: string) => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("starlight-theme", theme);
+  };
+  document.querySelectorAll<HTMLButtonElement>(".vz-theme").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const current =
+        document.documentElement.dataset.theme ??
+        (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      apply(current === "dark" ? "light" : "dark");
+    });
+  });
+</script>
+
+<style>
+  .vz-theme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 999px;
+    border: 1px solid var(--vz-border-subtle);
+    background: var(--vz-surface);
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+    transition: color 180ms ease, border-color 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vz-theme:hover {
+    color: var(--sl-color-white);
+    border-color: var(--vz-red-border);
+    transform: translateY(-1px);
+  }
+  /* Dark shows the sun (click → light); light shows the moon */
+  .vz-moon { display: none; }
+  :global([data-theme="light"]) .vz-moon { display: block; }
+  :global([data-theme="light"]) .vz-sun { display: none; }
+</style>

@@ -5,16 +5,16 @@ export default defineConfig({
   site: "https://docs.vezo.exchange",
   integrations: [
     starlight({
-      title: "Vezo Docs",
+      title: "vezo",
       description:
         "Documentation for Vezo — the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.",
       favicon: "/favicon.svg",
+      logo: { src: "./src/assets/vezo-logo.svg", alt: "Vezo" },
       customCss: ["./src/styles/custom.css"],
-      social: [
-        { icon: "github", label: "GitHub", href: "https://github.com/prajalsharma/veNFT-marketplace" },
-        { icon: "seti:pipeline", label: "Dune Analytics", href: "https://dune.com/vezo/vezo" },
-        { icon: "rocket", label: "App", href: "https://www.vezo.exchange" },
-      ],
+      components: {
+        SocialIcons: "./src/components/HeaderLinks.astro",
+        ThemeSelect: "./src/components/ThemeToggle.astro",
+      },
       sidebar: [
         {
           label: "Introduction",
