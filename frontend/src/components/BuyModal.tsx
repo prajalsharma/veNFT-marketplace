@@ -379,7 +379,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     query: { enabled: !isNative && !!listing && !!buyerAddress },
   });
 
-  const { data: nftApproved } = useReadContract({
+  const { data: nftApproved, isFetched: nftApprovedFetched } = useReadContract({
     address: listing?.nftContract as `0x${string}`,
     abi: ERC721_ABI,
     functionName: "getApproved",
@@ -387,7 +387,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     query: { enabled: !!listing },
   });
 
-  const { data: nftApprovedForAll } = useReadContract({
+  const { data: nftApprovedForAll, isFetched: nftApprovedForAllFetched } = useReadContract({
     address: listing?.nftContract as `0x${string}`,
     abi: ERC721_ABI,
     functionName: "isApprovedForAll",
@@ -398,8 +398,14 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     query: { enabled: !!listing },
   });
 
+  // While the two approval reads are still in flight, give the listing the
+  // benefit of the doubt — otherwise the "no longer valid" warning flashes on
+  // every open until the RPC responds. The contract re-validates at buy time
+  // regardless, so an optimistic pending state is safe.
+  const approvalChecked = nftApprovedFetched && nftApprovedForAllFetched;
   const isNftApproved =
     listing == null ||
+    !approvalChecked ||
     (nftApproved as string | undefined)?.toLowerCase() === contracts.marketplace.toLowerCase() ||
     nftApprovedForAll === true;
 
