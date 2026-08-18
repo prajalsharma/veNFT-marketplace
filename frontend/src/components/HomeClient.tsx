@@ -417,6 +417,15 @@ export default function HomeClient() {
                 <MagneticButton href="/docs" className="btn-outline text-sm">
                   Read the Docs
                 </MagneticButton>
+                <a
+                  href="https://dune.com/vezo/vezo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline text-sm gap-2"
+                >
+                  <BarChart3 style={{ width: 14, height: 14 }} />
+                  Analytics
+                </a>
               </motion.div>
 
               {/* Stats row */}
@@ -711,6 +720,15 @@ export default function HomeClient() {
                   Start trading
                   <ArrowRight style={{ width: 14, height: 14 }} />
                 </MagneticButton>
+                <a
+                  href="https://dune.com/vezo/vezo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline text-sm gap-2"
+                >
+                  <BarChart3 style={{ width: 14, height: 14 }} />
+                  Analytics
+                </a>
                 <a
                   href="https://github.com/prajalsharma/veNFT-marketplace"
                   target="_blank"
