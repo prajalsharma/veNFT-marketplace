@@ -9,8 +9,8 @@ This guide takes you from nothing to a connected wallet on [vezo.exchange](https
 
 Vezo supports two wallet families:
 
-- **EVM wallets**: MetaMask, Rabby, and anything WalletConnect-compatible.
-- **Bitcoin wallets**: Unisat, OKX Wallet, and Xverse, connected through Mezo Passport.
+- **EVM wallets**: MetaMask, OKX, Coinbase Wallet, Rainbow, plus any injected or WalletConnect-compatible wallet.
+- **Bitcoin wallets**: Unisat, OKX (BTC), and Xverse, connected through Mezo Passport.
 
 If you're unsure, MetaMask is the simplest starting point.
 

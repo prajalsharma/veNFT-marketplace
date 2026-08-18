@@ -3,7 +3,7 @@ title: What is Vezo?
 description: Vezo is an escrowless, peer-to-peer secondary marketplace for veBTC and veMEZO vote-escrowed NFTs on the Mezo network.
 ---
 
-Vezo is a secondary marketplace for locked governance positions on Mezo. When users lock BTC or MEZO in Mezo's vote-escrow system, they receive an NFT (a *veNFT*) representing that locked position. Those positions are normally illiquid until the lock expires, which is often months away. Vezo lets holders sell them, and lets buyers acquire them, without waiting for the lock to end.
+**Vezo** is the first secondary marketplace for veNFTs on Mezo. When users lock BTC or MEZO in Mezo's vote-escrow system, they receive an NFT (a *veNFT*) representing that locked position. Those positions are normally illiquid until the lock expires, which is often months away. Vezo lets holders sell them, and lets buyers acquire them, without waiting for the lock to end.
 
 ## The problem Vezo solves
 

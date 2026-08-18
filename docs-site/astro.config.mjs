@@ -9,7 +9,7 @@ export default defineConfig({
     starlight({
       title: "vezo",
       description:
-        "Documentation for Vezo, the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.",
+        "Documentation for Vezo, the first secondary marketplace for veNFTs on Mezo. Escrowless, atomic trading for veBTC and veMEZO positions.",
       favicon: "/favicon.ico",
       logo: { src: "./src/assets/vezo-logo.svg", alt: "Vezo" },
       customCss: ["./src/styles/custom.css"],
