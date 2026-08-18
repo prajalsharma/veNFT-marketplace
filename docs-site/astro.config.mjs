@@ -2,9 +2,16 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightLlmsTxt from "starlight-llms-txt";
 import starlightLinksValidator from "starlight-links-validator";
+import rehypeExternalLinks from "rehype-external-links";
 
 export default defineConfig({
   site: "https://docs.vezo.exchange",
+  markdown: {
+    rehypePlugins: [
+      // External links open in a new tab; internal docs links stay in-tab.
+      [rehypeExternalLinks, { target: "_blank", rel: ["noopener", "noreferrer"] }],
+    ],
+  },
   integrations: [
     starlight({
       title: "vezo",
