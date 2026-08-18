@@ -47,6 +47,45 @@ Listings can be priced in BTC, MEZO, or MUSD (Mezo's stablecoin). Buyers can eve
 | Pay in any token | Buy a listing priced in one currency using another, swapped automatically |
 | Cancel | Delist at any time, no penalty |
 
+## How Vezo came to be
+
+Vezo didn't start as a startup pitch. It began as the official Mezo community bounty, ["veNFT Marketplace for veBTC and veMEZO Locks"](https://docs.superhuman.com/d/Mezo-Community-Resources_d7Ee5YHYoEI/Bounty-veNFT-Marketplace-for-veBTC-and-veMEZO-Locks_suY2iKqe#Table-9_tuZ45qDv/r7&columnId=c-2laUloylgR), which asked the ecosystem to build exactly this: an escrowless secondary market for locked positions. Vezo was built against that spec, hardened through security review, and shipped to mainnet.
+
+<figure>
+<svg viewBox="0 0 860 190" role="img" aria-label="Timeline: spring 2026 community bounty, build and security review, June 2026 mainnet launch, and ongoing growth with v2 modules, analytics, and documentation." style="max-width:100%;height:auto;font-size:12.5px;">
+  <defs>
+    <marker id="tl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+
+  <line x1="40" y1="95" x2="828" y2="95" stroke="currentColor" stroke-opacity="0.35" marker-end="url(#tl-a)"/>
+
+  <circle cx="110" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="110" y="62" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Community bounty</text>
+  <text x="110" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">official Mezo bounty spec</text>
+  <text x="110" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">spring 2026</text>
+
+  <circle cx="330" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="330" y="62" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Build &amp; review</text>
+  <text x="330" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">audited base &#183; 10 findings fixed</text>
+  <text x="330" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">testnet deployment</text>
+
+  <circle cx="550" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="550" y="62" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Mainnet launch</text>
+  <text x="550" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">live on Mezo &#183; June 2026</text>
+  <text x="550" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">vezo.exchange</text>
+
+  <circle cx="770" cy="95" r="7" fill="#FF0040"/>
+  <text x="770" y="62" text-anchor="middle" fill="#FF0040" font-weight="700" font-size="12">Today</text>
+  <text x="770" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">bidding &#183; swap payments</text>
+  <text x="770" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">analytics &#183; docs</text>
+</svg>
+<figcaption>From bounty spec to live protocol: built spring 2026, security-reviewed, on mainnet since June 2026, and growing since with the v2 bidding and swap modules, public analytics, and this documentation.</figcaption>
+</figure>
+
+The bounty origin shapes how Vezo is run: the contracts follow the bounty's security requirements (documented in [Security](/architecture/security/)), the code is fully [open source](https://github.com/prajalsharma/veNFT-marketplace), and the project carries a post-launch maintenance commitment covering indexing, batch operations, governance integration, and analytics.
+
 ## Where to go next
 
 - If Mezo itself is new to you, read [What is Mezo?](/introduction/what-is-mezo/)
