@@ -865,3 +865,15 @@ select option {
 .logo-animate {
   animation: logoReveal 0.65s var(--ease-spring) both;
 }
+
+/* Hero 3D contact shadow — breathes on the float period */
+.hero3d-shadow {
+  animation: hero3d-shadow 7s ease-in-out infinite;
+}
+@keyframes hero3d-shadow {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 1; }
+  50% { transform: translateX(-50%) scaleX(0.9); opacity: 0.75; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero3d-shadow { animation: none; }
+}

@@ -1,30 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { useNetwork } from "@/hooks/useNetwork";
 import {
   motion,
   useMotionValue,
   useSpring,
-  AnimatePresence,
 } from "framer-motion";
 import {
   ArrowRight,
   Shield,
   BarChart3,
   MousePointer2,
-  Zap,
   TrendingUp,
-  Lock,
-  ChevronRight,
   ShoppingBag,
   Tag,
   Gavel,
   ArrowLeftRight,
   ShieldCheck,
 } from "lucide-react";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import { VezoLogoMark } from "@/components/Header";
+
+const Hero3D = nextDynamic(() => import("@/components/Hero3D"), { ssr: false });
 
 // ─── Magnetic button ──────────────────────────────────────────────────────────
 function MagneticButton({
@@ -137,185 +136,6 @@ function StatChip({ label, value, color }: { label: string; value: string; color
         {value}
       </span>
     </div>
-  );
-}
-
-// ─── Demo card — interactive cursor spotlight ─────────────────────────────────
-function DemoCard() {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [hovered, setHovered] = useState(false);
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  }
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      className="relative rounded-2xl overflow-hidden"
-      style={{
-        background: "var(--bg-1)",
-        border: `1px solid ${hovered ? "rgba(255,0,64,0.28)" : "var(--border-subtle)"}`,
-        boxShadow: hovered ? "var(--shadow-card-hover)" : "var(--shadow-md)",
-        transition: "box-shadow 300ms cubic-bezier(0.16,1,0.3,1), border-color 300ms cubic-bezier(0.16,1,0.3,1)",
-      }}
-    >
-      {/* Cursor spotlight */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "inherit",
-          opacity: hovered ? 1 : 0,
-          background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,0,64,0.065), transparent 60%)`,
-          transition: "opacity 300ms ease",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-
-      {/* Top color band */}
-      <div style={{ height: 2, background: "linear-gradient(90deg, #FF0040, #F7931A)", position: "relative", zIndex: 1 }} />
-
-      <div className="p-6 relative" style={{ zIndex: 1 }}>
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F7931A]" />
-              <span className="eyebrow" style={{ color: "var(--text-3)" }}>veBTC #842</span>
-            </div>
-            <p className="text-[9px] font-mono" style={{ color: "var(--text-3)" }}>
-              Listed 2h ago · 0xa8f2…3e14
-            </p>
-          </div>
-          <div
-            className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest"
-            style={{
-              background: "rgba(16,185,129,0.1)",
-              border: "1px solid rgba(16,185,129,0.22)",
-              color: "#10B981",
-            }}
-          >
-            14% Off
-          </div>
-        </div>
-
-        {/* Value */}
-        <div className="mb-5">
-          <p className="eyebrow mb-1">Intrinsic Value</p>
-          <div className="flex items-baseline gap-1.5">
-            <span
-              className="font-bold tabular-nums"
-              style={{
-                fontSize: "clamp(1.8rem,3vw,2.4rem)",
-                letterSpacing: "-0.04em",
-                fontVariantNumeric: "tabular-nums",
-                color: "var(--text-1)",
-              }}
-            >
-              0.5200
-            </span>
-            <span className="text-sm font-semibold" style={{ color: "var(--text-2)" }}>BTC</span>
-          </div>
-        </div>
-
-        {/* Discount track */}
-        <div className="mb-5">
-          <div className="flex justify-between text-[10px] mb-1.5" style={{ color: "var(--text-3)" }}>
-            <span>Price vs Intrinsic</span>
-            <span style={{ color: "#10B981", fontWeight: 700 }}>14% below spot</span>
-          </div>
-          <div className="discount-track">
-            <motion.div
-              className="discount-fill"
-              initial={{ width: 0 }}
-              whileInView={{ width: "86%" }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            />
-          </div>
-          <div className="flex justify-between text-[9px] mt-1" style={{ color: "var(--text-3)" }}>
-            <span className="tabular-nums">0.45 BTC listing</span>
-            <span className="tabular-nums">0.52 BTC intrinsic</span>
-          </div>
-        </div>
-
-        {/* Stats 2-col */}
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          {[
-            { label: "Lock Ends", value: "22 days" },
-            { label: "Voting Power", value: "0.48" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="p-3 rounded-xl"
-              style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
-            >
-              <p className="eyebrow mb-1">{s.label}</p>
-              <p
-                className="text-sm font-semibold tabular-nums"
-                style={{ fontVariantNumeric: "tabular-nums", color: "var(--text-1)" }}
-              >
-                {s.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Buy button */}
-        <motion.button
-          whileHover={{ y: -2 }}
-          whileTap={{ y: 1, scale: 0.984 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 group relative overflow-hidden btn-primary"
-        >
-          <span
-            aria-hidden
-            className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
-            style={{ transition: "transform 600ms ease" }}
-          />
-          Buy Now
-          <ArrowRight style={{ width: 14, height: 14 }} className="group-hover:translate-x-0.5 transition-transform relative z-10" />
-        </motion.button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Floating badge ────────────────────────────────────────────────────────────
-function FloatingBadge({
-  children,
-  style,
-  delay = 0.8,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12, scale: 0.92 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute rounded-xl px-3 py-2 text-[10px] font-bold"
-      style={{
-        background: "var(--bg-2)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-lg)",
-        backdropFilter: "blur(16px)",
-        ...style,
-      }}
-    >
-      {children}
-    </motion.div>
   );
 }
 
@@ -450,14 +270,14 @@ export default function HomeClient() {
               </motion.div>
             </motion.div>
 
-            {/* ── Right: featured listing preview (static) ── */}
+            {/* ── Right: the Vezo mark as a 3D object ── */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="hidden lg:block"
             >
-              <DemoCard />
+              <Hero3D />
             </motion.div>
           </div>
         </div>
