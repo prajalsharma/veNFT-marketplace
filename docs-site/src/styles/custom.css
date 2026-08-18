@@ -1,0 +1,17 @@
+/* Vezo brand accents for Starlight */
+:root {
+  --sl-color-accent-low: #33000d;
+  --sl-color-accent: #ff0040;
+  --sl-color-accent-high: #ffb3c7;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #ffe0e8;
+  --sl-color-accent: #d60036;
+  --sl-color-accent-high: #66001a;
+}
+
+.site-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
