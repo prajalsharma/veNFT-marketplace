@@ -106,7 +106,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 { href: "/marketplace", label: "Marketplace" },
                 { href: "/my-listings", label: "My Listings" },
                 { href: "/activity", label: "Activity" },
-                { href: "/docs", label: "Documentation" },
+                { href: "https://docs.vezo.exchange", label: "Documentation" },
                 { href: "https://github.com/prajalsharma/veNFT-marketplace", label: "GitHub", external: true },
                 { href: "https://x.com/VezoExchange", label: "Twitter", external: true },
               ].map((link) => (

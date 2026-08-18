@@ -418,7 +418,7 @@ export default function HomeClient() {
                   Enter Marketplace
                   <ArrowRight style={{ width: 14, height: 14 }} />
                 </MagneticButton>
-                <MagneticButton href="/docs" className="btn-outline text-sm">
+                <MagneticButton href="https://docs.vezo.exchange" className="btn-outline text-sm">
                   Read the Docs
                 </MagneticButton>
                 <a

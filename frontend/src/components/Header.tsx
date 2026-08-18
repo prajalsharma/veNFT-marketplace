@@ -192,7 +192,7 @@ export function Header() {
     { href: "/marketplace", label: "Marketplace" },
     { href: "/my-listings", label: "My Listings" },
     { href: "/activity", label: "Activity" },
-    { href: "/docs", label: "Docs", icon: BookOpen },
+    { href: "https://docs.vezo.exchange", label: "Docs", icon: BookOpen },
   ];
 
   return (

@@ -13,7 +13,7 @@ const TABS = [
   { href: "/marketplace", label: "Market",   icon: Store },
   { href: "/my-listings", label: "Listings", icon: Tag },
   { href: "/activity",    label: "Activity", icon: Activity },
-  { href: "/docs",        label: "Docs",     icon: BookOpen },
+  { href: "https://docs.vezo.exchange", label: "Docs", icon: BookOpen },
 ] as const;
 
 export function MobileBottomNav() {
