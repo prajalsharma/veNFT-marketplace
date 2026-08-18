@@ -68,8 +68,8 @@ Vezo didn't start as a startup pitch. It began as the official Mezo community bo
 
   <circle cx="330" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
   <text x="330" y="62" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Build &amp; review</text>
-  <text x="330" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">audited base &#183; 10 findings fixed</text>
-  <text x="330" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">testnet deployment</text>
+  <text x="330" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">security-reviewed contracts</text>
+  <text x="330" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">proven on testnet</text>
 
   <circle cx="550" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
   <text x="550" y="62" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Mainnet launch</text>
