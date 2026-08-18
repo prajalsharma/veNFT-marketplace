@@ -155,7 +155,7 @@ function swapAndBuy(
 ) external;
 ```
 
-Routes `payToken` through the on-chain BTC/MUSD pool, then executes `buyNFT` and forwards the NFT in one atomic transaction. MEZO has no pool, so MEZO-priced listings are direct-pay only. See [Pay With Any Token](/concepts/pay-with-any-token/) for the design rationale.
+Routes `payToken` through the on-chain BTC/MUSD pool, then executes `buyNFT` and forwards the NFT in one atomic transaction. Semantics are exact-in: the router pulls `maxAmountIn`, skims its routing fee (`platformFeeSwapBps`), swaps the remainder, requires the output to cover the listing price, and refunds any surplus in the quote token. Two constraints: the listing's quote token must be ERC-20 (BTC-quoted listings revert with `UnsupportedQuoteToken`, since the marketplace settles those natively), and the pay token needs a live pool to the quote token, so in practice the route is BTC in, MUSD-quoted listing out. MEZO has no pool and cannot be swapped either way. See [Pay With Any Token](/concepts/pay-with-any-token/) for the design rationale.
 
 ## Getting ABIs
 

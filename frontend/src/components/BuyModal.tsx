@@ -17,9 +17,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, ShieldCheck, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info } from "lucide-react";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
 import { useNetwork } from "@/hooks/useNetwork";
-import { useReadContract, useWaitForTransactionReceipt, useAccount, useBalance, useConfig } from "wagmi";
+import { useReadContract, useWaitForTransactionReceipt, useAccount, useBalance, useConfig, usePublicClient } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { usePriceTicker, formatUSD } from "@/hooks/usePriceTicker";
+import { useSwapAndBuy } from "@/hooks/useSwapAndBuy";
 
 // ─── ABIs ─────────────────────────────────────────────────────────────────────
 
@@ -306,35 +307,6 @@ function CrossCurrencyNote({
   );
 }
 
-// ─── Swap info block ─────────────────────────────────────────────────────────
-// Informs buyer they can use any token — the on-chain swap router handles it.
-function SwapNote({ paySymbol }: { paySymbol: string }) {
-  const otherTokens = ["BTC", "MEZO", "MUSD"].filter((t) => t !== paySymbol);
-  return (
-    <div
-      className="p-4 rounded-xl"
-      style={{ background: "rgba(255,0,64,0.05)", border: "1px solid rgba(255,0,64,0.14)" }}
-    >
-      <div className="flex items-start gap-2.5">
-        <ArrowLeftRight style={{ width: 13, height: 13, color: "#FF0040", flexShrink: 0, marginTop: 1 }} />
-        <div>
-          <p className="text-[12.5px] font-bold mb-1" style={{ color: "#FF0040" }}>
-            Don&apos;t have {paySymbol}?
-          </p>
-          <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-            The on-chain swap router lets you pay with{" "}
-            <span style={{ color: "var(--text-1)", fontWeight: 600 }}>
-              {otherTokens.join(" or ")}
-            </span>
-            . It swaps to the listed currency automatically and adds a small routing
-            fee on top of the listed price.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps) {
   const { contracts } = useNetwork();
@@ -360,15 +332,73 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
   const isRouterReady =
     !!routerAddress && routerAddress !== "0x0000000000000000000000000000000000000000";
 
-  // The pay-with-any-token swap is only real when SwapPaymentRouter is deployed
-  // (and a DEX router configured on-chain). Until then we must NOT advertise it.
-  const swapPaymentRouter = (contracts as { swapPaymentRouter?: string }).swapPaymentRouter;
-  const isSwapDeployed =
-    !!swapPaymentRouter && swapPaymentRouter !== "0x0000000000000000000000000000000000000000";
+  // Pay-with-BTC swap: the v1 router settles only ERC-20 quote legs (BTC-quoted
+  // listings use the marketplace's native path), and BTC/MUSD is the only live
+  // pool — so the one real route is an MUSD-priced listing paid in BTC.
+  const { quoteSwap, swapAndBuy, isSwapDeployed: swapReady, swapPaymentRouter } = useSwapAndBuy();
+  const publicClient = usePublicClient();
+  const musdLower = ((contracts as { MUSD?: string }).MUSD ?? "").toLowerCase();
+  const swapRoute =
+    listing && swapReady && paymentLower === musdLower && musdLower
+      ? { payToken: BTC_ADDRESS as `0x${string}`, paySymbol: "BTC" }
+      : null;
+  const [payWithSwap, setPayWithSwap] = useState(false);
+  const [swapQuote, setSwapQuote] = useState<{ maxIn: bigint; feeBps: number } | null>(null);
+  const [swapQuoteLoading, setSwapQuoteLoading] = useState(false);
+
+  // Live quote: derive the BTC budget that clears the MUSD price with headroom.
+  // Exact-in semantics: the router pulls maxIn, skims its routing fee, swaps the
+  // rest, and refunds any surplus MUSD — so a modest buffer costs nothing.
+  useEffect(() => {
+    if (!payWithSwap || !swapRoute || !listing) {
+      setSwapQuote(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      setSwapQuoteLoading(true);
+      setSwapQuote(null);
+      try {
+        const quoteToken = listing.paymentToken as `0x${string}`;
+        const probe = 10n ** 14n; // 0.0001 BTC
+        const probeOut = await quoteSwap(swapRoute.payToken, quoteToken, probe);
+        if (!probeOut || probeOut === 0n) throw new Error("no pool");
+        let netIn = (listing.price * probe) / probeOut;
+        netIn = (netIn * 1015n) / 1000n; // +1.5% headroom
+        const out = await quoteSwap(swapRoute.payToken, quoteToken, netIn);
+        if (!out || out === 0n) throw new Error("no pool");
+        if (out < listing.price) {
+          netIn = (netIn * listing.price * 1005n) / (out * 1000n);
+        }
+        let feeBps = 0;
+        try {
+          feeBps = Number(
+            await publicClient!.readContract({
+              address: swapPaymentRouter!,
+              abi: [{ name: "platformFeeSwapBps", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] }] as const,
+              functionName: "platformFeeSwapBps",
+            })
+          );
+        } catch {
+          /* fee is display-only; the buffer already absorbs it */
+        }
+        const maxIn = (netIn * 10000n) / BigInt(10000 - feeBps) + 1n;
+        if (!alive) return;
+        setSwapQuote({ maxIn, feeBps });
+      } catch {
+        if (alive) setPayWithSwap(false);
+      } finally {
+        if (alive) setSwapQuoteLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [payWithSwap, swapRoute?.payToken, listing?.listingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: nativeBalance } = useBalance({
     address: buyerAddress,
-    query: { enabled: isNative && !!buyerAddress },
+    query: { enabled: (isNative || !!swapRoute) && !!buyerAddress },
   });
 
   const { data: erc20Balance } = useReadContract({
@@ -425,6 +455,10 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
 
   const hasEnoughBalance = (() => {
     if (!listing) return true;
+    if (payWithSwap) {
+      if (!nativeBalance || !swapQuote) return true; // pending reads: benefit of the doubt
+      return nativeBalance.value >= swapQuote.maxIn;
+    }
     if (isNative) {
       if (!nativeBalance) return true;
       return nativeBalance.value >= listing.price;
@@ -468,6 +502,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
       setPhase("approve");
       setErrorMsg(null);
       setSessionHash(undefined);
+      setPayWithSwap(false);
     }
   }, [isOpen]);
 
@@ -484,7 +519,11 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     setErrorMsg(null);
 
     if (!hasEnoughBalance) {
-      setErrorMsg(`Insufficient ${paymentSymbol} balance. You need ${formattedPrice} ${paymentSymbol}.`);
+      setErrorMsg(
+        payWithSwap && swapQuote
+          ? `Insufficient BTC balance. The swap needs about ${parseFloat(formatEther(swapQuote.maxIn)).toFixed(6)} BTC.`
+          : `Insufficient ${paymentSymbol} balance. You need ${formattedPrice} ${paymentSymbol}.`
+      );
       setStep("error");
       return;
     }
@@ -496,7 +535,23 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     }
 
     try {
-      if (isNative) {
+      if (payWithSwap && swapRoute && swapQuote && buyerAddress) {
+        // Approve (if needed) happens inside the hook; the returned hash is the
+        // swapAndBuy transaction itself.
+        setPhase("approve");
+        setStep("approving");
+        const h = await swapAndBuy({
+          listingId: listing.listingId,
+          payToken: swapRoute.payToken,
+          maxAmountIn: swapQuote.maxIn,
+          amountOutMin: listing.price,
+          stable: false,
+          buyerAddress,
+        });
+        setPhase("buy");
+        setStep("buying");
+        setSessionHash(h);
+      } else if (isNative) {
         setPhase("buy");
         setStep("buying");
         const h = await buyListing(listing.listingId, listing.price, true);
@@ -650,7 +705,58 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     listingPrice={listing.price}
                     prices={prices}
                   />
-                  {isSwapDeployed && <SwapNote paySymbol={paymentSymbol} />}
+                  {swapRoute && (
+                    <div
+                      className="p-4 rounded-xl"
+                      style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
+                    >
+                      <p className="eyebrow mb-2.5" style={{ color: "var(--text-3)" }}>Pay with</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setPayWithSwap(false)}
+                          disabled={isBusy}
+                          className="flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-colors"
+                          style={
+                            !payWithSwap
+                              ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
+                              : { background: "var(--bg-1)", border: "1px solid var(--border)", color: "var(--text-2)" }
+                          }
+                        >
+                          {paymentSymbol}
+                        </button>
+                        <button
+                          onClick={() => setPayWithSwap(true)}
+                          disabled={isBusy}
+                          className="flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-colors inline-flex items-center justify-center gap-1.5"
+                          style={
+                            payWithSwap
+                              ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
+                              : { background: "var(--bg-1)", border: "1px solid var(--border)", color: "var(--text-2)" }
+                          }
+                        >
+                          <ArrowLeftRight style={{ width: 11, height: 11 }} />
+                          {swapRoute.paySymbol}
+                        </button>
+                      </div>
+                      {payWithSwap && (
+                        <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                          {swapQuoteLoading || !swapQuote ? (
+                            "Fetching the live pool rate…"
+                          ) : (
+                            <>
+                              You pay{" "}
+                              <span className="tabular-nums" style={{ fontWeight: 700, color: "var(--text-1)" }}>
+                                ≈ {parseFloat(formatEther(swapQuote.maxIn)).toFixed(6)} BTC
+                              </span>
+                              , swapped on-chain to {paymentSymbol} and settled in the same
+                              transaction{swapQuote.feeBps > 0 ? ` (includes a ${(swapQuote.feeBps / 100).toFixed(2)}% routing fee)` : ""}.
+                              Surplus {paymentSymbol} is refunded to your wallet.
+                            </>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 
@@ -690,7 +796,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
               </AnimatePresence>
 
               {/* Step indicators for 2-step ERC-20 flow */}
-              {!isNative && !alreadyApproved && (
+              {!isNative && !alreadyApproved && !payWithSwap && (
                 <div className="flex items-center gap-2">
                   <StepPill
                     label={`Approve ${paymentSymbol}`}
@@ -782,7 +888,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
               ) : (
                 <motion.button
                   onClick={handleBuy}
-                  disabled={isBusy || !hasEnoughBalance || !isNftApproved}
+                  disabled={isBusy || !hasEnoughBalance || !isNftApproved || (payWithSwap && !swapQuote)}
                   whileTap={{ y: 1, scale: 0.985 }}
                   transition={{ type: "spring", stiffness: 100, damping: 20 }}
                   className="w-full btn-primary py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed group"
@@ -805,7 +911,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     </>
                   ) : (
                     <>
-                      {isNative || alreadyApproved ? "Buy Now" : `1. Approve ${paymentSymbol}`}
+                      {payWithSwap ? "Swap & Buy" : isNative || alreadyApproved ? "Buy Now" : `1. Approve ${paymentSymbol}`}
                       <ArrowRight
                         style={{ width: 15, height: 15 }}
                         className="group-hover:translate-x-1 transition-transform"

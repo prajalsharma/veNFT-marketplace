@@ -37,7 +37,7 @@ What the contract guarantees during step 3 (details in [Marketplace Mechanics](/
 
 ### Paying in a different token
 
-If you hold BTC but the listing wants MUSD (or vice versa), use the swap payment flow. The app routes your token through Mezo's DEX and completes the purchase in one transaction. See [Pay With Any Token](/concepts/pay-with-any-token/) for the mechanics and its slippage protection. MEZO-priced listings must be paid in MEZO directly.
+If you hold BTC but the listing wants MUSD, choose **Pay with BTC** in the buy dialog. The app quotes the live pool rate, routes your BTC through Mezo's DEX, and completes the purchase in one transaction, refunding any surplus MUSD. See [Pay With Any Token](/concepts/pay-with-any-token/) for the mechanics and its slippage protection. BTC-priced and MEZO-priced listings are paid in their own currency directly.
 
 ## Or: make a bid instead
 

@@ -59,9 +59,10 @@ Swaps route through the on-chain BTC/MUSD pool:
 
 | You hold | Listing priced in | Route |
 |---|---|---|
-| BTC | MUSD | BTC → MUSD via pool |
-| MUSD | BTC | MUSD → BTC via pool |
+| BTC | MUSD | BTC → MUSD via pool, settled by the router |
 | The listing's own token | anything | No swap; normal `buyNFT` |
+
+BTC-priced listings are not swappable in the current router: the marketplace settles BTC listings through its native-value path, and the router's swap leg settles in ERC-20 only. Pay BTC-priced listings in BTC directly.
 
 :::note[Why MEZO-priced listings are direct-pay only]
 MEZO has no DEX pool on Mezo at present, so there is no on-chain route to swap into or out of MEZO. Listings priced in MEZO are paid in MEZO directly. If a MEZO pool is deployed in the future, the router's pool-direct design can accommodate it.
