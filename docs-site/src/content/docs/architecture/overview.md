@@ -100,7 +100,7 @@ Vezo is four modular core contracts, two additive v2 modules, a Next.js frontend
 
   <!-- Adapter → vote-escrow -->
   <line x1="606" y1="382" x2="680" y2="382" stroke="currentColor" marker-end="url(#ar-c)"/>
-  <text x="643" y="370" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="10">locked &#183; ownerOf</text>
+  <text x="643" y="370" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="10">queries</text>
 
   <!-- SwapRouter → pool -->
   <line x1="606" y1="552" x2="680" y2="552" stroke="currentColor" marker-end="url(#ar-c)"/>

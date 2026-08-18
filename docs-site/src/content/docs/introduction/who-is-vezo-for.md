@@ -37,12 +37,42 @@ Because rewards and voting rights transfer with the NFT, a bought position is in
 
 A liquid secondary market makes the primary lock more attractive: users lock more, and for longer, when they know an exit exists. This is the flywheel Vezo contributes to Mezo:
 
-```
-liquid exit exists → locking feels safer → more/longer locks
-        ▲                                        │
-        │                                        ▼
-   deeper market  ◀──  more listings  ◀──  more veNFTs in circulation
-```
+<figure>
+<svg viewBox="0 0 800 270" role="img" aria-label="A six-stage loop: a liquid exit exists, so locking feels safer, so users create more and longer locks, which mints more veNFTs, which creates more listings, which deepens the market, which strengthens the liquid exit." style="max-width:100%;height:auto;font-size:12.5px;">
+  <defs>
+    <marker id="fw-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+
+  <rect x="40" y="30" width="200" height="56" rx="10" fill="none" stroke="#FF0040" stroke-width="1.5"/>
+  <text x="140" y="53" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Liquid exit exists</text>
+  <text x="140" y="71" text-anchor="middle" fill="#FF0040" fill-opacity="0.9" font-size="10.5">Vezo</text>
+
+  <rect x="300" y="30" width="200" height="56" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="400" y="63" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Locking feels safer</text>
+
+  <rect x="560" y="30" width="200" height="56" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="660" y="63" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">More, longer locks</text>
+
+  <rect x="560" y="180" width="200" height="56" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="660" y="213" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">More veNFTs minted</text>
+
+  <rect x="300" y="180" width="200" height="56" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="400" y="213" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">More listings</text>
+
+  <rect x="40" y="180" width="200" height="56" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="140" y="213" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Deeper market</text>
+
+  <line x1="240" y1="58" x2="296" y2="58" stroke="currentColor" marker-end="url(#fw-a)"/>
+  <line x1="500" y1="58" x2="556" y2="58" stroke="currentColor" marker-end="url(#fw-a)"/>
+  <line x1="660" y1="86" x2="660" y2="176" stroke="currentColor" marker-end="url(#fw-a)"/>
+  <line x1="556" y1="208" x2="504" y2="208" stroke="currentColor" marker-end="url(#fw-a)"/>
+  <line x1="296" y1="208" x2="244" y2="208" stroke="currentColor" marker-end="url(#fw-a)"/>
+  <line x1="140" y1="176" x2="140" y2="90" stroke="currentColor" marker-end="url(#fw-a)"/>
+</svg>
+<figcaption>The liquidity flywheel: an exit market makes locking safer, which produces more locked positions, which feeds back into a deeper exit market.</figcaption>
+</figure>
 
 Vezo is deliberately neutral infrastructure: no whitelist, no curation, no permission needed to list or buy. Anyone holding a veBTC or veMEZO NFT can use it.
 

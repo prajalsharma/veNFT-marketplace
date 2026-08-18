@@ -60,7 +60,7 @@ Each lock is represented as an NFT, and this is the key fact for Vezo. Because t
 
   <!-- bridge arrow -->
   <line x1="150" y1="162" x2="212" y2="162" stroke="currentColor" marker-end="url(#mz-a)"/>
-  <text x="181" y="150" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">tBTC bridge</text>
+  <text x="181" y="121" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">tBTC bridge</text>
 
   <!-- Mezo group -->
   <rect x="216" y="16" width="524" height="298" rx="14" fill="currentColor" fill-opacity="0.03" stroke="currentColor" stroke-opacity="0.3"/>
@@ -68,28 +68,28 @@ Each lock is represented as an NFT, and this is the key fact for Vezo. Because t
   <text x="240" y="61" fill="currentColor" fill-opacity="0.6" font-size="11">EVM &#183; BTC as gas &#183; MUSD stablecoin &#183; MEZO governance</text>
 
   <!-- Vote-escrow -->
-  <rect x="240" y="84" width="222" height="64" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
-  <text x="351" y="110" text-anchor="middle" fill="currentColor" font-weight="700">Vote-escrow system</text>
-  <text x="351" y="129" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">lock BTC / MEZO</text>
+  <rect x="240" y="84" width="190" height="64" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="335" y="110" text-anchor="middle" fill="currentColor" font-weight="700">Vote-escrow system</text>
+  <text x="335" y="129" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">lock BTC / MEZO</text>
 
   <!-- DEX -->
-  <rect x="240" y="230" width="222" height="64" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
-  <text x="351" y="256" text-anchor="middle" fill="currentColor" font-weight="700">Velodrome-style DEX</text>
-  <text x="351" y="275" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">BTC / MUSD pool</text>
+  <rect x="240" y="230" width="190" height="64" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.45"/>
+  <text x="335" y="256" text-anchor="middle" fill="currentColor" font-weight="700">Velodrome-style DEX</text>
+  <text x="335" y="275" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">BTC / MUSD pool</text>
 
   <!-- Vezo -->
-  <rect x="536" y="84" width="180" height="210" rx="10" fill="none" stroke="#FF0040" stroke-width="1.5"/>
-  <text x="626" y="180" text-anchor="middle" fill="#FF0040" font-weight="800" font-size="15">Vezo</text>
-  <text x="626" y="200" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">secondary market</text>
-  <text x="626" y="216" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">for veNFTs</text>
+  <rect x="560" y="84" width="160" height="210" rx="10" fill="none" stroke="#FF0040" stroke-width="1.5"/>
+  <text x="640" y="180" text-anchor="middle" fill="#FF0040" font-weight="800" font-size="15">Vezo</text>
+  <text x="640" y="200" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">secondary market</text>
+  <text x="640" y="216" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="11">for veNFTs</text>
 
   <!-- vote-escrow → Vezo -->
-  <line x1="462" y1="116" x2="532" y2="116" stroke="#FF0040" marker-end="url(#mz-r)"/>
-  <text x="497" y="104" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">veBTC / veMEZO NFTs</text>
+  <line x1="430" y1="116" x2="556" y2="116" stroke="#FF0040" marker-end="url(#mz-r)"/>
+  <text x="493" y="104" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">veNFTs</text>
 
   <!-- DEX → Vezo -->
-  <line x1="462" y1="262" x2="532" y2="262" stroke="currentColor" marker-end="url(#mz-a)"/>
-  <text x="497" y="250" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">swap route</text>
+  <line x1="430" y1="262" x2="556" y2="262" stroke="currentColor" marker-end="url(#mz-a)"/>
+  <text x="493" y="250" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">swap route</text>
 </svg>
 <figcaption>Bitcoin enters Mezo through the tBTC bridge. Mezo's vote-escrow system turns locked BTC and MEZO into veNFTs, which trade on Vezo; Vezo's swap router uses the on-chain DEX pool for cross-token payments.</figcaption>
 </figure>
