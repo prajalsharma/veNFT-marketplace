@@ -320,17 +320,21 @@ function FloatingBadge({
 }
 
 // ─── Trust pill ────────────────────────────────────────────────────────────────
-function TrustPill({ label, color }: { label: string; color: string }) {
+function TrustPill({ label, color, large }: { label: string; color: string; large?: boolean }) {
   return (
     <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold"
+      className={
+        large
+          ? "inline-flex items-center gap-2.5 px-5 py-3 rounded-full text-[15px] font-semibold"
+          : "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold"
+      }
       style={{
         background: `${color}0e`,
         border: `1px solid ${color}20`,
-        color: "var(--text-2)",
+        color: large ? "var(--text-1)" : "var(--text-2)",
       }}
     >
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+      <span className={`${large ? "w-2 h-2" : "w-1.5 h-1.5"} rounded-full shrink-0`} style={{ background: color }} />
       {label}
     </div>
   );
@@ -467,7 +471,7 @@ export default function HomeClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-wrap items-center justify-center gap-3"
+            className="flex flex-wrap items-center justify-center gap-4"
           >
             {[
               "NFT stays in your wallet",
@@ -476,7 +480,7 @@ export default function HomeClient() {
               "Audited smart contracts",
               "Atomic settlement",
             ].map((label) => (
-              <TrustPill key={label} label={label} color="var(--text-3)" />
+              <TrustPill key={label} label={label} color="var(--text-3)" large />
             ))}
           </motion.div>
         </div>

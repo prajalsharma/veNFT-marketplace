@@ -27,7 +27,6 @@ import { VeNFTCard, VeNFTCardSkeleton } from "@/components/VeNFTCard";
 import { FilterSidebar, FilterButton, FilterState } from "@/components/FilterSidebar";
 import { BuyModal } from "@/components/BuyModal";
 import { useActiveListings, Listing } from "@/hooks/useMarketplace";
-import { useActivityFeed } from "@/hooks/useActivityFeed";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
 
@@ -208,8 +207,6 @@ export default function MarketplaceClient() {
     marketplaceAddress,
     isMarketplaceReady,
   } = useActiveListings();
-  // Historical sales feed — used for avg discount from ACTUAL completed trades
-  const { events: activityEvents } = useActivityFeed(200);
   const prices = usePriceTicker();
 
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -283,7 +280,7 @@ export default function MarketplaceClient() {
 
   // ── Market stats — floors from open listings, avg discount from HISTORICAL SALES ──
   const marketStats = useMemo(() => {
-    if (listingsLoading) return { veBTCFloor: "Loading…", veMEZOFloor: "Loading…", avgDiscount: "Loading…", tradeCount: 0 };
+    if (listingsLoading) return { veBTCFloor: "Loading…", veMEZOFloor: "Loading…", avgDiscount: "Loading…", listingCount: 0 };
 
     const active = searchableListings.filter((l) => l.active);
     const veBTC = active.filter((l) => l.collection === "veBTC");
@@ -317,30 +314,18 @@ export default function MarketplaceClient() {
     const veBTCFloor = floorLabel(veBTC);
     const veMEZOFloor = floorLabel(veMEZO);
 
-    // Avg discount from HISTORICAL SALES only (not open listings) — gives buyers
-    // an accurate picture of what past trades actually cleared at.
-    const historicalSales = activityEvents.filter(
-      (e) => e.type === "sale" && e.discountBps !== null && e.discountBps > 0
-    );
+    // Avg discount across OPEN LISTINGS — what a buyer can actually get right now.
+    const priced = active.filter((l) => l.discountBps !== null);
     let avgDiscount = "—";
-    let tradeCount = 0;
-    if (historicalSales.length > 0) {
-      const avg = historicalSales.reduce((s, e) => s + (e.discountBps ?? 0), 0) / historicalSales.length;
+    let listingCount = 0;
+    if (priced.length > 0) {
+      const avg = priced.reduce((s, l) => s + Number(l.discountBps ?? 0n), 0) / priced.length;
       avgDiscount = `${(avg / 100).toFixed(1)}%`;
-      tradeCount = historicalSales.length;
-    } else if (active.length > 0) {
-      // Fallback to open-listing avg when no sale history yet
-      const pos = active.filter((l) => l.discountBps !== null && l.discountBps > 0n);
-      if (pos.length) {
-        const avg = pos.reduce((s, l) => s + Number(l.discountBps ?? 0n), 0) / pos.length;
-        avgDiscount = `~${(avg / 100).toFixed(1)}%`;
-      } else {
-        avgDiscount = "N/A";
-      }
+      listingCount = priced.length;
     }
 
-    return { veBTCFloor, veMEZOFloor, avgDiscount, tradeCount };
-  }, [searchableListings, activityEvents, listingsLoading, prices]);
+    return { veBTCFloor, veMEZOFloor, avgDiscount, listingCount };
+  }, [searchableListings, listingsLoading, prices]);
 
   const activeFilterCount = [
     filters.collectionFilter !== "all",
@@ -402,7 +387,7 @@ export default function MarketplaceClient() {
               <StatBar label="veBTC Floor" value={marketStats.veBTCFloor} color="#F7931A" />
               <StatBar label="veMEZO Floor" value={marketStats.veMEZOFloor} color="#4A90E2" />
               <StatBar
-                label={marketStats.tradeCount > 0 ? `Avg Discount (${marketStats.tradeCount} sales)` : "Avg Discount"}
+                label={marketStats.listingCount > 0 ? `Avg Discount (${marketStats.listingCount} listings)` : "Avg Discount"}
                 value={marketStats.avgDiscount}
                 color="#10B981"
               />
