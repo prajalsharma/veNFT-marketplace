@@ -12,8 +12,7 @@
   (a static, slightly-open pose); pauses offscreen; disposes on unmount.
 */
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -40,29 +39,6 @@ function toShape(points: [number, number][]): THREE.Shape {
 
 export default function Hero3D() {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [bestDiscount, setBestDiscount] = useState<string | null>(null);
-
-  // Live proof: the deepest discount on the marketplace right now.
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/listings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!alive || !d) return;
-        const rows: { discountBps?: string | null }[] = d.listings ?? [];
-        let best = 0;
-        for (const row of rows) {
-          const bps = row.discountBps ? Number(row.discountBps) : 0;
-          if (bps > best) best = bps;
-        }
-        if (best > 0) setBestDiscount((best / 100).toFixed(1));
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -262,7 +238,7 @@ export default function Hero3D() {
   }, []);
 
   return (
-    <div className="relative w-full" style={{ height: 540 }}>
+    <div className="relative w-full" style={{ height: 540 }} aria-hidden="true">
       <div ref={hostRef} className="absolute inset-0 cursor-pointer" aria-hidden="true" />
       {/* Contact shadow — breathes on the same 7s period as the float */}
       <div
@@ -277,29 +253,6 @@ export default function Hero3D() {
           filter: "blur(11px)",
         }}
       />
-      {/* Live proof: real marketplace data anchored to the object */}
-      {bestDiscount && (
-        <Link
-          href="/marketplace"
-          className="absolute left-1/2 -translate-x-1/2 inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12.5px] font-semibold"
-          style={{
-            bottom: 0,
-            background: "var(--bg-1)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-sm)",
-            color: "var(--text-2)",
-          }}
-        >
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "#FF0040" }} />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#FF0040" }} />
-          </span>
-          Best discount live now
-          <span className="font-bold tabular-nums" style={{ color: "#FF0040" }}>
-            {bestDiscount}%
-          </span>
-        </Link>
-      )}
     </div>
   );
 }
