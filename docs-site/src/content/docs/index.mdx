@@ -1,27 +1,12 @@
 ---
 title: Vezo Documentation
-description: The escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.
-template: splash
-hero:
-  image:
-    file: ../../assets/vezo-logo.svg
-    alt: Vezo
-  title: The liquidity layer for locked Bitcoin.
-  tagline: >-
-    Vezo is an escrowless, peer-to-peer marketplace for veBTC and veMEZO
-    vote-escrowed NFTs on Mezo. Learn what vote-escrow is, how atomic
-    escrowless trading works, and how the protocol is built.
-  actions:
-    - text: What is Vezo?
-      link: /introduction/what-is-vezo/
-      icon: right-arrow
-    - text: Open the app
-      link: https://www.vezo.exchange
-      icon: external
-      variant: minimal
+description: Documentation for Vezo — the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.
+tableOfContents: false
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+Vezo is an escrowless, peer-to-peer marketplace for **veBTC** and **veMEZO** vote-escrowed NFTs on [Mezo](/introduction/what-is-mezo/), Bitcoin's EVM Layer 2. These docs explain the asset class, the trading mechanics, the protocol architecture, and how to integrate against the contracts — use the sidebar to browse every page, or start with one of the paths below.
 
 <div class="vz-stats not-content">
   <div class="vz-stat"><span class="k">Network</span><span class="v">Mezo EVM</span></div>
@@ -31,40 +16,29 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
   <div class="vz-stat"><span class="k">Custody</span><span class="v">Escrowless</span></div>
 </div>
 
-## Start here
+## New here? Start with the concepts
 
-<CardGrid stagger>
-  <Card title="New to Mezo?" icon="star">
-    Start with [What is Mezo?](/introduction/what-is-mezo/) — the Bitcoin
-    Layer 2 that Vezo is built on — then read how
-    [vote-escrow locks become NFTs](/introduction/vote-escrow/).
-  </Card>
-  <Card title="Want to trade?" icon="rocket">
-    Follow [Getting Started](/guides/getting-started/) to set up your wallet
-    on Mezo, then the step-by-step [buying](/guides/buying/) and
-    [selling](/guides/selling/) guides.
-  </Card>
-  <Card title="How it works" icon="puzzle">
-    Understand the [escrowless, atomic settlement
-    model](/concepts/marketplace-mechanics/), [intrinsic value and
-    discounts](/concepts/pricing-and-discounts/), and
-    [fees](/concepts/fees/).
-  </Card>
-  <Card title="Under the hood" icon="seti:config">
-    A [system overview](/architecture/overview/), the [smart contract
-    modules](/architecture/contracts/), and the [security
-    model](/architecture/security/) with the full audit-fix history.
-  </Card>
+<CardGrid>
+  <LinkCard title="What is Vezo?" description="The problem Vezo solves and what makes it different." href="/introduction/what-is-vezo/" />
+  <LinkCard title="What is Mezo?" description="The Bitcoin Layer 2 Vezo is built on — no prior knowledge assumed." href="/introduction/what-is-mezo/" />
+  <LinkCard title="Vote-Escrow & veNFTs" description="What happens when users lock BTC or MEZO, and what a veNFT holder owns." href="/introduction/vote-escrow/" />
+  <LinkCard title="Marketplace Mechanics" description="How escrowless custody and atomic settlement protect both sides." href="/concepts/marketplace-mechanics/" />
 </CardGrid>
 
-## At a glance
+## Ready to trade?
 
-| | |
-|---|---|
-| **Network** | Mezo (EVM-compatible Bitcoin Layer 2) |
-| **Assets** | veBTC and veMEZO vote-escrowed NFTs (ERC-721) |
-| **Payment tokens** | BTC, MEZO, MUSD — or any of them via automatic swap |
-| **Custody** | Escrowless: the NFT stays in the seller's wallet until the moment of sale |
-| **Settlement** | Atomic: NFT transfer and payment happen in one transaction, or not at all |
-| **Protocol fee** | Currently 1%, hard-capped at 5%, changes timelocked 48 hours |
-| **Analytics** | [Live dashboard on Dune](https://dune.com/vezo/vezo) |
+<CardGrid>
+  <LinkCard title="Getting Started" description="Set up a wallet on Mezo, get funds, and connect to the app." href="/guides/getting-started/" />
+  <LinkCard title="Buying a veNFT" description="Evaluate discounts, buy atomically, or bid below the ask." href="/guides/buying/" />
+  <LinkCard title="Selling a veNFT" description="List without giving up custody, price well, cancel anytime." href="/guides/selling/" />
+  <LinkCard title="Fees" description="The 1% protocol fee, its 5% hard cap, and the 48-hour timelock." href="/concepts/fees/" />
+</CardGrid>
+
+## Building on Vezo?
+
+<CardGrid>
+  <LinkCard title="Contract Integration" description="Chain config, ABIs, and code samples for reading listings and buying on-chain." href="/developers/integrate/" />
+  <LinkCard title="Smart Contracts" description="All contract modules and deployed addresses on mainnet and testnet." href="/architecture/contracts/" />
+  <LinkCard title="Subgraph & Data" description="Query listings, bids, and activity via the Goldsky subgraph." href="/developers/subgraph/" />
+  <LinkCard title="Security" description="Audit status, code-enforced guarantees, and vulnerability reporting." href="/architecture/security/" />
+</CardGrid>

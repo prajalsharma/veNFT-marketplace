@@ -8,9 +8,12 @@ export default defineConfig({
       title: "vezo",
       description:
         "Documentation for Vezo — the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.",
-      favicon: "/favicon.svg",
+      favicon: "/favicon.ico",
       logo: { src: "./src/assets/vezo-logo.svg", alt: "Vezo" },
       customCss: ["./src/styles/custom.css"],
+      editLink: {
+        baseUrl: "https://github.com/prajalsharma/veNFT-marketplace/edit/main/docs-site/",
+      },
       components: {
         SocialIcons: "./src/components/HeaderLinks.astro",
         ThemeSelect: "./src/components/ThemeToggle.astro",
@@ -49,6 +52,14 @@ export default defineConfig({
             { label: "System Overview", slug: "architecture/overview" },
             { label: "Smart Contracts", slug: "architecture/contracts" },
             { label: "Security", slug: "architecture/security" },
+          ],
+        },
+        {
+          label: "Developers",
+          items: [
+            { label: "Contract Integration", slug: "developers/integrate" },
+            { label: "Subgraph & Data", slug: "developers/subgraph" },
+            { label: "Run Locally", slug: "developers/run-locally" },
           ],
         },
         {
