@@ -1,5 +1,7 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import starlightLlmsTxt from "starlight-llms-txt";
+import starlightLinksValidator from "starlight-links-validator";
 
 export default defineConfig({
   site: "https://docs.vezo.exchange",
@@ -7,10 +9,44 @@ export default defineConfig({
     starlight({
       title: "vezo",
       description:
-        "Documentation for Vezo — the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.",
+        "Documentation for Vezo, the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.",
       favicon: "/favicon.ico",
       logo: { src: "./src/assets/vezo-logo.svg", alt: "Vezo" },
       customCss: ["./src/styles/custom.css"],
+      plugins: [
+        starlightLlmsTxt({
+          projectName: "Vezo",
+          description:
+            "Escrowless peer-to-peer marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo, Bitcoin's Economic Layer.",
+        }),
+        starlightLinksValidator(),
+      ],
+      head: [
+        { tag: "meta", attrs: { property: "og:image", content: "https://docs.vezo.exchange/og.png" } },
+        { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
+        { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
+        { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
+        { tag: "meta", attrs: { name: "twitter:image", content: "https://docs.vezo.exchange/og.png" } },
+        { tag: "meta", attrs: { name: "theme-color", content: "#FF0040" } },
+        {
+          tag: "script",
+          attrs: { type: "application/ld+json" },
+          content: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Vezo Documentation",
+            url: "https://docs.vezo.exchange",
+            description:
+              "Documentation for Vezo, the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.",
+            publisher: {
+              "@type": "Organization",
+              name: "Vezo",
+              url: "https://www.vezo.exchange",
+              logo: "https://docs.vezo.exchange/favicon.svg",
+            },
+          }),
+        },
+      ],
       editLink: {
         baseUrl: "https://github.com/prajalsharma/veNFT-marketplace/edit/main/docs-site/",
       },
