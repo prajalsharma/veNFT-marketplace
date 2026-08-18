@@ -1,17 +1,22 @@
 "use client";
 
 /*
-  Hero3D — the Vezo mark as a physical object.
+  Hero3D — "The Vault".
 
-  Replaces the static demo-listing card with the brand monolith: the V mark
-  extruded and lit like a product shot. Satin red, clearcoat, environment
-  reflections. Idle sway + inertia-damped pointer parallax; honors
-  prefers-reduced-motion (single static frame); pauses offscreen.
+  A frosted-glass cube (the lock) holding the molten Vezo mark (the value),
+  which glows through the walls. Hovering lifts the lid and lets the light
+  out: the exit exists. A small live chip anchors the scene to reality with
+  the best discount currently on the marketplace.
+
+  Idle sway + inertia-damped pointer parallax; honors prefers-reduced-motion
+  (a static, slightly-open pose); pauses offscreen; disposes on unmount.
 */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
 // Silhouette of the mark in logo space (y-down), converted to y-up centered.
 const LEFT: [number, number][] = [
@@ -35,6 +40,28 @@ function toShape(points: [number, number][]): THREE.Shape {
 
 export default function Hero3D() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const [bestDiscount, setBestDiscount] = useState<string | null>(null);
+
+  // Live proof: the deepest discount on the marketplace right now.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/listings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d) return;
+        const rows: { discountBps?: string | null }[] = d.listings ?? [];
+        let best = 0;
+        for (const row of rows) {
+          const bps = row.discountBps ? Number(row.discountBps) : 0;
+          if (bps > best) best = bps;
+        }
+        if (best > 0) setBestDiscount((best / 100).toFixed(1));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -45,54 +72,91 @@ export default function Hero3D() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.9;
+    renderer.toneMappingExposure = 0.95;
     host.appendChild(renderer.domElement);
     renderer.domElement.style.display = "block";
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 1, 1000);
-    camera.position.set(0, 6, 300);
-    camera.lookAt(0, 0, 0);
+    const camera = new THREE.PerspectiveCamera(35, 1, 1, 1200);
+    camera.position.set(0, 46, 340);
+    camera.lookAt(0, -2, 0);
 
-    // Studio reflections without loading any assets.
     const pmrem = new THREE.PMREMGenerator(renderer);
     const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environment = envTex;
 
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
-    key.position.set(60, 90, 120);
+    const key = new THREE.DirectionalLight(0xffffff, 1.2);
+    key.position.set(70, 110, 130);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0xffd9e2, 0.5);
-    rim.position.set(-80, -30, -60);
-    scene.add(rim);
+    const fill = new THREE.DirectionalLight(0xffe8ee, 0.35);
+    fill.position.set(-90, -20, -80);
+    scene.add(fill);
 
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0xff0040,
-      metalness: 0.15,
-      roughness: 0.34,
-      clearcoat: 0.9,
-      clearcoatRoughness: 0.25,
-      envMapIntensity: 0.7,
+    const vault = new THREE.Group();
+    scene.add(vault);
+
+    // ── The molten core: the V mark, glowing ──
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0x30000c,
+      emissive: 0xff0040,
+      emissiveIntensity: 1.5,
+      roughness: 0.55,
+      envMapIntensity: 0.25,
     });
-
     const extrude: THREE.ExtrudeGeometryOptions = {
       depth: 16,
       bevelEnabled: true,
-      bevelThickness: 2.2,
-      bevelSize: 1.8,
-      bevelSegments: 4,
+      bevelThickness: 2,
+      bevelSize: 1.6,
+      bevelSegments: 3,
       curveSegments: 4,
     };
-
-    const group = new THREE.Group();
+    const core = new THREE.Group();
     for (const pts of [LEFT, RIGHT]) {
       const geo = new THREE.ExtrudeGeometry(toShape(pts), extrude);
       geo.translate(0, 0, -extrude.depth! / 2);
-      group.add(new THREE.Mesh(geo, material));
+      core.add(new THREE.Mesh(geo, coreMat));
     }
-    scene.add(group);
+    core.scale.setScalar(0.6);
+    core.position.y = -12;
+    vault.add(core);
 
-    // Pointer parallax target (normalized -1..1), damped toward each frame.
+    // Light escaping the core, brightens when the vault opens.
+    const glow = new THREE.PointLight(0xff0040, 1200, 500, 2);
+    glow.position.set(0, -6, 0);
+    vault.add(glow);
+
+    // ── The vault: frosted glass body + lid ──
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf2e4e8,
+      metalness: 0,
+      roughness: 0.34,
+      transmission: 1,
+      thickness: 26,
+      ior: 1.45,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.2,
+      attenuationColor: new THREE.Color(0xffc9d6),
+      attenuationDistance: 200,
+    });
+    const body = new THREE.Mesh(new RoundedBoxGeometry(124, 96, 124, 4, 7), glassMat);
+    body.position.y = -16;
+    vault.add(body);
+    const lid = new THREE.Mesh(new RoundedBoxGeometry(124, 26, 124, 4, 7), glassMat);
+    const LID_Y = 52;
+    lid.position.y = LID_Y;
+    vault.add(lid);
+
+    // ── Interaction state ──
+    let openTarget = 0;
+    let open = 0;
+    const onEnter = () => (openTarget = 1);
+    const onLeave = () => (openTarget = 0);
+    const onClick = () => (openTarget = openTarget > 0.5 ? 0 : 1);
+    host.addEventListener("pointerenter", onEnter);
+    host.addEventListener("pointerleave", onLeave);
+    host.addEventListener("click", onClick);
+
     let targetX = 0;
     let targetY = 0;
     const onPointer = (e: PointerEvent) => {
@@ -107,18 +171,28 @@ export default function Hero3D() {
     let px = 0;
     let py = 0;
 
+    const pose = (t: number, dt: number) => {
+      px += (targetX - px) * Math.min(1, dt * 3.5);
+      py += (targetY - py) * Math.min(1, dt * 3.5);
+      open += (openTarget - open) * Math.min(1, dt * 3);
+
+      vault.rotation.y = Math.sin(t * 0.3) * 0.34 + px * 0.28;
+      vault.rotation.x = Math.sin(t * 0.2) * 0.04 - py * 0.12;
+      vault.position.y = Math.sin((t * Math.PI * 2) / 7) * 3;
+
+      // The lid lifts and tips; the core burns brighter; light gets out.
+      lid.position.y = LID_Y + open * 34;
+      lid.rotation.z = -open * 0.12;
+      lid.rotation.x = open * 0.05;
+      core.rotation.y = t * 0.45;
+      coreMat.emissiveIntensity = 1.5 + open * 1.1 + Math.sin(t * 2.1) * 0.12;
+      glow.intensity = 1200 + open * 2600;
+    };
+
     const frame = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
-      const t = now / 1000;
-
-      // Inertia toward the pointer, layered over a slow idle sway.
-      px += (targetX - px) * Math.min(1, dt * 3.5);
-      py += (targetY - py) * Math.min(1, dt * 3.5);
-      group.rotation.y = Math.sin(t * 0.35) * 0.42 + px * 0.3;
-      group.rotation.x = Math.sin(t * 0.22) * 0.05 - py * 0.14;
-      group.position.y = Math.sin((t * Math.PI * 2) / 7) * 3;
-
+      pose(now / 1000, dt);
       renderer.render(scene, camera);
       if (running) raf = requestAnimationFrame(frame);
     };
@@ -146,40 +220,40 @@ export default function Hero3D() {
     ro.observe(host);
     resize();
 
+    let io: IntersectionObserver | null = null;
+    const onVisibility = () =>
+      document.visibilityState === "visible" ? start() : stop();
+
     if (reduceMotion) {
-      // One considered pose, no animation loop.
-      group.rotation.y = -0.35;
-      group.rotation.x = -0.06;
+      // Static, slightly-open pose: the story in one frame.
+      open = 0.4;
+      openTarget = 0.4;
+      vault.rotation.y = -0.3;
+      pose(1, 0);
       renderer.render(scene, camera);
     } else {
-      const io = new IntersectionObserver(
+      io = new IntersectionObserver(
         ([entry]) => (entry.isIntersecting ? start() : stop()),
         { threshold: 0.05 }
       );
       io.observe(host);
-      const onVisibility = () =>
-        document.visibilityState === "visible" ? start() : stop();
       document.addEventListener("visibilitychange", onVisibility);
-
-      return () => {
-        stop();
-        io.disconnect();
-        document.removeEventListener("visibilitychange", onVisibility);
-        window.removeEventListener("pointermove", onPointer);
-        ro.disconnect();
-        group.children.forEach((m) => (m as THREE.Mesh).geometry.dispose());
-        material.dispose();
-        envTex.dispose();
-        pmrem.dispose();
-        renderer.dispose();
-        host.removeChild(renderer.domElement);
-      };
     }
 
     return () => {
+      stop();
+      io?.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pointermove", onPointer);
+      host.removeEventListener("pointerenter", onEnter);
+      host.removeEventListener("pointerleave", onLeave);
+      host.removeEventListener("click", onClick);
       ro.disconnect();
-      group.children.forEach((m) => (m as THREE.Mesh).geometry.dispose());
-      material.dispose();
+      core.children.forEach((m) => (m as THREE.Mesh).geometry.dispose());
+      body.geometry.dispose();
+      lid.geometry.dispose();
+      coreMat.dispose();
+      glassMat.dispose();
       envTex.dispose();
       pmrem.dispose();
       renderer.dispose();
@@ -188,21 +262,44 @@ export default function Hero3D() {
   }, []);
 
   return (
-    <div className="relative w-full" style={{ height: 520 }} aria-hidden="true">
-      <div ref={hostRef} className="absolute inset-0" />
+    <div className="relative w-full" style={{ height: 540 }}>
+      <div ref={hostRef} className="absolute inset-0 cursor-pointer" aria-hidden="true" />
       {/* Contact shadow — breathes on the same 7s period as the float */}
       <div
         className="hero3d-shadow absolute left-1/2 -translate-x-1/2 pointer-events-none"
+        aria-hidden="true"
         style={{
-          bottom: 48,
-          width: "52%",
-          height: 36,
+          bottom: 34,
+          width: "56%",
+          height: 38,
           borderRadius: "50%",
-          background:
-            "radial-gradient(ellipse, rgba(0,0,0,0.22) 0%, transparent 68%)",
-          filter: "blur(10px)",
+          background: "radial-gradient(ellipse, rgba(0,0,0,0.24) 0%, transparent 68%)",
+          filter: "blur(11px)",
         }}
       />
+      {/* Live proof: real marketplace data anchored to the object */}
+      {bestDiscount && (
+        <Link
+          href="/marketplace"
+          className="absolute left-1/2 -translate-x-1/2 inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12.5px] font-semibold"
+          style={{
+            bottom: 0,
+            background: "var(--bg-1)",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-sm)",
+            color: "var(--text-2)",
+          }}
+        >
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "#FF0040" }} />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#FF0040" }} />
+          </span>
+          Best discount live now
+          <span className="font-bold tabular-nums" style={{ color: "#FF0040" }}>
+            {bestDiscount}%
+          </span>
+        </Link>
+      )}
     </div>
   );
 }
