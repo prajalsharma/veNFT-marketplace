@@ -5,7 +5,7 @@ description: Vezo's security model - audit status, the guarantees enforced in co
 
 ## Audit status
 
-Vezo's contracts are adapted from the OpenXSwap marketplace pattern, an audited codebase. Every modification made for Mezo's dual-token vote-escrow system is documented and was independently reviewed; ten findings from that review (one critical, three high, six medium) were fixed before deployment. The complete audit diff and per-module review notes are public in the repository:
+Vezo's contracts are adapted from the OpenXSwap marketplace pattern, an audited codebase, and were **audited by the Mezo team before launching on mainnet**. Every modification made for Mezo's dual-token vote-escrow system is documented; ten findings from that audit (one critical, three high, six medium) were fixed before deployment. The complete audit diff and per-module review notes are public in the repository:
 
 - [Security & audit diff](https://github.com/prajalsharma/veNFT-marketplace#security--audit-diff): every change from the audited base, with severity and fix
 - [`AUDIT_LISTINGS.md`](https://github.com/prajalsharma/veNFT-marketplace/blob/main/AUDIT_LISTINGS.md) · [`AUDIT_BIDDING.md`](https://github.com/prajalsharma/veNFT-marketplace/blob/main/AUDIT_BIDDING.md) · [`AUDIT_SWAP.md`](https://github.com/prajalsharma/veNFT-marketplace/blob/main/AUDIT_SWAP.md): per-module notes

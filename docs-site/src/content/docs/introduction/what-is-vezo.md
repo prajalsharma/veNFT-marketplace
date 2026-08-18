@@ -49,7 +49,7 @@ Listings can be priced in BTC, MEZO, or MUSD (Mezo's stablecoin). Buyers can eve
 
 ## How Vezo came to be
 
-Vezo didn't start as a startup pitch. It began as the official Mezo community bounty, ["veNFT Marketplace for veBTC and veMEZO Locks"](https://docs.superhuman.com/d/Mezo-Community-Resources_d7Ee5YHYoEI/Bounty-veNFT-Marketplace-for-veBTC-and-veMEZO-Locks_suY2iKqe#Table-9_tuZ45qDv/r7&columnId=c-2laUloylgR), which asked the ecosystem to build exactly this: an escrowless secondary market for locked positions. Vezo was built against that spec, hardened through security review, and shipped to mainnet.
+Vezo didn't start as a startup pitch. It began as the official Mezo community bounty, ["veNFT Marketplace for veBTC and veMEZO Locks"](https://docs.superhuman.com/d/Mezo-Community-Resources_d7Ee5YHYoEI/Bounty-veNFT-Marketplace-for-veBTC-and-veMEZO-Locks_suY2iKqe#Table-9_tuZ45qDv/r7&columnId=c-2laUloylgR), which asked the ecosystem to build exactly this: an escrowless secondary market for locked positions. Vezo was built against that spec, audited by the Mezo team, and shipped to mainnet.
 
 <figure>
 <svg viewBox="0 0 860 190" role="img" aria-label="Timeline: spring 2026 community bounty, build and security review, June 2026 mainnet launch, and ongoing growth with v2 modules, analytics, and documentation." style="max-width:100%;height:auto;font-size:12.5px;">
@@ -68,7 +68,7 @@ Vezo didn't start as a startup pitch. It began as the official Mezo community bo
 
   <circle cx="330" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
   <text x="330" y="62" text-anchor="middle" fill="currentColor" font-weight="700" font-size="12">Build &amp; review</text>
-  <text x="330" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">security-reviewed contracts</text>
+  <text x="330" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">audited by the Mezo team</text>
   <text x="330" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">proven on testnet</text>
 
   <circle cx="550" cy="95" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -81,7 +81,7 @@ Vezo didn't start as a startup pitch. It began as the official Mezo community bo
   <text x="770" y="128" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">bidding &#183; swap payments</text>
   <text x="770" y="144" text-anchor="middle" fill="currentColor" fill-opacity="0.6" font-size="10.5">analytics &#183; docs</text>
 </svg>
-<figcaption>From bounty spec to live protocol: built spring 2026, security-reviewed, on mainnet since June 2026, and growing since with the v2 bidding and swap modules, public analytics, and this documentation.</figcaption>
+<figcaption>From bounty spec to live protocol: built spring 2026, audited by the Mezo team, on mainnet since June 2026, and growing since with the v2 bidding and swap modules, public analytics, and this documentation.</figcaption>
 </figure>
 
 The bounty origin shapes how Vezo is run: the contracts follow the bounty's security requirements (documented in [Security](/architecture/security/)), the code is fully [open source](https://github.com/prajalsharma/veNFT-marketplace), and the project carries a post-launch maintenance commitment covering indexing, batch operations, governance integration, and analytics.
