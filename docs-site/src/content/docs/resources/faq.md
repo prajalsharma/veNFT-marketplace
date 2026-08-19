@@ -47,7 +47,7 @@ That's what the atomic settlement is for. The purchase transaction transfers the
 
 ### The listing is priced in MUSD but I only have BTC. Am I stuck?
 
-No. Use the swap payment flow: your BTC is swapped to MUSD through Mezo's DEX and the purchase completes in the same transaction, with slippage protection. See [Pay With Any Token](/concepts/pay-with-any-token/). The exception is MEZO-priced listings, which must be paid in MEZO since MEZO has no DEX pool yet.
+No. Choose **Pay with BTC** in the buy dialog: your BTC is swapped to MUSD through Mezo's DEX and the purchase completes in the same transaction, with slippage protection. See [Pay With Any Token](/concepts/pay-with-any-token/). The swap only works in that direction, though: BTC-priced listings must be paid in BTC (the marketplace settles them natively), and MEZO-priced listings must be paid in MEZO (MEZO has no DEX pool).
 
 ### Why do some listings show a premium instead of a discount?
 

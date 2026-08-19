@@ -55,14 +55,19 @@ Because everything happens inside one transaction, the atomicity guarantee of th
 
 ## Supported routes
 
-Swaps route through the on-chain BTC/MUSD pool:
+Two rules decide whether a swap route exists, both enforced by the contract:
+
+1. **The listing must be priced in an ERC-20** (MUSD today). BTC-priced listings are settled through the marketplace's native-value path, which the router cannot use; pay those in BTC directly.
+2. **The pay token must have a direct DEX pool to the listing's currency.** Mezo's factory currently holds 30+ pools; BTC, mUSDC, and mUSDT all pool to MUSD, while MEZO has no pool at all and cannot be swapped in either direction.
 
 | You hold | Listing priced in | Route |
 |---|---|---|
-| BTC | MUSD | BTC → MUSD via pool, settled by the router |
+| BTC | MUSD | BTC → MUSD via the volatile pool, settled by the router |
+| mUSDC / mUSDT | MUSD | Stable-pool routes; supported by the contract, not yet offered in the app |
 | The listing's own token | anything | No swap; normal `buyNFT` |
+| Anything | BTC or MEZO | No swap route; pay in the listed currency |
 
-BTC-priced listings are not swappable in the current router: the marketplace settles BTC listings through its native-value path, and the router's swap leg settles in ERC-20 only. Pay BTC-priced listings in BTC directly.
+The Vezo app currently offers the BTC route in the buy dialog; integrators can use any pooled pay token directly through the contract.
 
 :::note[Why MEZO-priced listings are direct-pay only]
 MEZO has no DEX pool on Mezo at present, so there is no on-chain route to swap into or out of MEZO. Listings priced in MEZO are paid in MEZO directly. If a MEZO pool is deployed in the future, the router's pool-direct design can accommodate it.

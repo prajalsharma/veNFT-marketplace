@@ -34,7 +34,7 @@ Every listing displays the position's **intrinsic value** (the amount of BTC or 
 
 ### Multi-token payments
 
-Listings can be priced in BTC, MEZO, or MUSD (Mezo's stablecoin). Buyers can even pay with a different token than the listing asks for; the [swap router](/concepts/pay-with-any-token/) converts it through Mezo's on-chain DEX inside the same transaction.
+Listings can be priced in BTC, MEZO, or MUSD (Mezo's stablecoin). For MUSD-priced listings, buyers holding BTC can pay with it directly; the [swap router](/concepts/pay-with-any-token/) converts it through Mezo's on-chain DEX inside the same transaction.
 
 ## What you can do on Vezo
 
@@ -44,7 +44,7 @@ Listings can be priced in BTC, MEZO, or MUSD (Mezo's stablecoin). Buyers can eve
 | Browse | See all active listings with live intrinsic value, voting power, lock expiry, and discount |
 | Buy | Purchase atomically in one transaction |
 | Bid | Make an offer on any veNFT; funds stay in your wallet until the owner accepts |
-| Pay in any token | Buy a listing priced in one currency using another, swapped automatically |
+| Pay with BTC | Buy an MUSD-priced listing with BTC, swapped automatically on-chain |
 | Cancel | Delist at any time, no penalty |
 
 ## How Vezo came to be
