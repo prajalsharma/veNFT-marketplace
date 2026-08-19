@@ -14,6 +14,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { formatEther, maxUint256 } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { X, ArrowRight, ShieldCheck, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info } from "lucide-react";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -550,7 +551,8 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
 
   const isBusy = step === "approving" || step === "buying";
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
@@ -878,6 +880,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

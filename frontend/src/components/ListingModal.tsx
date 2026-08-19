@@ -23,6 +23,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { useMarketplace } from "@/hooks/useMarketplace";
 import { useNetwork } from "@/hooks/useNetwork";
 import { PAYMENT_TOKENS } from "@/lib/contracts";
@@ -104,7 +105,8 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
   const discount = price ? (1 - parseFloat(price) / parseFloat(formattedIntrinsic)) * 100 : 0;
   const accentColor = veNFT.collection === "veBTC" ? "#F7931A" : "#4A90E2";
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
@@ -375,6 +377,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
