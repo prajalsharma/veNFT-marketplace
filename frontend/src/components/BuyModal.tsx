@@ -345,6 +345,8 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
   const [payWithSwap, setPayWithSwap] = useState(false);
   const [swapQuote, setSwapQuote] = useState<{ maxIn: bigint; feeBps: number } | null>(null);
   const [swapQuoteLoading, setSwapQuoteLoading] = useState(false);
+  const [swapQuoteError, setSwapQuoteError] = useState(false);
+  const [swapQuoteNonce, setSwapQuoteNonce] = useState(0);
 
   // Live quote: derive the BTC budget that clears the MUSD price with headroom.
   // Exact-in semantics: the router pulls maxIn, skims its routing fee, swaps the
@@ -355,46 +357,58 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
       return;
     }
     let alive = true;
+    const fetchQuote = async () => {
+      const quoteToken = listing.paymentToken as `0x${string}`;
+      const probe = 10n ** 14n; // 0.0001 BTC
+      const probeOut = await quoteSwap(swapRoute.payToken, quoteToken, probe);
+      if (!probeOut || probeOut === 0n) throw new Error("no pool");
+      let netIn = (listing.price * probe) / probeOut;
+      netIn = (netIn * 1015n) / 1000n; // +1.5% headroom
+      const out = await quoteSwap(swapRoute.payToken, quoteToken, netIn);
+      if (!out || out === 0n) throw new Error("no pool");
+      if (out < listing.price) {
+        netIn = (netIn * listing.price * 1005n) / (out * 1000n);
+      }
+      let feeBps = 0;
+      try {
+        feeBps = Number(
+          await publicClient!.readContract({
+            address: swapPaymentRouter!,
+            abi: [{ name: "platformFeeSwapBps", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] }] as const,
+            functionName: "platformFeeSwapBps",
+          })
+        );
+      } catch {
+        /* fee is display-only; the buffer already absorbs it */
+      }
+      return { maxIn: (netIn * 10000n) / BigInt(10000 - feeBps) + 1n, feeBps };
+    };
     (async () => {
       setSwapQuoteLoading(true);
       setSwapQuote(null);
-      try {
-        const quoteToken = listing.paymentToken as `0x${string}`;
-        const probe = 10n ** 14n; // 0.0001 BTC
-        const probeOut = await quoteSwap(swapRoute.payToken, quoteToken, probe);
-        if (!probeOut || probeOut === 0n) throw new Error("no pool");
-        let netIn = (listing.price * probe) / probeOut;
-        netIn = (netIn * 1015n) / 1000n; // +1.5% headroom
-        const out = await quoteSwap(swapRoute.payToken, quoteToken, netIn);
-        if (!out || out === 0n) throw new Error("no pool");
-        if (out < listing.price) {
-          netIn = (netIn * listing.price * 1005n) / (out * 1000n);
-        }
-        let feeBps = 0;
+      setSwapQuoteError(false);
+      // Public RPCs rate-limit bursts; retry once before surfacing an error.
+      for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          feeBps = Number(
-            await publicClient!.readContract({
-              address: swapPaymentRouter!,
-              abi: [{ name: "platformFeeSwapBps", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] }] as const,
-              functionName: "platformFeeSwapBps",
-            })
-          );
+          const q = await fetchQuote();
+          if (!alive) return;
+          setSwapQuote(q);
+          setSwapQuoteLoading(false);
+          return;
         } catch {
-          /* fee is display-only; the buffer already absorbs it */
+          if (!alive) return;
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
         }
-        const maxIn = (netIn * 10000n) / BigInt(10000 - feeBps) + 1n;
-        if (!alive) return;
-        setSwapQuote({ maxIn, feeBps });
-      } catch {
-        if (alive) setPayWithSwap(false);
-      } finally {
-        if (alive) setSwapQuoteLoading(false);
+      }
+      if (alive) {
+        setSwapQuoteError(true);
+        setSwapQuoteLoading(false);
       }
     })();
     return () => {
       alive = false;
     };
-  }, [payWithSwap, swapRoute?.payToken, listing?.listingId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [payWithSwap, swapRoute?.payToken, listing?.listingId, swapQuoteNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: nativeBalance } = useBalance({
     address: buyerAddress,
@@ -740,7 +754,18 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                       </div>
                       {payWithSwap && (
                         <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-                          {swapQuoteLoading || !swapQuote ? (
+                          {swapQuoteError ? (
+                            <>
+                              Couldn&apos;t fetch the pool rate.{" "}
+                              <button
+                                onClick={() => setSwapQuoteNonce((n) => n + 1)}
+                                className="font-bold underline underline-offset-2"
+                                style={{ color: "#FF0040" }}
+                              >
+                                Retry
+                              </button>
+                            </>
+                          ) : swapQuoteLoading || !swapQuote ? (
                             "Fetching the live pool rate…"
                           ) : (
                             <>
