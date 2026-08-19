@@ -119,9 +119,11 @@ function parseError(raw: string): string {
 // ─── Step pill ─────────────────────────────────────────────────────────────────
 function StepPill({
   label,
+  num,
   state,
 }: {
   label: string;
+  num: number;
   state: "idle" | "active" | "done";
 }) {
   const colors = {
@@ -144,7 +146,7 @@ function StepPill({
           className="w-3 h-3 rounded-full border flex items-center justify-center text-[8px] font-black"
           style={{ borderColor: "currentColor" }}
         >
-          {label.startsWith("1") ? "1" : "2"}
+          {num}
         </span>
       )}
       {label}
@@ -236,72 +238,19 @@ function CrossCurrencyNote({
       const disc = ivIn !== null && amtN < ivIn ? (((ivIn - amtN) / ivIn) * 100).toFixed(1) : null;
       return { sym, amt, disc };
     });
-  const bestIdx = crossRows.reduce(
-    (b, r, i) => r.disc !== null && (b === -1 || parseFloat(r.disc) > parseFloat(crossRows[b].disc ?? "0")) ? i : b,
-    -1
-  );
 
   return (
-    <div
-      className="p-4 rounded-xl space-y-2"
-      style={{ background: "rgba(74,144,226,0.06)", border: "1px solid rgba(74,144,226,0.18)" }}
-    >
-      <div className="flex items-center gap-2 mb-1">
-        <Info style={{ width: 13, height: 13, color: "#4A90E2", flexShrink: 0 }} />
-        <p className="text-[11px] font-bold" style={{ color: "#4A90E2" }}>USD Context</p>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-        <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>You pay</span>
-        <span className="text-[11.5px] font-bold tabular-nums text-right" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-          {formatUSD(priceUSD)}
-        </span>
-        {ivUSD !== null && (
-          <>
-            <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>Intrinsic value</span>
-            <span className="text-[11.5px] font-bold tabular-nums text-right" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-              {formatUSD(ivUSD)}
-            </span>
-          </>
+    <div className="px-1 space-y-0.5">
+      <p className="text-[12px]" style={{ color: "var(--text-3)" }}>
+        {formatUSD(priceUSD)}
+        {discountUSD !== null && discountUSD > 0 && ivUSD !== null && (
+          <> &#183; {discountUSD.toFixed(1)}% below intrinsic value ({formatUSD(ivUSD)})</>
         )}
-        {discountUSD !== null && discountUSD > 0 && (
-          <>
-            <span className="text-[11.5px]" style={{ color: "var(--text-3)" }}>Implied discount</span>
-            <span className="text-[11.5px] font-bold tabular-nums text-right" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
-              {discountUSD.toFixed(1)}% off
-            </span>
-          </>
-        )}
-      </div>
-
-      {/* Cross-currency breakdown */}
+      </p>
       {crossRows.length > 0 && (
-        <div className="pt-2 mt-2 space-y-1.5" style={{ borderTop: "1px solid rgba(74,144,226,0.14)" }}>
-          <p className="text-[10.5px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
-            Equivalent in other currencies
-          </p>
-          {crossRows.map((row, i) => (
-            <div key={row.sym} className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11.5px] font-bold w-8" style={{ color: "var(--text-3)" }}>{row.sym}</span>
-                {i === bestIdx && (
-                  <span className="text-[8px] font-black uppercase px-1 py-0.5 rounded" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>
-                    best
-                  </span>
-                )}
-              </div>
-              <div className="text-right">
-                <span className="text-[11.5px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-                  {row.amt}
-                </span>
-                {row.disc && (
-                  <span className="ml-1.5 text-[10.5px] font-bold" style={{ color: "#10B981" }}>
-                    {row.disc}% off IV
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <p className="text-[12px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+          &#8776; {crossRows.map((r) => `${r.amt} ${r.sym}`).join(" \u00b7 ")}
+        </p>
       )}
     </div>
   );
@@ -491,9 +440,13 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
       })()
     : "";
 
-  const formattedPrice = listing
-    ? parseFloat(formatEther(listing.price)).toFixed(6)
-    : "0";
+  const formatAmount = (wei: bigint) => {
+    const v = parseFloat(formatEther(wei));
+    if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
+    return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
+  };
+  const formattedPrice = listing ? formatAmount(listing.price) : "0";
 
   useEffect(() => {
     if (txConfirmed && step === "buying") {
@@ -619,13 +572,13 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
             transition={{ type: "spring", stiffness: 240, damping: 26 }}
             className="relative w-full max-w-md overflow-hidden rounded-2xl"
             style={{
-              background: "var(--bg-1)",
+              background: "color-mix(in srgb, var(--bg-1) 84%, transparent)",
+              backdropFilter: "blur(24px) saturate(160%)",
+              WebkitBackdropFilter: "blur(24px) saturate(160%)",
               border: "1px solid var(--border)",
-              boxShadow: "var(--shadow-xl)",
+              boxShadow: "var(--shadow-xl), inset 0 1px 0 rgba(255,255,255,0.06)",
             }}
           >
-            {/* Top accent bar */}
-            <div style={{ height: 2, background: "linear-gradient(90deg, #FF0040, #FF004044)" }} />
 
             {/* Header */}
             <div
@@ -642,13 +595,6 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     #{listing.tokenId.toString()}
                   </span>
                 </h2>
-                <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
-                  {isNative
-                    ? "Single transaction: pay and receive the NFT atomically."
-                    : alreadyApproved
-                    ? "Allowance ready. One transaction to purchase."
-                    : "Two steps: approve token spend, then purchase."}
-                </p>
               </div>
               <button
                 onClick={handleClose}
@@ -664,50 +610,31 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
             <div className="p-6 space-y-4">
               {/* Price summary */}
               <div
-                className="p-4 rounded-xl space-y-2.5"
+                className="p-5 rounded-xl"
                 style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
               >
-                {[
-                  {
-                    label: "You pay",
-                    value: (
-                      <span
-                        className="tabular-nums font-bold text-[16px]"
-                        style={{ fontVariantNumeric: "tabular-nums" }}
-                      >
-                        {formattedPrice}{" "}
-                        <span className="text-[12px] font-semibold" style={{ color: "var(--text-2)" }}>
-                          {paymentSymbol}
-                        </span>
-                      </span>
-                    ),
-                    color: "var(--text-1)",
-                  },
-                  {
-                    label: "Discount",
-                    value: (
-                      <span
-                        className="tabular-nums font-bold"
-                        style={{ fontVariantNumeric: "tabular-nums", color: "#10B981" }}
-                      >
-                        {listing.discountBps === null
-                          ? "—"
-                          : `${(Number(listing.discountBps) / 100).toFixed(1)}%`}
-                      </span>
-                    ),
-                    color: "#10B981",
-                  },
-                  {
-                    label: "Protocol fee",
-                    value: <span className="tabular-nums font-semibold" style={{ fontVariantNumeric: "tabular-nums", color: "var(--text-3)" }}>1%</span>,
-                    color: "var(--text-3)",
-                  },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex justify-between items-center text-[13.5px]">
-                    <span style={{ color: "var(--text-2)" }}>{label}</span>
-                    {value}
-                  </div>
-                ))}
+                <p className="eyebrow mb-1.5" style={{ color: "var(--text-3)" }}>You pay</p>
+                <p
+                  className="tabular-nums font-bold"
+                  style={{ fontSize: 28, letterSpacing: "-0.03em", lineHeight: 1.1, fontVariantNumeric: "tabular-nums", color: "var(--text-1)" }}
+                >
+                  {formattedPrice}{" "}
+                  <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paymentSymbol}</span>
+                </p>
+                <div
+                  className="flex items-center gap-4 mt-3 pt-3 text-[12.5px]"
+                  style={{ borderTop: "1px solid var(--border-subtle)" }}
+                >
+                  <span style={{ color: "var(--text-3)" }}>
+                    Discount{" "}
+                    <span className="font-bold tabular-nums" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
+                      {listing.discountBps === null ? "—" : `${(Number(listing.discountBps) / 100).toFixed(1)}%`}
+                    </span>
+                  </span>
+                  <span style={{ color: "var(--text-3)" }}>
+                    Protocol fee <span className="font-semibold" style={{ color: "var(--text-2)" }}>1%</span>
+                  </span>
+                </div>
               </div>
 
               {/* USD context + swap note */}
@@ -825,6 +752,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 <div className="flex items-center gap-2">
                   <StepPill
                     label={`Approve ${paymentSymbol}`}
+                    num={1}
                     state={
                       step === "approving"
                         ? "active"
@@ -836,6 +764,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
                   <StepPill
                     label="Purchase NFT"
+                    num={2}
                     state={
                       step === "buying" ? "active" : step === "done" ? "done" : "idle"
                     }
@@ -936,7 +865,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     </>
                   ) : (
                     <>
-                      {payWithSwap ? "Swap & Buy" : isNative || alreadyApproved ? "Buy Now" : `1. Approve ${paymentSymbol}`}
+                      {payWithSwap ? "Swap & Buy" : isNative || alreadyApproved ? "Buy Now" : `Approve ${paymentSymbol}`}
                       <ArrowRight
                         style={{ width: 15, height: 15 }}
                         className="group-hover:translate-x-1 transition-transform"
