@@ -239,21 +239,29 @@ function PlaceBidForm({
           }}
           required
         />
-        <select
-          value={expiryDays}
-          onChange={(e) => setExpiryDays(e.target.value)}
-          className="rounded-lg px-2 py-2 text-[13px] font-medium focus:outline-none appearance-none"
-          style={{
-            background: "var(--bg-2)",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-2)",
-            minWidth: 72,
-          }}
-        >
-          {["1","3","7","14","30"].map((d) => (
-            <option key={d} value={d}>{d}d expiry</option>
-          ))}
-        </select>
+      </div>
+
+      {/* Expiry — segmented chips, consistent with the token selector above */}
+      <div className="flex items-center gap-1.5 mt-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: "var(--text-3)" }}>
+          Expires
+        </span>
+        {["1", "3", "7", "14", "30"].map((d) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => setExpiryDays(d)}
+            aria-pressed={expiryDays === d}
+            className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold transition-colors"
+            style={
+              expiryDays === d
+                ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
+                : { background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }
+            }
+          >
+            {d}d
+          </button>
+        ))}
       </div>
 
       <AnimatePresence>
