@@ -877,3 +877,7 @@ select option {
 @media (prefers-reduced-motion: reduce) {
   .hero3d-shadow { animation: none; }
 }
+
+/* Slower marquee for the wider desktop ticker; pause while hovered */
+.marquee-slow { animation-duration: 30s; }
+.marquee-hover-pause:hover .marquee-track { animation-play-state: paused; }

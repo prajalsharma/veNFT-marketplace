@@ -6,7 +6,7 @@ import { useAddNetwork } from "@/hooks/useAddNetwork";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Github, BookOpen, FlaskConical, Globe, Sun, Moon, TrendingUp } from "lucide-react";
+import { Menu, X, Github, BookOpen, FlaskConical, Globe, Sun, Moon, TrendingUp, TrendingDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePriceTicker, formatUSD } from "@/hooks/usePriceTicker";
 
@@ -118,55 +118,74 @@ function WalletButton() {
 function PriceTickerBar({ isDark }: { isDark: boolean }) {
   const prices = usePriceTicker();
   const tickers = [
-    { label: "BTC",  value: formatUSD(prices.BTC),  color: "#F7931A" },
-    { label: "MEZO", value: formatUSD(prices.MEZO), color: "#4A90E2" },
-    { label: "MUSD", value: formatUSD(prices.MUSD), color: "#10B981" },
+    { label: "BTC",  value: formatUSD(prices.BTC),  change: prices.changes.BTC,  color: "#F7931A" },
+    { label: "MEZO", value: formatUSD(prices.MEZO), change: prices.changes.MEZO, color: "#4A90E2" },
+    { label: "MUSD", value: formatUSD(prices.MUSD), change: prices.changes.MUSD, color: "#10B981" },
   ];
 
-  const Pill = ({ t }: { t: typeof tickers[number] }) => (
-    <div className="flex items-center gap-1.5 px-4 shrink-0">
-      <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
-      <span className="text-[12px] font-bold tabular-nums" style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}>
-        {t.value}
-      </span>
-    </div>
-  );
-
-  return (
-    <div
-      className="border-t h-[32px] sm:h-[36px] overflow-hidden"
-      style={{ borderColor: "var(--header-border)", background: isDark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)" }}
-    >
-      {/* Mobile — infinite marquee (two copies for a seamless loop) */}
-      <div className="sm:hidden h-full flex items-center overflow-hidden" aria-label="Live prices">
-        <div className="marquee-track items-center">
-          {[...tickers, ...tickers].map((t, i) => <Pill key={i} t={t} />)}
-        </div>
-      </div>
-
-      {/* Desktop — static row */}
-      <div className="hidden sm:flex max-w-[1280px] mx-auto h-full px-5 md:px-10 lg:px-16 items-center gap-5">
-        <div className="flex items-center gap-1.5 shrink-0" style={{ color: "var(--text-3)" }}>
-          <TrendingUp style={{ width: 11, height: 11 }} />
-          <span className="text-xs font-black uppercase tracking-widest">Live Prices</span>
-        </div>
-        <div className="w-px h-3 shrink-0" style={{ background: "var(--border)" }} />
-        <div className="flex items-center gap-4 shrink-0">
-          {tickers.map((t) => (
-            <div key={t.label} className="flex items-center gap-1.5 shrink-0">
-              <span className="text-xs font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
-              <span className="text-sm font-bold tabular-nums" style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}>
-                {t.value}
-              </span>
-            </div>
-          ))}
-        </div>
-        {prices.lastUpdated && (
-          <span className="ml-auto text-[11px] hidden md:block shrink-0" style={{ color: "var(--text-3)" }}>
-            Updated {new Date(prices.lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+  const Pill = ({ t }: { t: typeof tickers[number] }) => {
+    const pos = t.change !== null && t.change > 0.05;
+    const neg = t.change !== null && t.change < -0.05;
+    return (
+      <div className="flex items-center gap-2 px-6 shrink-0">
+        <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
+        <span
+          className="text-[14px] font-bold tabular-nums"
+          style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}
+        >
+          {t.value}
+        </span>
+        {pos && (
+          <span className="flex items-center gap-0.5 text-[11.5px] font-bold tabular-nums" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
+            <TrendingUp style={{ width: 12, height: 12 }} />
+            {Math.abs(t.change!).toFixed(2)}%
+          </span>
+        )}
+        {neg && (
+          <span className="flex items-center gap-0.5 text-[11.5px] font-bold tabular-nums" style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}>
+            <TrendingDown style={{ width: 12, height: 12 }} />
+            {Math.abs(t.change!).toFixed(2)}%
           </span>
         )}
       </div>
+    );
+  };
+
+  return (
+    <div
+      className="border-t h-[38px] sm:h-[42px] overflow-hidden flex items-center"
+      style={{ borderColor: "var(--header-border)", background: isDark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)" }}
+    >
+      {/* Fixed label */}
+      <div
+        className="hidden sm:flex items-center gap-1.5 shrink-0 pl-5 md:pl-10 lg:pl-16 pr-5 h-full"
+        style={{ color: "var(--text-3)" }}
+      >
+        <TrendingUp style={{ width: 12, height: 12 }} />
+        <span className="text-xs font-black uppercase tracking-widest">Live Prices</span>
+        <div className="w-px h-3 ml-3" style={{ background: "var(--border)" }} />
+      </div>
+
+      {/* Infinite marquee — four copies form two identical halves for a seamless loop */}
+      <div
+        className="flex-1 h-full flex items-center overflow-hidden marquee-hover-pause"
+        aria-label="Live prices"
+        style={{
+          maskImage: "linear-gradient(90deg, transparent, black 28px, black calc(100% - 28px), transparent)",
+          WebkitMaskImage: "linear-gradient(90deg, transparent, black 28px, black calc(100% - 28px), transparent)",
+        }}
+      >
+        <div className="marquee-track marquee-slow items-center">
+          {[...tickers, ...tickers, ...tickers, ...tickers].map((t, i) => <Pill key={i} t={t} />)}
+        </div>
+      </div>
+
+      {/* Updated timestamp, pinned right */}
+      {prices.lastUpdated && (
+        <span className="hidden md:block text-[11px] shrink-0 pl-4 pr-5 md:pr-10 lg:pr-16" style={{ color: "var(--text-3)" }}>
+          Updated {new Date(prices.lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </span>
+      )}
     </div>
   );
 }
