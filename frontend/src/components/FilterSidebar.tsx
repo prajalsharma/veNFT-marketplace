@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Filter, X, CheckCircle2, SlidersHorizontal, Star, Clock, TrendingDown, Zap, GitMerge, RefreshCw } from "lucide-react";
+import { Filter, X, CheckCircle2, SlidersHorizontal, Star, Clock, TrendingDown, Zap, Award, RefreshCw } from "lucide-react";
 
 export interface FilterState {
   collectionFilter: "all" | "veBTC" | "veMEZO";
@@ -75,6 +75,50 @@ function FilterChip({
         {label}
       </span>
       {active && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+    </button>
+  );
+}
+
+
+function PresetChip({
+  label,
+  active,
+  onClick,
+  icon: Icon,
+  hint,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  icon?: any;
+  hint?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      title={hint}
+      className="h-10 px-3 rounded-xl border text-[12.5px] font-bold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
+      style={{
+        background: active ? "rgba(255,0,64,0.10)" : "var(--bg-2)",
+        borderColor: active ? "rgba(255,0,64,0.45)" : "var(--border)",
+        color: active ? "#FF0040" : "var(--text-2)",
+      }}
+      onMouseEnter={(e) => {
+        if (!active) {
+          e.currentTarget.style.borderColor = "var(--border-strong)";
+          e.currentTarget.style.color = "var(--text-1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          e.currentTarget.style.borderColor = "var(--border)";
+          e.currentTarget.style.color = "var(--text-2)";
+        }
+      }}
+    >
+      {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
+      {label}
     </button>
   );
 }
@@ -262,31 +306,54 @@ export function FilterSidebar({
                 </div>
               </section>
 
-              {/* ── Quick Presets ── */}
+              {/* ── Discount presets — radio-style: click the active one to clear ── */}
               <section>
-                <SectionLabel>Quick Presets</SectionLabel>
-                <div className="grid grid-cols-2 gap-2">
-                  <FilterChip
-                    label="Best Deals"
-                    icon={Star}
-                    active={minDiscount >= 10}
-                    onClick={() => { setMinDiscount(10); setMaxDiscount(50); }}
+                <SectionLabel>Minimum Discount</SectionLabel>
+                <div className="grid grid-cols-3 gap-2">
+                  <PresetChip
+                    label="Any"
+                    hint="No minimum discount"
+                    active={minDiscount === 0}
+                    onClick={() => { setMinDiscount(0); setMaxDiscount(50); }}
                   />
-                  <FilterChip
-                    label="Ending Soon"
+                  <PresetChip
+                    label="10%+"
+                    hint="Only listings at least 10% below intrinsic value"
+                    active={minDiscount === 10}
+                    onClick={() => {
+                      if (minDiscount === 10) { setMinDiscount(0); } else { setMinDiscount(10); setMaxDiscount(50); }
+                    }}
+                  />
+                  <PresetChip
+                    label="20%+"
+                    hint="Only listings at least 20% below intrinsic value"
+                    active={minDiscount === 20}
+                    onClick={() => {
+                      if (minDiscount === 20) { setMinDiscount(0); } else { setMinDiscount(20); setMaxDiscount(50); }
+                    }}
+                  />
+                </div>
+              </section>
+
+              {/* ── Quick filters — real toggles ── */}
+              <section>
+                <SectionLabel>Quick Filters</SectionLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  <PresetChip
+                    label="Ending soon"
+                    hint="Locks expiring soonest first"
                     icon={Clock}
                     active={showEndingSoon}
-                    onClick={() => { setShowEndingSoon(!showEndingSoon); setSortBy("time-remaining"); }}
+                    onClick={() => {
+                      const next = !showEndingSoon;
+                      setShowEndingSoon(next);
+                      if (next) setSortBy("time-remaining");
+                    }}
                   />
-                  <FilterChip
-                    label="Deep Discount"
-                    icon={TrendingDown}
-                    active={minDiscount >= 20}
-                    onClick={() => { setMinDiscount(20); setMaxDiscount(50); }}
-                  />
-                  <FilterChip
+                  <PresetChip
                     label="Grant NFTs"
-                    icon={GitMerge}
+                    hint="Positions issued through Mezo\u2019s grant and vesting program"
+                    icon={Award}
                     active={showGrantOnly}
                     onClick={() => setShowGrantOnly(!showGrantOnly)}
                   />

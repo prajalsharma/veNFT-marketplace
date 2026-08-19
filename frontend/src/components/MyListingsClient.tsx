@@ -27,7 +27,7 @@ import {
   Zap,
   Tag,
   XCircle,
-  GitMerge,
+  Award,
   LayoutGrid,
   TrendingDown,
   Clock,
@@ -367,7 +367,7 @@ function WalletNFTCard({
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
               style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.22)" }}
             >
-              <GitMerge style={{ width: 10, height: 10, color: "#F59E0B" }} />
+              <Award style={{ width: 10, height: 10, color: "#F59E0B" }} />
               <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
                 Grant
               </span>

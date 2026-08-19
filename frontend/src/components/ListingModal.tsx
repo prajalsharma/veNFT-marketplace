@@ -18,7 +18,7 @@ import {
   X,
   ShieldCheck,
   ArrowRight,
-  GitMerge,
+  Award,
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
@@ -260,7 +260,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     border: "1px solid rgba(245,158,11,0.22)",
                   }}
                 >
-                  <GitMerge style={{ width: 14, height: 14, color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
+                  <Award style={{ width: 14, height: 14, color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
                   <div>
                     <p className="text-[13px] font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
                       Grant NFT: Cannot be Merged or Split
