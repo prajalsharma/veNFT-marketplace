@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 // Falls back to hardcoded sensible defaults if CoinGecko is unreachable.
 
 const CG_URL =
-  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cmezo%2Cmezo-usd&vs_currencies=usd";
+  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cmezo%2Cmezo-usd&vs_currencies=usd&include_24hr_change=true";
 
 // Cache at the edge for 60 seconds
 export const revalidate = 60;
