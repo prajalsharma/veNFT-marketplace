@@ -118,9 +118,9 @@ function WalletButton() {
 function PriceTickerBar({ isDark }: { isDark: boolean }) {
   const prices = usePriceTicker();
   const tickers = [
-    { label: "BTC",  value: formatUSD(prices.BTC),  change: prices.changes.BTC,  color: "#F7931A" },
-    { label: "MEZO", value: formatUSD(prices.MEZO), change: prices.changes.MEZO, color: "#4A90E2" },
-    { label: "MUSD", value: formatUSD(prices.MUSD), change: prices.changes.MUSD, color: "#10B981" },
+    { label: "BTC",  value: formatUSD(prices.BTC),  change: prices.changes.BTC },
+    { label: "MEZO", value: formatUSD(prices.MEZO), change: prices.changes.MEZO },
+    { label: "MUSD", value: formatUSD(prices.MUSD), change: prices.changes.MUSD },
   ];
 
   const Pill = ({ t }: { t: typeof tickers[number] }) => {
@@ -128,10 +128,10 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
     const neg = t.change !== null && t.change < -0.05;
     return (
       <div className="flex items-center gap-2 px-6 shrink-0">
-        <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: "var(--text-3)" }}>{t.label}</span>
+        <span className="text-[12.5px] font-bold uppercase tracking-wide" style={{ color: "var(--text-2)" }}>{t.label}</span>
         <span
           className="text-[14px] font-bold tabular-nums"
-          style={{ color: t.value === "—" ? "var(--text-3)" : t.color, fontVariantNumeric: "tabular-nums" }}
+          style={{ color: t.value === "—" ? "var(--text-3)" : "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
         >
           {t.value}
         </span>

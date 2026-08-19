@@ -12,11 +12,13 @@
   ✓ Empty state: composed, shows how to get started
 */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   ArrowUpDown,
+  ChevronDown,
+  Check,
   ShieldCheck as ShieldCheckIcon,
   X,
   TrendingDown,
@@ -195,6 +197,77 @@ const DEFAULT_FILTERS: FilterState = {
   showAutoLockOnly: false,
   showEndingSoon: false,
 };
+
+
+// ─── Sort menu — custom dropdown, no native select ────────────────────────────
+const SORT_LABELS: Record<string, string> = {
+  discount: "Best discount",
+  "price-asc": "Price: low \u2192 high",
+  "price-desc": "Price: high \u2192 low",
+  "time-remaining": "Expiring soon",
+  newest: "Newest",
+};
+
+function SortMenu({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="input-field cursor-pointer flex items-center gap-2 whitespace-nowrap"
+        style={{ fontSize: "0.8rem", fontWeight: 600, paddingLeft: 14, paddingRight: 12 }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <ArrowUpDown style={{ width: 13, height: 13, color: "var(--text-3)" }} />
+        {SORT_LABELS[value] ?? "Sort"}
+        <ChevronDown
+          style={{ width: 13, height: 13, color: "var(--text-3)", transform: open ? "rotate(180deg)" : "none", transition: "transform 180ms ease" }}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 mt-2 w-52 rounded-xl z-50 p-1.5"
+            style={{ background: "var(--bg-1)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
+            role="listbox"
+          >
+            {Object.entries(SORT_LABELS).map(([v, l]) => (
+              <button
+                key={v}
+                role="option"
+                aria-selected={v === value}
+                onClick={() => { onChange(v); setOpen(false); }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-semibold text-left transition-colors"
+                style={{
+                  color: v === value ? "#FF0040" : "var(--text-2)",
+                  background: v === value ? "rgba(255,0,64,0.08)" : "transparent",
+                }}
+                onMouseEnter={(e) => { if (v !== value) e.currentTarget.style.background = "var(--bg-2)"; }}
+                onMouseLeave={(e) => { if (v !== value) e.currentTarget.style.background = "transparent"; }}
+              >
+                {l}
+                {v === value && <Check style={{ width: 14, height: 14 }} />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MarketplaceClient() {
@@ -455,32 +528,7 @@ export default function MarketplaceClient() {
 
               <div className="flex gap-2">
                 {/* Sort */}
-                <div className="relative">
-                  <ArrowUpDown
-                    style={{
-                      position: "absolute",
-                      left: 12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: 13,
-                      height: 13,
-                      color: "var(--text-3)",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <select
-                    value={filters.sortBy}
-                    onChange={(e) => setFilter("sortBy", e.target.value)}
-                    className="input-field appearance-none cursor-pointer"
-                    style={{ paddingLeft: 34, paddingRight: 28, fontSize: "0.8rem", fontWeight: 600 }}
-                  >
-                    <option value="discount">Best discount</option>
-                    <option value="price-asc">Price: low → high</option>
-                    <option value="price-desc">Price: high → low</option>
-                    <option value="time-remaining">Expiring soon</option>
-                    <option value="newest">Newest</option>
-                  </select>
-                </div>
+                <SortMenu value={filters.sortBy} onChange={(v) => setFilter("sortBy", v)} />
                 <FilterButton onClick={() => setSidebarOpen(true)} activeFilters={activeFilterCount} />
               </div>
             </div>

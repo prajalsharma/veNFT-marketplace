@@ -65,8 +65,15 @@ export function VeNFTCard({
   const disabled = isExpired || !active;
 
   const lockedSym = isVeBTC ? "BTC" : "MEZO";
-  const formattedPrice = parseFloat(formatEther(price)).toFixed(4);
-  const formattedIntrinsic = parseFloat(formatEther(intrinsicValue)).toFixed(4);
+  // Market-standard number display: commas for thousands, no dead zeros.
+  const fmtAmount = (wei: bigint) => {
+    const v = parseFloat(formatEther(wei));
+    if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
+    return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
+  };
+  const formattedPrice = fmtAmount(price);
+  const formattedIntrinsic = fmtAmount(intrinsicValue);
   const formattedVoting = parseFloat(formatEther(votingPower)).toFixed(2);
   const paySymbol = getPaymentTokenSymbol(paymentToken);
   const discountPct = discountBps !== null ? Number(discountBps) / 100 : 0;

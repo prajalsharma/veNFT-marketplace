@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { Filter, X, CheckCircle2, SlidersHorizontal, Star, Clock, TrendingDown, Zap, GitMerge, RefreshCw } from "lucide-react";
 
 export interface FilterState {
@@ -30,7 +31,7 @@ interface FilterSidebarProps extends FilterState {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[9px] font-black uppercase tracking-[0.22em] mb-3 px-0.5" style={{ color: "var(--text-3)" }}>{children}</p>
+    <p className="text-[11px] font-black uppercase tracking-[0.14em] mb-3 px-0.5" style={{ color: "var(--text-3)" }}>{children}</p>
   );
 }
 
@@ -128,7 +129,8 @@ export function FilterSidebar({
     showEndingSoon,
   ].filter(Boolean).length;
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -138,7 +140,7 @@ export function FilterSidebar({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[60]"
+            className="fixed inset-0 z-[90]"
             style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
             onClick={onClose}
           />
@@ -149,7 +151,7 @@ export function FilterSidebar({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
-            className="fixed top-0 right-0 h-full w-full max-w-[340px] z-[70] flex flex-col overflow-hidden"
+            className="fixed top-0 right-0 h-full w-full max-w-[340px] z-[95] flex flex-col overflow-hidden"
             style={{
               background: "var(--bg-1)",
               borderLeft: "1px solid var(--border)",
@@ -188,30 +190,14 @@ export function FilterSidebar({
                 <div className="space-y-2">
                   {[
                     { id: "all", label: "All Collections" },
-                    { id: "veBTC", label: "veBTC", accent: "#F7931A" },
-                    { id: "veMEZO", label: "veMEZO", accent: "#4A90E2" },
+                    { id: "veBTC", label: "veBTC" },
+                    { id: "veMEZO", label: "veMEZO" },
                   ].map((item) => (
                     <FilterChip
                       key={item.id}
                       label={item.label}
                       active={collectionFilter === item.id}
                       onClick={() => setCollectionFilter(item.id as any)}
-                      accent={item.accent}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              {/* ── Sort By ── */}
-              <section>
-                <SectionLabel>Sort By</SectionLabel>
-                <div className="space-y-1.5">
-                  {SORT_OPTIONS.map((opt) => (
-                    <FilterChip
-                      key={opt.value}
-                      label={opt.label}
-                      active={sortBy === opt.value}
-                      onClick={() => setSortBy(opt.value)}
                     />
                   ))}
                 </div>
@@ -227,7 +213,7 @@ export function FilterSidebar({
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-[10px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
+                    <div className="flex justify-between text-[11px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
                       <span>Min discount</span>
                       <span className="font-bold" style={{ color: "var(--text-2)" }}>{minDiscount}%</span>
                     </div>
@@ -248,7 +234,7 @@ export function FilterSidebar({
                     />
                   </div>
                   <div>
-                    <div className="flex justify-between text-[10px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
+                    <div className="flex justify-between text-[11px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
                       <span>Max discount</span>
                       <span className="font-bold" style={{ color: "var(--text-2)" }}>{maxDiscount}%</span>
                     </div>
@@ -268,7 +254,7 @@ export function FilterSidebar({
                       className="w-full"
                     />
                   </div>
-                  <div className="flex justify-between text-[9px] font-bold" style={{ color: "var(--text-4)" }}>
+                  <div className="flex justify-between text-[10.5px] font-bold" style={{ color: "var(--text-4)" }}>
                     <span>0%</span>
                     <span>25%</span>
                     <span>50%</span>
@@ -285,28 +271,24 @@ export function FilterSidebar({
                     icon={Star}
                     active={minDiscount >= 10}
                     onClick={() => { setMinDiscount(10); setMaxDiscount(50); }}
-                    accent="#F59E0B"
                   />
                   <FilterChip
                     label="Ending Soon"
                     icon={Clock}
                     active={showEndingSoon}
                     onClick={() => { setShowEndingSoon(!showEndingSoon); setSortBy("time-remaining"); }}
-                    accent="#EF4444"
                   />
                   <FilterChip
                     label="Deep Discount"
                     icon={TrendingDown}
                     active={minDiscount >= 20}
                     onClick={() => { setMinDiscount(20); setMaxDiscount(50); }}
-                    accent="#10B981"
                   />
                   <FilterChip
                     label="Grant NFTs"
                     icon={GitMerge}
                     active={showGrantOnly}
                     onClick={() => setShowGrantOnly(!showGrantOnly)}
-                    accent="#F59E0B"
                   />
                 </div>
               </section>
@@ -316,7 +298,6 @@ export function FilterSidebar({
                 <SectionLabel>Options</SectionLabel>
                 <div className="space-y-3">
                   {[
-                    { label: "Active listings only", sub: "Hide sold/cancelled", val: activeOnly, set: setActiveOnly },
                     { label: "Auto max-lock only", sub: "Continuously max-locked positions", val: showAutoLockOnly, set: setShowAutoLockOnly },
                   ].map((toggle) => (
                     <div
@@ -327,7 +308,7 @@ export function FilterSidebar({
                     >
                       <div>
                         <p className="text-sm font-bold">{toggle.label}</p>
-                        <p className="text-[10px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
+                        <p className="text-[11.5px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
                       </div>
                       <ToggleSwitch checked={toggle.val} onChange={toggle.set} />
                     </div>
@@ -359,7 +340,8 @@ export function FilterSidebar({
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 
