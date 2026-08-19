@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Filter, X, CheckCircle2, SlidersHorizontal, Star, Clock, TrendingDown, Zap, Award, RefreshCw } from "lucide-react";
@@ -153,16 +154,64 @@ const SORT_OPTIONS = [
 ];
 
 export function FilterSidebar({
-  collectionFilter, setCollectionFilter,
-  sortBy, setSortBy,
+  collectionFilter: appliedCollection, setCollectionFilter: commitCollection,
+  sortBy: appliedSortBy, setSortBy: commitSortBy,
   activeOnly, setActiveOnly,
-  minDiscount, setMinDiscount,
-  maxDiscount, setMaxDiscount,
-  showGrantOnly, setShowGrantOnly,
-  showAutoLockOnly, setShowAutoLockOnly,
-  showEndingSoon, setShowEndingSoon,
+  minDiscount: appliedMinDiscount, setMinDiscount: commitMinDiscount,
+  maxDiscount: appliedMaxDiscount, setMaxDiscount: commitMaxDiscount,
+  showGrantOnly: appliedGrantOnly, setShowGrantOnly: commitGrantOnly,
+  showAutoLockOnly: appliedAutoLock, setShowAutoLockOnly: commitAutoLock,
+  showEndingSoon: appliedEndingSoon, setShowEndingSoon: commitEndingSoon,
   isOpen, onClose, onReset,
 }: FilterSidebarProps) {
+
+  // Draft-and-apply: the drawer edits a local draft; nothing touches the live
+  // results until Apply commits it. Closing without applying discards changes,
+  // and the grid re-filters exactly once per visit instead of on every tweak.
+  const [draft, setDraft] = useState({
+    collectionFilter: appliedCollection,
+    sortBy: appliedSortBy,
+    minDiscount: appliedMinDiscount,
+    maxDiscount: appliedMaxDiscount,
+    showGrantOnly: appliedGrantOnly,
+    showAutoLockOnly: appliedAutoLock,
+    showEndingSoon: appliedEndingSoon,
+  });
+  useEffect(() => {
+    if (isOpen) {
+      setDraft({
+        collectionFilter: appliedCollection,
+        sortBy: appliedSortBy,
+        minDiscount: appliedMinDiscount,
+        maxDiscount: appliedMaxDiscount,
+        showGrantOnly: appliedGrantOnly,
+        showAutoLockOnly: appliedAutoLock,
+        showEndingSoon: appliedEndingSoon,
+      });
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { collectionFilter, sortBy, minDiscount, maxDiscount, showGrantOnly, showAutoLockOnly, showEndingSoon } = draft;
+  const setCollectionFilter = (v: FilterState["collectionFilter"]) => setDraft((d) => ({ ...d, collectionFilter: v }));
+  const setSortBy = (v: string) => setDraft((d) => ({ ...d, sortBy: v }));
+  const setMinDiscount = (v: number) => setDraft((d) => ({ ...d, minDiscount: v }));
+  const setMaxDiscount = (v: number) => setDraft((d) => ({ ...d, maxDiscount: v }));
+  const setShowGrantOnly = (v: boolean) => setDraft((d) => ({ ...d, showGrantOnly: v }));
+  const setShowAutoLockOnly = (v: boolean) => setDraft((d) => ({ ...d, showAutoLockOnly: v }));
+  const setShowEndingSoon = (v: boolean) => setDraft((d) => ({ ...d, showEndingSoon: v }));
+
+  const applyDraft = () => {
+    commitCollection(draft.collectionFilter);
+    commitSortBy(draft.sortBy);
+    commitMinDiscount(draft.minDiscount);
+    commitMaxDiscount(draft.maxDiscount);
+    commitGrantOnly(draft.showGrantOnly);
+    commitAutoLock(draft.showAutoLockOnly);
+    commitEndingSoon(draft.showEndingSoon);
+    onClose();
+  };
+  const resetDraft = () =>
+    setDraft({ collectionFilter: "all", sortBy: "discount", minDiscount: 0, maxDiscount: 50, showGrantOnly: false, showAutoLockOnly: false, showEndingSoon: false });
 
   const activeFilterCount = [
     collectionFilter !== "all",
@@ -387,14 +436,14 @@ export function FilterSidebar({
             {/* Footer actions */}
             <div className="px-5 py-5 border-t space-y-2" style={{ borderColor: "var(--border)", background: "var(--bg-1)" }}>
               <button
-                onClick={onClose}
+                onClick={applyDraft}
                 className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-150"
                 style={{ background: "linear-gradient(135deg, #FF0040, #CC0030)" }}
               >
                 Apply Filters
               </button>
               <button
-                onClick={onReset}
+                onClick={resetDraft}
                 className="w-full py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                 style={{ color: "var(--text-3)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
