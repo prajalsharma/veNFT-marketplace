@@ -28,6 +28,7 @@ import { formatEther } from "viem";
 import { VeNFTCard, VeNFTCardSkeleton } from "@/components/VeNFTCard";
 import { FilterSidebar, FilterButton, FilterState } from "@/components/FilterSidebar";
 import { BuyModal } from "@/components/BuyModal";
+import { ListingDetailModal } from "@/components/ListingDetailModal";
 import { useActiveListings, Listing } from "@/hooks/useMarketplace";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
@@ -286,6 +287,7 @@ export default function MarketplaceClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeBuyListing, setActiveBuyListing] = useState<Listing | null>(null);
+  const [detailListing, setDetailListing] = useState<Listing | null>(null);
   const [purchasedIds, setPurchasedIds] = useState<Set<number>>(new Set());
 
   function setFilter<K extends keyof FilterState>(key: K, val: FilterState[K]) {
@@ -414,6 +416,21 @@ export default function MarketplaceClient() {
 
   return (
     <>
+      <ListingDetailModal
+        isOpen={!!detailListing}
+        onClose={() => setDetailListing(null)}
+        listing={detailListing}
+        unitUsd={
+          detailListing
+            ? prices[getPaymentTokenSymbol(detailListing.paymentToken) as "BTC" | "MEZO" | "MUSD"] ?? null
+            : null
+        }
+        onBuy={(l) => {
+          setDetailListing(null);
+          setActiveBuyListing(l);
+        }}
+      />
+
       <BuyModal
         isOpen={!!activeBuyListing}
         onClose={() => setActiveBuyListing(null)}
@@ -622,6 +639,7 @@ export default function MarketplaceClient() {
                     votingPower={listing.votingPower}
                     discountBps={listing.discountBps}
                     unitUsd={prices[getPaymentTokenSymbol(listing.paymentToken) as "BTC" | "MEZO" | "MUSD"] ?? null}
+                    onDetails={() => setDetailListing(listing)}
                     seller={listing.seller}
                     active={listing.active}
                     isGrant={listing.isGrant}

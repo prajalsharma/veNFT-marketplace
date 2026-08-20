@@ -6,13 +6,11 @@
 // card read as AI-generated. One discount badge, one CTA, consistent type scale.
 
 import { formatEther } from "viem";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronDown, Gavel } from "lucide-react";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronRight, Gavel } from "lucide-react";
 import { DiscountBadge } from "./DiscountBadge";
 import { CountdownCompact } from "./CountdownTimer";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
-import BidsPanel from "./BidsPanel";
 import { useActiveTokenBids } from "@/hooks/useBidding";
 
 interface VeNFTCardProps {
@@ -32,6 +30,7 @@ interface VeNFTCardProps {
   /** USD price of one unit of the payment token, for fiat context under the price. */
   unitUsd?: number | null;
   onBuy?: () => void;
+  onDetails?: () => void;
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -60,6 +59,7 @@ export function VeNFTCard({
   isGrant = false,
   unitUsd = null,
   onBuy,
+  onDetails,
 }: VeNFTCardProps) {
   const isVeBTC = collection === "veBTC";
   const lockEndSec = Number(lockEnd);
@@ -83,8 +83,6 @@ export function VeNFTCard({
 
   // A small, muted per-collection dot — the only color cue (keeps the brand calm).
   const dot = isVeBTC ? "#F7931A" : "#4A90E2";
-
-  const [bidsOpen, setBidsOpen] = useState(false);
 
   // Live offer count for the collapsed row. Reads batch through Multicall3, so
   // one call covers every card on screen rather than one request per card.
@@ -170,16 +168,12 @@ export function VeNFTCard({
         </button>
       </div>
 
-      {/* Offers / Bids — subtle, collapsible */}
+      {/* Offers / details — opens the listing detail modal */}
       {nftContract && (
         <div className="px-5 pb-5">
-          {/* The collapsed row has to earn the click. With live offers it goes
-              accent-tinted and states the count; with none it reads as an
-              invitation rather than an empty drawer. */}
           <button
-            onClick={() => setBidsOpen((o) => !o)}
-            aria-expanded={bidsOpen}
-            aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, show details` : "Make an offer"}
+            onClick={onDetails}
+            aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, open details` : "Details and offers"}
             className="w-full flex items-center justify-between py-3 px-4 rounded-xl text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={
               hasOffers
@@ -189,7 +183,7 @@ export function VeNFTCard({
           >
             <span className="flex items-center gap-2.5">
               <Gavel style={{ width: 14, height: 14, color: hasOffers ? "#FF0040" : "currentColor" }} />
-              {hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}` : "Make an offer"}
+              {hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}` : "Details & offers"}
             </span>
             <span className="flex items-center gap-2">
               {hasOffers && (
@@ -200,18 +194,9 @@ export function VeNFTCard({
                   {offerCount}
                 </span>
               )}
-              <ChevronDown style={{ width: 14, height: 14, transform: bidsOpen ? "rotate(180deg)" : "none", transition: "transform 220ms ease" }} />
+              <ChevronRight style={{ width: 14, height: 14 }} />
             </span>
           </button>
-          <AnimatePresence>
-            {bidsOpen && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }} style={{ overflow: "hidden" }}>
-                <div className="pt-3">
-                  <BidsPanel collection={nftContract as `0x${string}`} tokenId={tokenId} currentOwner={seller as `0x${string}`} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       )}
     </motion.div>
