@@ -45,3 +45,4 @@ npm-debug.log*
 # Build artifacts — never commit
 .next/
 *.tsbuildinfo
+dist/
