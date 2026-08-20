@@ -29,6 +29,8 @@ interface VeNFTCardProps {
   seller: string;
   active?: boolean;
   isGrant?: boolean;
+  /** USD price of one unit of the payment token, for fiat context under the price. */
+  unitUsd?: number | null;
   onBuy?: () => void;
 }
 
@@ -56,6 +58,7 @@ export function VeNFTCard({
   seller,
   active = true,
   isGrant = false,
+  unitUsd = null,
   onBuy,
 }: VeNFTCardProps) {
   const isVeBTC = collection === "veBTC";
@@ -127,9 +130,17 @@ export function VeNFTCard({
             </span>
             <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paySymbol}</span>
           </div>
-          {discountPct > 0 && (
-            <p className="text-[12.5px] font-semibold mt-1.5" style={{ color: "#10B981" }}>
-              {discountPct.toFixed(1)}% below intrinsic value
+          {(unitUsd || discountPct > 0) && (
+            <p className="text-[12.5px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+              {unitUsd ? (
+                <>&#8776; ${(unitUsd * parseFloat(formatEther(price))).toLocaleString("en-US", { maximumFractionDigits: 2 })}</>
+              ) : null}
+              {unitUsd && discountPct > 0 ? " · " : null}
+              {discountPct > 0 && (
+                <span className="font-semibold" style={{ color: "#10B981" }}>
+                  {discountPct.toFixed(1)}% below intrinsic value
+                </span>
+              )}
             </p>
           )}
         </div>

@@ -240,7 +240,7 @@ function SortMenu({ value, onChange }: { value: string; onChange: (v: string) =>
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 mt-2 w-52 rounded-xl z-50 p-1.5"
+            className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-52 rounded-xl z-50 p-1.5"
             style={{ background: "var(--bg-1)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
             role="listbox"
           >
@@ -621,6 +621,7 @@ export default function MarketplaceClient() {
                     lockEnd={listing.lockEnd}
                     votingPower={listing.votingPower}
                     discountBps={listing.discountBps}
+                    unitUsd={prices[getPaymentTokenSymbol(listing.paymentToken) as "BTC" | "MEZO" | "MUSD"] ?? null}
                     seller={listing.seller}
                     active={listing.active}
                     isGrant={listing.isGrant}

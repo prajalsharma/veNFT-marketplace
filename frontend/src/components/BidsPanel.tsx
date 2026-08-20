@@ -20,6 +20,8 @@ import { PAYMENT_TOKENS } from "../lib/contracts";
 import { Gavel, CheckCircle2, X, Clock, Loader2, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { parseBiddingError } from "../lib/biddingErrors";
+import { getPaymentTokenSymbol as symbolOf } from "../lib/tokens";
+import { usePriceTicker } from "../hooks/usePriceTicker";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,6 +85,14 @@ function PlaceBidForm({
   const [amount,       setAmount]       = useState("");
   const [paymentToken, setPaymentToken] = useState<`0x${string}`>(contracts.MUSD);
   const [expiryDays,   setExpiryDays]   = useState("7");
+  const tickerPrices = usePriceTicker();
+  const bidUsd = (() => {
+    const v = parseFloat(amount);
+    if (!amount || !isFinite(v) || v <= 0) return null;
+    const sym = symbolOf(paymentToken) as "BTC" | "MEZO" | "MUSD";
+    const unit = tickerPrices[sym];
+    return unit ? v * unit : null;
+  })();
   const [error,        setError]        = useState<string | null>(null);
   const [txHash,       setTxHash]       = useState<`0x${string}` | null>(null);
   // "confirming" waits on the receipt; "done" means the bid is live on-chain.
@@ -195,7 +205,10 @@ function PlaceBidForm({
       </p>
 
       {/* Payment token selector */}
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: "var(--text-3)" }}>
+          Currency
+        </span>
         {PAYMENT_TOKENS.filter((t) => !t.isNative).map((t) => {
           // contracts keys are upper-case symbols (MEZO, MUSD) — do NOT lower-case
           // them or the lookup returns undefined, which both highlights every button
@@ -220,8 +233,8 @@ function PlaceBidForm({
         })}
       </div>
 
-      {/* Amount + expiry row */}
-      <div className="flex gap-2">
+      {/* Amount — token suffix inside the field, USD context beneath */}
+      <div className="relative">
         <input
           id="bids-panel-amount"
           name="bids-panel-amount"
@@ -231,15 +244,27 @@ function PlaceBidForm({
           placeholder="Bid amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="flex-1 rounded-lg px-3 py-2 text-[13px] font-medium focus:outline-none focus:ring-1 focus:ring-[#FF0040]"
+          className="w-full rounded-lg pl-3 pr-16 py-2.5 text-[14px] font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-[#FF0040]"
           style={{
             background: "var(--bg-2)",
             border: "1px solid var(--border-subtle)",
             color: "var(--text-1)",
+            fontVariantNumeric: "tabular-nums",
           }}
           required
         />
+        <span
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold pointer-events-none"
+          style={{ color: "var(--text-3)" }}
+        >
+          {symbolOf(paymentToken)}
+        </span>
       </div>
+      {bidUsd !== null && (
+        <p className="text-[12px] tabular-nums -mt-1" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+          &#8776; ${bidUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })} USD
+        </p>
+      )}
 
       {/* Expiry — segmented chips, consistent with the token selector above */}
       <div className="flex items-center gap-1.5 mt-2">
@@ -347,7 +372,13 @@ function BidRow({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-            {parseFloat(formatUnits(bid.amount, 18)).toFixed(4)}
+            {(() => {
+              const v = parseFloat(formatUnits(bid.amount, 18));
+              return v >= 1000
+                ? v.toLocaleString("en-US", { maximumFractionDigits: 0 })
+                : v.toLocaleString("en-US", { maximumFractionDigits: 4 });
+            })()}{" "}
+            <span className="font-semibold" style={{ color: "var(--text-3)" }}>{symbolOf(bid.paymentToken)}</span>
           </span>
           <div className="flex items-center gap-1" style={{ color: expired ? "#EF4444" : "#10B981" }}>
             <Clock style={{ width: 9, height: 9 }} />
