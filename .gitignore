@@ -41,3 +41,7 @@ npm-debug.log*
 .nyc_output/
 # !.env.example  node_modules # Removed by Orchids to allow .env files
 .venv
+
+# Build artifacts — never commit
+.next/
+*.tsbuildinfo
