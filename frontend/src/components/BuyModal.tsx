@@ -295,7 +295,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
   const [payWithSwap, setPayWithSwap] = useState(false);
   const [swapQuote, setSwapQuote] = useState<{ maxIn: bigint; feeBps: number } | null>(null);
   const [swapQuoteLoading, setSwapQuoteLoading] = useState(false);
-  const [swapQuoteError, setSwapQuoteError] = useState(false);
+  const [swapQuoteError, setSwapQuoteError] = useState<null | "fetch" | "deviation">(null);
   const [swapQuoteNonce, setSwapQuoteNonce] = useState(0);
 
   // Live quote: derive the BTC budget that clears the MUSD price with headroom.
@@ -331,12 +331,24 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
       } catch {
         /* fee is display-only; the buffer already absorbs it */
       }
-      return { maxIn: (netIn * 10000n) / BigInt(10000 - feeBps) + 1n, feeBps };
+      const maxIn = (netIn * 10000n) / BigInt(10000 - feeBps) + 1n;
+      // Defense-in-depth: cross-check the pool-derived budget against the
+      // independent price ticker (CoinGecko path, not the RPC path). A budget
+      // more than 25% above the market-implied cost means a manipulated or
+      // badly broken rate — refuse rather than let the user overpay.
+      if (prices.BTC && prices.MUSD) {
+        const maxInBtc = parseFloat(formatEther(maxIn));
+        const impliedBtc = (parseFloat(formatEther(listing.price)) * prices.MUSD) / prices.BTC;
+        if (impliedBtc > 0 && maxInBtc > impliedBtc * 1.25) {
+          throw new Error("deviation");
+        }
+      }
+      return { maxIn, feeBps };
     };
     (async () => {
       setSwapQuoteLoading(true);
       setSwapQuote(null);
-      setSwapQuoteError(false);
+      setSwapQuoteError(null);
       // Public RPCs rate-limit bursts; retry once before surfacing an error.
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
@@ -345,13 +357,18 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
           setSwapQuote(q);
           setSwapQuoteLoading(false);
           return;
-        } catch {
+        } catch (err) {
           if (!alive) return;
+          if (err instanceof Error && err.message === "deviation") {
+            setSwapQuoteError("deviation");
+            setSwapQuoteLoading(false);
+            return;
+          }
           if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
         }
       }
       if (alive) {
-        setSwapQuoteError(true);
+        setSwapQuoteError("fetch");
         setSwapQuoteLoading(false);
       }
     })();
@@ -683,7 +700,12 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                       </div>
                       {payWithSwap && (
                         <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-                          {swapQuoteError ? (
+                          {swapQuoteError === "deviation" ? (
+                            <span style={{ color: "#EF4444" }}>
+                              The pool rate is far above the market price right now, so the
+                              swap is disabled for your protection. Pay in {paymentSymbol} instead.
+                            </span>
+                          ) : swapQuoteError === "fetch" ? (
                             <>
                               Couldn&apos;t fetch the pool rate.{" "}
                               <button
