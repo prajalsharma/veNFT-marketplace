@@ -15,7 +15,7 @@
 
 import { useCallback } from "react";
 import { useWriteContract, usePublicClient } from "wagmi";
-import { erc20Abi, maxUint256 } from "viem";
+import { erc20Abi } from "viem";
 import { useNetwork } from "./useNetwork";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -93,8 +93,10 @@ export function useSwapAndBuy() {
         address: payToken, abi: erc20Abi, functionName: "allowance", args: [buyerAddress, spr],
       })) as bigint;
       if (allowance < maxAmountIn) {
+        // Least-privilege: approve exactly this purchase's budget, never
+        // an unlimited allowance to a periphery contract.
         const approveHash = await writeContractAsync({
-          address: payToken, abi: erc20Abi, functionName: "approve", args: [spr, maxUint256],
+          address: payToken, abi: erc20Abi, functionName: "approve", args: [spr, maxAmountIn],
         });
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
       }
