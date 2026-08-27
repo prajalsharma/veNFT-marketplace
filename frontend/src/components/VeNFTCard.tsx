@@ -5,11 +5,13 @@
 // bands, edge accents, or button shimmer — those "demo" effects are what made the
 // card read as AI-generated. One discount badge, one CTA, consistent type scale.
 
+import { useState } from "react";
 import { formatEther } from "viem";
-import { motion } from "framer-motion";
-import { ChevronRight, Gavel } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronRight, Gavel, ExternalLink } from "lucide-react";
 import { DiscountBadge } from "./DiscountBadge";
 import { CountdownCompact } from "./CountdownTimer";
+import BidsPanel from "./BidsPanel";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { useActiveTokenBids } from "@/hooks/useBidding";
 
@@ -93,6 +95,11 @@ export function VeNFTCard({
   const offerCount = Array.isArray(activeBids) ? activeBids.length : 0;
   const hasOffers  = offerCount > 0;
 
+  // Offers expand inline on the card, so several cards' offers can be open and
+  // compared side by side without leaving the grid. The full modal stays one
+  // click away via the "Full details" link inside the expanded section.
+  const [offersOpen, setOffersOpen] = useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -168,12 +175,13 @@ export function VeNFTCard({
         </button>
       </div>
 
-      {/* Offers / details — opens the listing detail modal */}
+      {/* Offers — expands inline so offers on several veNFTs can be read at once */}
       {nftContract && (
         <div className="px-5 pb-5">
           <button
-            onClick={onDetails}
-            aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, open details` : "Details and offers"}
+            onClick={() => setOffersOpen((o) => !o)}
+            aria-expanded={offersOpen}
+            aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, ${offersOpen ? "collapse" : "expand"}` : "Offers"}
             className="w-full flex items-center justify-between py-3 px-4 rounded-xl text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={
               hasOffers
@@ -183,7 +191,7 @@ export function VeNFTCard({
           >
             <span className="flex items-center gap-2.5">
               <Gavel style={{ width: 14, height: 14, color: hasOffers ? "#FF0040" : "currentColor" }} />
-              {hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}` : "Details & offers"}
+              {hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}` : "Offers"}
             </span>
             <span className="flex items-center gap-2">
               {hasOffers && (
@@ -194,9 +202,41 @@ export function VeNFTCard({
                   {offerCount}
                 </span>
               )}
-              <ChevronRight style={{ width: 14, height: 14 }} />
+              <ChevronDown
+                style={{ width: 14, height: 14, transform: offersOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }}
+              />
             </span>
           </button>
+
+          <AnimatePresence initial={false}>
+            {offersOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="pt-3 space-y-2">
+                  <BidsPanel
+                    collection={nftContract as `0x${string}`}
+                    tokenId={tokenId}
+                    currentOwner={seller as `0x${string}`}
+                  />
+                  {onDetails && (
+                    <button
+                      onClick={onDetails}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                      style={{ color: "var(--text-2)" }}
+                    >
+                      Full details
+                      <ExternalLink style={{ width: 11, height: 11 }} />
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </motion.div>
