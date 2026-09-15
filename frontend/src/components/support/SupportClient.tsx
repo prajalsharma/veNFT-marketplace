@@ -625,7 +625,7 @@ function SupportersBoard({
           </span>
           <span className="text-right">
             <span className="text-[16px] font-bold tabular-nums mr-2" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-              &#8776; ${totalUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+              &#8776; ${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className="text-[12px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
               {tokenLine}
@@ -702,7 +702,7 @@ function SupportersBoard({
                   className="shrink-0 text-[14px] font-bold tabular-nums"
                   style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
                 >
-                  {d.usd > 0 ? `$${d.usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}
+                  {d.usd > 0 ? `$${d.usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                 </span>
               </motion.div>
             );
@@ -802,7 +802,10 @@ export default function SupportClient() {
         >
           Like what you&apos;re seeing?
         </h1>
-        <div className="space-y-4 text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "62ch" }}>
+        <div
+          className="space-y-4 leading-relaxed"
+          style={{ color: "var(--text-2)", maxWidth: "60ch", fontSize: "clamp(1.02rem, 1.4vw, 1.13rem)" }}
+        >
           <p>
             Vezo is the first secondary marketplace for veNFTs on Mezo, built and run
             by an independent team, not a foundation. For the past six months we&apos;ve
