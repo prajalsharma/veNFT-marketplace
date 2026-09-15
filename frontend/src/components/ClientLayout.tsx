@@ -6,6 +6,7 @@ import { NetworkSwitcher } from "@/components/NetworkSwitcher";
 import { ActivityProvider } from "@/context/ActivityContext";
 import { OnboardingTour, openOnboardingTour } from "@/components/OnboardingTour";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { SupportNudge } from "@/components/SupportNudge";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -106,6 +107,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 { href: "/marketplace", label: "Marketplace" },
                 { href: "/my-listings", label: "My Listings" },
                 { href: "/activity", label: "Activity" },
+                { href: "/support", label: "Support Vezo" },
                 { href: "https://docs.vezo.exchange", label: "Documentation" },
                 { href: "https://github.com/prajalsharma/veNFT-marketplace", label: "GitHub", external: true },
                 { href: "https://x.com/VezoExchange", label: "Twitter", external: true },
@@ -151,6 +153,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* Aave-style mobile bottom tab navigation */}
       <MobileBottomNav />
+
+      {/* One-time invitation to the support page */}
+      <SupportNudge />
 
       {/* First-visit walkthrough (reopen via the "How it works" footer link) */}
       <OnboardingTour />
