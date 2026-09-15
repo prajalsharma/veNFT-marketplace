@@ -1,8 +1,15 @@
 "use client";
 
-// A one-time, quiet invitation to the support page. Appears once per browser
-// a few seconds after landing (anywhere except the support page itself), and
-// never again once dismissed. Deliberately small: this is a nod, not a plea.
+// The support ask. Top-center, sliding down from under the header: the
+// highest-attention spot on the page (eye-tracking F-patterns start there,
+// while bottom corners suffer banner blindness from years of cookie notices
+// and chat widgets). Wikipedia's fundraising banner lives at the top of the
+// page for the same reason.
+//
+// The copy is a direct, honest ask in the reciprocity frame: you've used the
+// product, help keep it running. It appears once on whatever page the user
+// first enters (never on the support page itself), shortly after load, and a
+// dismissal is respected forever. Respecting the "no" is part of the ask.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -10,15 +17,16 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Heart, X } from "lucide-react";
 
-const STORAGE_KEY = "vezo-support-nudge-v1";
-const SHOW_AFTER_MS = 8_000;
+// v2: the ask moved top-center with new copy; earlier dismissals of the timid
+// bottom-corner version don't carry over.
+const STORAGE_KEY = "vezo-support-nudge-v2";
+const SHOW_AFTER_MS = 2_500;
 
 export function SupportNudge() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const reduced = useReducedMotion();
 
-  // Everywhere except the support page itself (landing page included).
   const eligible = !pathname.startsWith("/support");
 
   useEffect(() => {
@@ -41,11 +49,11 @@ export function SupportNudge() {
     <AnimatePresence>
       {visible && eligible && (
         <motion.aside
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 12 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed z-[60] right-4 bottom-20 sm:right-6 sm:bottom-6 w-[calc(100vw-2rem)] max-w-[340px] rounded-2xl p-4"
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: -28 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, y: -16 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed z-[60] left-3 right-3 mx-auto top-[102px] lg:top-[118px] max-w-[600px] rounded-2xl p-4 sm:p-5"
           style={{
             background: "var(--bg-1)",
             border: "1px solid var(--border)",
@@ -62,26 +70,40 @@ export function SupportNudge() {
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-4)")}
           >
-            <X style={{ width: 14, height: 14 }} />
+            <X style={{ width: 15, height: 15 }} />
           </button>
-          <div className="flex items-center gap-2 mb-1.5 pr-6">
-            <Heart style={{ width: 13, height: 13, color: "#FF0040", fill: "#FF0040" }} />
-            <p className="text-[14px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
-              Like what you&apos;re seeing?
+
+          <div className="flex items-center gap-2 mb-1.5 pr-7">
+            <Heart style={{ width: 14, height: 14, color: "#FF0040", fill: "#FF0040", flexShrink: 0 }} />
+            <p className="text-[15px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
+              Like what you&apos;re seeing? We&apos;re asking for your support.
             </p>
           </div>
-          <p className="text-[12.5px] leading-relaxed mb-3" style={{ color: "var(--text-3)" }}>
-            Vezo is independent and community-supported. Contributions keep it
-            maintained and improving, and every supporter goes on the board.
+          <p className="text-[13px] leading-relaxed mb-3.5 pr-2" style={{ color: "var(--text-2)" }}>
+            Vezo is independent and free to use. If it&apos;s been useful to you,
+            a contribution in BTC, MEZO, or MUSD helps fund the infrastructure,
+            audits, and new features that keep it running. Every supporter goes
+            on the public board.
           </p>
-          <Link
-            href="/support"
-            onClick={dismiss}
-            className="inline-flex items-center gap-1.5 text-[13px] font-bold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-            style={{ color: "#FF0040" }}
-          >
-            Support Vezo &rarr;
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/support"
+              onClick={dismiss}
+              className="inline-flex items-center px-4 py-2 rounded-xl text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
+              style={{ background: "#FF0040", color: "#fff" }}
+            >
+              Support Vezo
+            </Link>
+            <button
+              onClick={dismiss}
+              className="text-[13px] font-semibold rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              style={{ color: "var(--text-3)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+            >
+              Not now
+            </button>
+          </div>
         </motion.aside>
       )}
     </AnimatePresence>

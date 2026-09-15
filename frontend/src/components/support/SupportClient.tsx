@@ -783,9 +783,13 @@ export default function SupportClient() {
         };
 
   return (
-    <div className="max-w-[1140px] mx-auto px-5 md:px-10 pt-24 md:pt-32 pb-8">
+    // One two-column grid for the whole page: the donate panel sits beside the
+    // hero from the very top (no dead space to the hero's right), and the
+    // supporters board fills the left column beneath the hero. On mobile the
+    // DOM order keeps the ask above the board: hero, panel, board.
+    <div className="max-w-[1140px] mx-auto px-5 md:px-10 pt-24 md:pt-32 pb-8 grid lg:grid-cols-[minmax(0,1fr)_400px] gap-x-8 gap-y-8 items-start">
       {/* Hero */}
-      <motion.div {...rise(0)} className="max-w-[720px] mb-12 md:mb-16">
+      <motion.div {...rise(0)} className="min-w-0 max-w-[720px] mb-2 lg:mb-4">
         <h1
           className="font-bold mb-5"
           style={{
@@ -815,16 +819,19 @@ export default function SupportClient() {
         </div>
       </motion.div>
 
-      {/* Panel + board */}
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] gap-6 lg:gap-8 items-start">
-        <motion.div {...rise(0.08)} className="order-2 lg:order-1 min-w-0">
-          <SupportersBoard data={merged} loading={loading} youAddress={address} />
-        </motion.div>
-        <motion.div {...rise(0.14)} className="order-1 lg:order-2 min-w-0 space-y-5 lg:sticky lg:top-24">
-          <DonatePanel onDonated={onDonated} />
-          <AddressBlock />
-        </motion.div>
-      </div>
+      {/* Right column — the ask, level with the hero, sticky on scroll */}
+      <motion.div
+        {...rise(0.14)}
+        className="min-w-0 space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24"
+      >
+        <DonatePanel onDonated={onDonated} />
+        <AddressBlock />
+      </motion.div>
+
+      {/* Left column, below the hero */}
+      <motion.div {...rise(0.08)} className="min-w-0 lg:col-start-1">
+        <SupportersBoard data={merged} loading={loading} youAddress={address} />
+      </motion.div>
     </div>
   );
 }
