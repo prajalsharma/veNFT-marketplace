@@ -37,11 +37,25 @@ import {
 const MAINNET = CONTRACTS.mainnet;
 const EXPLORER = MAINNET.explorer;
 
-const TOKEN_META: Record<SupportToken, { dot: string; presets: string[] }> = {
-  BTC:  { dot: "#F7931A", presets: ["0.0001", "0.0005", "0.001"] },
-  MEZO: { dot: "#4A90E2", presets: ["50", "200", "1000"] },
-  MUSD: { dot: "#10B981", presets: ["5", "20", "100"] },
+// `step` drives the number input's spinner, so nudging BTC moves by dust, not
+// by a whole coin (the browser default step of 1 is absurd across tokens with
+// wildly different unit values). `fallback` only covers the moment before the
+// live price feed answers.
+const TOKEN_META: Record<SupportToken, { dot: string; step: string; fallback: string }> = {
+  BTC:  { dot: "#F7931A", step: "0.0001", fallback: "0.0003" },
+  MEZO: { dot: "#4A90E2", step: "100",    fallback: "5000" },
+  MUSD: { dot: "#10B981", step: "1",      fallback: "25" },
 };
+
+// Preset chips are USD-anchored and converted through the same live price feed
+// as the header ticker, so $25 is always $25 no matter which token is picked.
+const USD_PRESETS = [5, 25, 100];
+
+/** Round a token amount to two significant digits ("5000", "0.00033", "25"). */
+function niceAmount(x: number): string {
+  if (!isFinite(x) || x <= 0) return "0";
+  return parseFloat(x.toPrecision(2)).toString();
+}
 
 const TOKEN_ADDR: Record<SupportToken, `0x${string}`> = {
   BTC: MAINNET.BTC,
@@ -126,7 +140,9 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
   const prices = usePriceTicker();
 
   const [token, setToken] = useState<SupportToken>("MUSD");
-  const [amount, setAmount] = useState("20");
+  const [amount, setAmount] = useState("25");
+  // Which USD chip the current amount came from (null once the user types).
+  const [usdPick, setUsdPick] = useState<number | null>(25);
   const [name, setName] = useState("");
   const [anon, setAnon] = useState(false);
   const [stage, setStage] = useState<"idle" | "sending" | "confirming" | "done">("idle");
@@ -141,6 +157,33 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
     return isFinite(v) && v > 0 && p ? v * p : null;
   })();
   const onMainnet = walletChain === mezoMainnet.id;
+
+  /** Live-price conversion of a USD target into this token's amount. */
+  const amountForUsd = useCallback(
+    (usdTarget: number, t: SupportToken): string => {
+      const p = prices[t];
+      return p ? niceAmount(usdTarget / p) : TOKEN_META[t].fallback;
+    },
+    [prices]
+  );
+
+  const pickToken = (t: SupportToken) => {
+    setToken(t);
+    setAmount(amountForUsd(usdPick ?? 25, t));
+    setError(null);
+  };
+
+  const pickUsd = (u: number) => {
+    setUsdPick(u);
+    setAmount(amountForUsd(u, token));
+  };
+
+  // When the live feed answers (or refreshes), keep a chip-chosen amount true
+  // to its dollar target; a hand-typed amount is never touched.
+  useEffect(() => {
+    if (usdPick !== null) setAmount(amountForUsd(usdPick, token));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prices.BTC, prices.MEZO, prices.MUSD]);
 
   const send = useCallback(async () => {
     setError(null);
@@ -275,7 +318,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             <button
               key={t}
               type="button"
-              onClick={() => { setToken(t); setAmount(TOKEN_META[t].presets[1]); setError(null); }}
+              onClick={() => pickToken(t)}
               aria-pressed={active}
               className="flex items-center justify-center gap-2 h-10 rounded-xl text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
               style={
@@ -294,22 +337,30 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
       {/* Amount */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5">
-          {meta.presets.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setAmount(p)}
-              aria-pressed={amount === p}
-              className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-              style={
-                amount === p
-                  ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
-                  : { background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }
-              }
-            >
-              {parseFloat(p).toLocaleString("en-US", { maximumFractionDigits: 6 })}
-            </button>
-          ))}
+          {USD_PRESETS.map((u) => {
+            const active = usdPick === u;
+            return (
+              <button
+                key={u}
+                type="button"
+                onClick={() => pickUsd(u)}
+                aria-pressed={active}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                style={
+                  active
+                    ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
+                    : { background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }
+                }
+              >
+                ${u}
+              </button>
+            );
+          })}
+          {!prices[token] && (
+            <span className="text-[11px]" style={{ color: "var(--text-4)" }}>
+              waiting for live prices…
+            </span>
+          )}
         </div>
         <div className="relative">
           <input
@@ -317,9 +368,9 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             name="support-amount"
             type="number"
             min="0"
-            step="any"
+            step={meta.step}
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => { setAmount(e.target.value); setUsdPick(null); }}
             className="w-full rounded-xl pl-3.5 pr-16 py-3 text-[15px] font-semibold tabular-nums focus:outline-none focus:ring-1 focus:ring-[#FF0040]"
             style={{
               background: "var(--bg-2)",
