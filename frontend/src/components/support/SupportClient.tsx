@@ -808,8 +808,8 @@ export default function SupportClient() {
         >
           <p>
             Vezo is the first secondary marketplace for veNFTs on Mezo, built and run
-            by an independent team, not a foundation. For the past six months we&apos;ve
-            shipped the marketplace, on-chain bidding, cross-token checkout, and full
+            by a small independent team. For the past six months we&apos;ve shipped the
+            marketplace, on-chain bidding, cross-token checkout, and full
             documentation, had the contracts audited by the Mezo team, and kept it all
             running on mainnet since March.
           </p>
