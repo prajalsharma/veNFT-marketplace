@@ -1,9 +1,8 @@
 "use client";
 
 // A one-time, quiet invitation to the support page. Appears once per browser
-// after the user has actually spent time in the app (not on first paint, and
-// never on the landing page or the support page itself), and never again once
-// dismissed. Deliberately small: this is a nod, not a plea.
+// a few seconds after landing (anywhere except the support page itself), and
+// never again once dismissed. Deliberately small: this is a nod, not a plea.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -12,14 +11,15 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Heart, X } from "lucide-react";
 
 const STORAGE_KEY = "vezo-support-nudge-v1";
-const SHOW_AFTER_MS = 25_000;
+const SHOW_AFTER_MS = 8_000;
 
 export function SupportNudge() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const reduced = useReducedMotion();
 
-  const eligible = pathname !== "/" && !pathname.startsWith("/support");
+  // Everywhere except the support page itself (landing page included).
+  const eligible = !pathname.startsWith("/support");
 
   useEffect(() => {
     if (!eligible) return;
