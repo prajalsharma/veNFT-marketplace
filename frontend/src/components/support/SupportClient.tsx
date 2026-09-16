@@ -50,7 +50,13 @@ const TOKEN_META: Record<SupportToken, { dot: string; step: string; fallback: st
 
 // Preset chips are USD-anchored and converted through the same live price feed
 // as the header ticker, so $25 is always $25 no matter which token is picked.
-const USD_PRESETS = [5, 25, 100];
+// Classic fundraising ladder: ~2x steps, no gap large enough to stall the
+// decision, middle option pre-selected as the anchor.
+const USD_PRESETS = [5, 10, 25, 50, 100];
+
+// Donating BTC costs BTC gas. Refuse an amount that would leave the wallet
+// unable to pay for its own transaction (~26k gas, generous margin).
+const BTC_GAS_HEADROOM = 2n * 10n ** 13n; // 0.00002 BTC
 
 /** Round a token amount to two significant digits ("5000", "0.00033", "25"). */
 function niceAmount(x: number): string {
@@ -211,6 +217,10 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
         setError(`Not enough ${token} on Mezo mainnet for that amount.`);
         return;
       }
+      if (token === "BTC" && balance - wei < BTC_GAS_HEADROOM) {
+        setError("Leave a little BTC for gas. Lower the amount slightly.");
+        return;
+      }
       setStage("sending");
       const graffiti = encodeGraffiti(name, anon);
       const data = (encodeFunctionData({
@@ -337,7 +347,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
 
       {/* Amount */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {USD_PRESETS.map((u) => {
             const active = usdPick === u;
             return (
@@ -367,6 +377,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
           <input
             id="support-amount"
             name="support-amount"
+            aria-label={`Donation amount in ${token}`}
             type="number"
             min="0"
             step={meta.step}
@@ -400,6 +411,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
           <input
             id="support-name"
             name="support-name"
+            aria-label="Name shown on the supporters board"
             type="text"
             maxLength={MAX_NAME_LEN}
             placeholder={anon ? "anon" : "Name on the board (optional)"}

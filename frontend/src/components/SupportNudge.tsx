@@ -14,8 +14,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAccount, useChainId } from "wagmi";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Heart, X } from "lucide-react";
+import { useNetwork } from "@/hooks/useNetwork";
+import { mezoTestnet, mezoMainnet } from "@/lib/wagmi";
 
 // v2: the ask moved top-center with new copy; earlier dismissals of the timid
 // bottom-corner version don't carry over.
@@ -27,7 +30,15 @@ export function SupportNudge() {
   const [visible, setVisible] = useState(false);
   const reduced = useReducedMotion();
 
-  const eligible = !pathname.startsWith("/support");
+  // The wrong-network banner occupies the same top-center spot. A functional
+  // warning always outranks an ask, so the nudge waits until it clears.
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  const { network } = useNetwork();
+  const wrongNetwork =
+    isConnected && chainId !== (network === "testnet" ? mezoTestnet.id : mezoMainnet.id);
+
+  const eligible = !pathname.startsWith("/support") && !wrongNetwork;
 
   useEffect(() => {
     if (!eligible) return;
