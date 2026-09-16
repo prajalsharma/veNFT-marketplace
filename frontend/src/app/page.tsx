@@ -10,7 +10,7 @@ const HomeClient = dynamic(() => import("@/components/HomeClient"), {
 export const metadata: Metadata = pageMetadata({
   path: "/",
   description:
-    "Vezo is the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo, Bitcoin's Layer 2. Buy veNFTs below intrinsic value, unlock voting power, and keep full custody — your NFT never leaves your wallet until the moment of sale.",
+    "Vezo is the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo, Bitcoin's economic layer. Buy veNFTs below intrinsic value, unlock voting power, and keep full custody: your NFT never leaves your wallet until the moment of sale.",
 });
 
 export default function Home() {

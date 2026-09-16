@@ -27,7 +27,7 @@ export const TWITTER_HANDLE = "@vezo_exchange";
 
 /** Primary brand description (≈155 chars — optimal meta-description length). */
 export const DEFAULT_DESCRIPTION =
-  "Vezo is the escrowless peer-to-peer marketplace for trading veBTC and veMEZO vote-escrowed NFTs on Mezo, Bitcoin's Layer 2. Buy veNFTs at a discount and unlock voting power — your NFT never leaves your wallet until the moment of sale.";
+  "Vezo is the escrowless peer-to-peer marketplace for trading veBTC and veMEZO vote-escrowed NFTs on Mezo, Bitcoin's economic layer. Buy veNFTs at a discount and unlock voting power: your NFT never leaves your wallet until the moment of sale.";
 
 /** Keyword universe — crypto / Bitcoin / Web3 intent, broad + long-tail. */
 export const KEYWORDS = [
@@ -38,8 +38,8 @@ export const KEYWORDS = [
   "vote-escrowed NFT",
   "Mezo Network",
   "Mezo veNFT",
-  "Bitcoin L2",
-  "Bitcoin Layer 2",
+  "Bitcoin economic layer",
+  "Bank on Bitcoin",
   "escrowless NFT marketplace",
   "veNFT trading",
   "buy veNFT at a discount",

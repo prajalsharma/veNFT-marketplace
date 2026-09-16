@@ -57,13 +57,13 @@ export default function OpengraphImage() {
             The veNFT Marketplace on Mezo
           </div>
           <div style={{ fontSize: 34, color: "#B8B8B8", maxWidth: 900, lineHeight: 1.3 }}>
-            Trade veBTC &amp; veMEZO vote-escrowed NFTs at a discount — escrowless,
-            non-custodial, on Bitcoin&apos;s Layer 2.
+            Trade veBTC &amp; veMEZO vote-escrowed NFTs at a discount. Escrowless,
+            non-custodial, on Mezo, Bitcoin&apos;s economic layer.
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          {["veBTC", "veMEZO", "Escrowless", "Bitcoin L2"].map((tag) => (
+          {["veBTC", "veMEZO", "Escrowless", "Built on Mezo"].map((tag) => (
             <div
               key={tag}
               style={{

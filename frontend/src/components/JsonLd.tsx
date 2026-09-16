@@ -37,14 +37,14 @@ export function OrganizationJsonLd() {
     },
     description: DEFAULT_DESCRIPTION,
     foundingDate: "2025",
-    slogan: "Trade vote-escrowed NFTs at a discount on Bitcoin's Layer 2.",
+    slogan: "Trade vote-escrowed NFTs at a discount on Mezo, Bitcoin's economic layer.",
     knowsAbout: [
       "veNFT",
       "vote-escrowed NFTs",
       "veBTC",
       "veMEZO",
       "Mezo Network",
-      "Bitcoin Layer 2",
+      "Bitcoin economic layer",
       "DeFi",
       "onchain governance",
     ],
@@ -135,7 +135,7 @@ export function FaqJsonLd({ faqs }: { faqs: { q: string; a: string }[] }) {
 export const VEZO_FAQS: { q: string; a: string }[] = [
   {
     q: "What is Vezo?",
-    a: "Vezo is an escrowless peer-to-peer marketplace for buying and selling veBTC and veMEZO vote-escrowed NFTs (veNFTs) on Mezo, Bitcoin's Layer 2 network. Your veNFT stays in your wallet until the exact moment of sale — there is no custody and no third-party lock.",
+    a: "Vezo is an escrowless peer-to-peer marketplace for buying and selling veBTC and veMEZO vote-escrowed NFTs (veNFTs) on Mezo, Bitcoin's economic layer. Your veNFT stays in your wallet until the exact moment of sale; there is no custody and no third-party lock.",
   },
   {
     q: "What is a veNFT?",
@@ -151,7 +151,7 @@ export const VEZO_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Which network and tokens does Vezo support?",
-    a: "Vezo runs on Mezo Network (Bitcoin's Layer 2). It trades veBTC and veMEZO veNFTs, and accepts payment in BTC, MEZO, and MUSD.",
+    a: "Vezo runs on Mezo, Bitcoin's economic layer. It trades veBTC and veMEZO veNFTs, and accepts payment in BTC, MEZO, and MUSD.",
   },
   {
     q: "What are the risks of buying a veNFT on Vezo?",
