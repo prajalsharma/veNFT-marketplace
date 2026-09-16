@@ -89,7 +89,7 @@ export function SupportNudge() {
           <div className="flex items-center gap-2 mb-1.5 pr-7">
             <Heart style={{ width: 14, height: 14, color: "#FF0040", fill: "#FF0040", flexShrink: 0 }} />
             <p className="text-[15px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
-              Like what you&apos;re seeing? We&apos;re asking for your support.
+              Back the build.
             </p>
           </div>
           <p className="text-[13px] leading-relaxed mb-3.5 pr-2" style={{ color: "var(--text-2)" }}>

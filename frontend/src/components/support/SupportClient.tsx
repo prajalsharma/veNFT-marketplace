@@ -813,7 +813,7 @@ export default function SupportClient() {
             textWrap: "balance",
           }}
         >
-          Like what you&apos;re seeing?
+          Built on Mezo. Backed by you.
         </h1>
         <div
           className="space-y-4 leading-relaxed"
