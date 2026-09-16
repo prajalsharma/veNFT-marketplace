@@ -821,21 +821,49 @@ export default function SupportClient() {
             directly into keeping it maintained, audited, and improving.
           </p>
         </div>
-        {/* Receipts: the traction is public, on Dune */}
-        <a
-          href="https://dune.com/vezo/vezo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex items-center gap-2.5 mt-6 px-4 py-2.5 rounded-xl text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-          style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", color: "var(--text-1)", boxShadow: "var(--shadow-xs)" }}
+        {/* Milestone receipts: a dated snapshot of the Dune numbers, hardcoded
+            on purpose. It is a statement about a fixed window (mainnet launch
+            to the as-of date), not a live feed; the Dune link below carries the
+            live, verifiable version. Update the figures and the as-of date
+            together. */}
+        <div
+          className="mt-6 rounded-2xl p-5"
+          style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}
         >
-          <BarChart3 style={{ width: 15, height: 15, color: "#FF0040", flexShrink: 0 }} />
-          <span>
-            How far we&apos;ve come is public. Sales, listings, volume, and users,
-            live on our Dune dashboard.
-          </span>
-          <ExternalLink style={{ width: 12, height: 12, flexShrink: 0, color: "var(--text-3)" }} />
-        </a>
+          <p className="text-[11px] font-bold uppercase tracking-widest mb-3.5" style={{ color: "var(--text-3)" }}>
+            March 16 &rarr; September 16, 2026 &middot; six months on mainnet
+          </p>
+          <div className="flex flex-wrap gap-x-7 gap-y-3.5 mb-4">
+            {[
+              { v: "56", l: "sales" },
+              { v: "206", l: "veNFT listings" },
+              { v: "61", l: "users" },
+              { v: "560,989", l: "MEZO volume" },
+              { v: "5,549", l: "MUSD volume" },
+            ].map((s) => (
+              <div key={s.l}>
+                <p
+                  className="text-[19px] font-bold tabular-nums leading-none"
+                  style={{ color: "var(--text-1)", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {s.v}
+                </p>
+                <p className="text-[11.5px] mt-1" style={{ color: "var(--text-3)" }}>{s.l}</p>
+              </div>
+            ))}
+          </div>
+          <a
+            href="https://dune.com/vezo/vezo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            style={{ color: "#FF0040" }}
+          >
+            <BarChart3 style={{ width: 13, height: 13, flexShrink: 0 }} />
+            Live and verifiable on our Dune dashboard
+            <ExternalLink style={{ width: 11, height: 11, flexShrink: 0 }} />
+          </a>
+        </div>
       </motion.div>
 
       {/* Right column — the ask, level with the hero, sticky on scroll */}
