@@ -826,14 +826,16 @@ export default function SupportClient() {
             to the as-of date), not a live feed; the Dune link below carries the
             live, verifiable version. Update the figures and the as-of date
             together. */}
+        {/* Centered on purpose: a milestone reads as ceremony, not data. Proof
+            sits directly between the story (reciprocity) and the ask (panel). */}
         <div
-          className="mt-6 rounded-2xl p-5"
+          className="mt-6 rounded-2xl px-6 py-7 text-center"
           style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-widest mb-3.5" style={{ color: "var(--text-3)" }}>
+          <p className="text-[11px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
             March 16 &rarr; September 16, 2026 &middot; six months on mainnet
           </p>
-          <div className="flex flex-wrap gap-x-7 gap-y-3.5 mb-4">
+          <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 mb-5">
             {[
               { v: "56", l: "sales" },
               { v: "206", l: "veNFT listings" },
@@ -841,14 +843,19 @@ export default function SupportClient() {
               { v: "560,989", l: "MEZO volume" },
               { v: "5,549", l: "MUSD volume" },
             ].map((s) => (
-              <div key={s.l}>
+              <div key={s.l} className="text-center">
                 <p
-                  className="text-[19px] font-bold tabular-nums leading-none"
-                  style={{ color: "var(--text-1)", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}
+                  className="font-bold tabular-nums leading-none"
+                  style={{
+                    fontSize: "clamp(1.45rem, 2.2vw, 1.7rem)",
+                    color: "var(--text-1)",
+                    letterSpacing: "-0.03em",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
                 >
                   {s.v}
                 </p>
-                <p className="text-[11.5px] mt-1" style={{ color: "var(--text-3)" }}>{s.l}</p>
+                <p className="text-[12px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
               </div>
             ))}
           </div>
@@ -856,7 +863,7 @@ export default function SupportClient() {
             href="https://dune.com/vezo/vezo"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="inline-flex items-center justify-center gap-1.5 text-[12.5px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ color: "#FF0040" }}
           >
             <BarChart3 style={{ width: 13, height: 13, flexShrink: 0 }} />
