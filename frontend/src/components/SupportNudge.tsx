@@ -12,13 +12,13 @@
 // dismissal is respected forever. Respecting the "no" is part of the ask.
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAccount, useChainId } from "wagmi";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Heart, X } from "lucide-react";
 import { useNetwork } from "@/hooks/useNetwork";
 import { mezoTestnet, mezoMainnet } from "@/lib/wagmi";
+import { SUPPORT_URL, isSupportSurface } from "@/lib/support";
 
 // v2: the ask moved top-center with new copy; earlier dismissals of the timid
 // bottom-corner version don't carry over.
@@ -38,7 +38,9 @@ export function SupportNudge() {
   const wrongNetwork =
     isConnected && chainId !== (network === "testnet" ? mezoTestnet.id : mezoMainnet.id);
 
-  const eligible = !pathname.startsWith("/support") && !wrongNetwork;
+  // Host-aware: on support.vezo.exchange the pathname is "/", so a path check
+  // alone would show the ask on the support page itself.
+  const eligible = !isSupportSurface(pathname) && !wrongNetwork;
 
   useEffect(() => {
     if (!eligible) return;
@@ -97,14 +99,14 @@ export function SupportNudge() {
             on the public board.
           </p>
           <div className="flex items-center gap-4">
-            <Link
-              href="/support"
+            <a
+              href={SUPPORT_URL}
               onClick={dismiss}
               className="inline-flex items-center px-4 py-2 rounded-xl text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
               style={{ background: "#FF0040", color: "#fff" }}
             >
               Support Vezo
-            </Link>
+            </a>
             <button
               onClick={dismiss}
               className="text-[13px] font-semibold rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"

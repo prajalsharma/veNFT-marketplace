@@ -6,15 +6,22 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") ?? "";
   if (host === "support.vezo.exchange" || host.startsWith("support.localhost")) {
-    if (req.nextUrl.pathname === "/") {
+    const { pathname } = req.nextUrl;
+    if (pathname === "/") {
       const url = req.nextUrl.clone();
       url.pathname = "/support";
       return NextResponse.rewrite(url);
+    }
+    // Canonicalize: support.vezo.exchange/support -> support.vezo.exchange/
+    if (pathname === "/support") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url, 308);
     }
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/"],
+  matcher: ["/", "/support"],
 };

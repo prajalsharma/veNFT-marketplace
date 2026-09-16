@@ -20,6 +20,20 @@ export const MAX_NAME_LEN = 20;
 
 export type SupportToken = "BTC" | "MEZO" | "MUSD";
 
+/** Canonical home of the support page. */
+export const SUPPORT_URL = "https://support.vezo.exchange";
+
+/**
+ * True when the user is already looking at the support page. On the subdomain
+ * the rewrite is internal, so the pathname stays "/" — the hostname is the
+ * only reliable signal there; path covers vezo.exchange/support.
+ */
+export function isSupportSurface(pathname?: string | null): boolean {
+  if (pathname?.startsWith("/support")) return true;
+  if (typeof window !== "undefined" && window.location.hostname.startsWith("support.")) return true;
+  return false;
+}
+
 /** Strip control/zero-width chars and cap length; returns "" if nothing survives. */
 export function sanitizeName(raw: string): string {
   return raw

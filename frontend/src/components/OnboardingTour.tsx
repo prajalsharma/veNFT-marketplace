@@ -214,8 +214,14 @@ export function OnboardingTour() {
     setI(Math.max(0, Math.min(STEPS.length - 1, next)));
   }, [i]);
 
-  // First-visit auto-open + external reopen trigger.
+  // First-visit auto-open + external reopen trigger. Never auto-open on the
+  // support page (its own host rewrites "/" there, so check hostname too) —
+  // a marketplace walkthrough is the wrong greeting for a support visitor.
   useEffect(() => {
+    const onSupport =
+      window.location.pathname.startsWith("/support") ||
+      window.location.hostname.startsWith("support.");
+    if (onSupport) return;
     let seen = "1";
     try { seen = localStorage.getItem(STORAGE_KEY) ?? ""; } catch { /* ignore */ }
     if (!seen) {
