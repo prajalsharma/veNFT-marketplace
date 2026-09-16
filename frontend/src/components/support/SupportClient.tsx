@@ -15,6 +15,7 @@ import { encodeFunctionData, erc20Abi, formatEther, parseEther } from "viem";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
+  BarChart3,
   Check,
   CheckCircle2,
   Copy,
@@ -820,6 +821,21 @@ export default function SupportClient() {
             directly into keeping it maintained, audited, and improving.
           </p>
         </div>
+        {/* Receipts: the traction is public, on Dune */}
+        <a
+          href="https://dune.com/vezo/vezo"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-2.5 mt-6 px-4 py-2.5 rounded-xl text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+          style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", color: "var(--text-1)", boxShadow: "var(--shadow-xs)" }}
+        >
+          <BarChart3 style={{ width: 15, height: 15, color: "#FF0040", flexShrink: 0 }} />
+          <span>
+            How far we&apos;ve come is public. Sales, listings, volume, and users,
+            live on our Dune dashboard.
+          </span>
+          <ExternalLink style={{ width: 12, height: 12, flexShrink: 0, color: "var(--text-3)" }} />
+        </a>
       </motion.div>
 
       {/* Right column — the ask, level with the hero, sticky on scroll */}
