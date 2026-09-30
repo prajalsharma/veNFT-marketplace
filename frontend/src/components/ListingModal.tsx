@@ -265,10 +265,13 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   <Award style={{ width: 14, height: 14, color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
                   <div>
                     <p className="text-[13px] font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
-                      Grant NFT: Cannot be Merged or Split
+                      Grant NFT: vesting applies
                     </p>
                     <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-                      This position was distributed as a grant. It can be listed and sold normally, but merge and split operations are disabled on-chain.
+                      This position was created as a grant with a vesting schedule.
+                      It can be listed and sold normally, but until vesting ends the
+                      grant manager can revoke unvested tokens, and merge and split
+                      are disabled on-chain. Buyers will see this disclosure too.
                     </p>
                   </div>
                 </motion.div>

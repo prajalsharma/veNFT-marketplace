@@ -315,9 +315,13 @@ export interface Listing {
   votingPower: bigint;
   lockEnd: bigint;
   discountBps: bigint | null;
-  /** True if this veNFT is a grant NFT (grantManager != 0x0 AND vestingEnd != 0).
-   *  Grant NFTs cannot be merged or split, but CAN be listed and purchased. */
+  /** True if this veNFT is a REVOCABLE grant NFT (grantManager != 0x0 AND
+   *  vestingEnd != 0). Grant NFTs trade normally, but while unvested they
+   *  cannot be merged or split AND the grant manager can revoke the unvested
+   *  portion of the locked tokens (VeMEZO.revokeGrant). */
   isGrant: boolean;
+  /** Unix seconds when the grant's vesting schedule ends (0 = not a grant). */
+  vestingEnd: bigint;
 }
 
 interface ListingTuple {
@@ -624,6 +628,7 @@ export function useListing(listingId: number) {
     lockEnd,
     discountBps,
     isGrant,
+    vestingEnd: vestingEndTs,
   };
 
   return { listing: fullListing, isLoading };
@@ -813,6 +818,7 @@ interface RawListingDTO {
   lockEnd: string;
   discountBps: string | null;
   isGrant: boolean;
+  vestingEnd?: string;
 }
 
 export function useActiveListings() {
@@ -852,6 +858,7 @@ export function useActiveListings() {
         lockEnd: BigInt(l.lockEnd),
         discountBps: l.discountBps === null ? null : BigInt(l.discountBps),
         isGrant: l.isGrant,
+        vestingEnd: BigInt(l.vestingEnd ?? "0"),
       }));
     },
     enabled: isMarketplaceReady,

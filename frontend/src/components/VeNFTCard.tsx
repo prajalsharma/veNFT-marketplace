@@ -118,7 +118,11 @@ export function VeNFTCard({
             <span className="text-[14px] font-bold" style={{ color: "var(--text-1)" }}>{collection}</span>
             <span className="text-[14px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>#{tokenId.toString()}</span>
             {isGrant && (
-              <span className="text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0" style={{ color: "#F59E0B", background: "rgba(245,158,11,0.1)" }}>
+              <span
+                className="text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 cursor-help"
+                style={{ color: "#F59E0B", background: "rgba(245,158,11,0.1)" }}
+                title="Grant-vested position: until vesting ends, the grant manager can revoke unvested tokens, and merge/split are disabled. Open the details for the vesting date."
+              >
                 Grant
               </span>
             )}

@@ -258,9 +258,12 @@ export async function GET(req: NextRequest) {
         const discountBps = computeDiscountBps(intrinsicValue, nftLockedToken, l.price, l.paymentToken, lockEnd);
 
         let isGrant = false;
+        let vestingEnd = 0n;
         if (grantRes !== "revert" && grantRes !== "err" && vestRes !== "revert" && vestRes !== "err") {
           const grantMgr = decodeAddr(grantRes.slice(2)).toLowerCase();
-          const vestingEnd = vestRes.length >= 66 ? toBig(vestRes.slice(0, 66)) : 0n;
+          vestingEnd = vestRes.length >= 66 ? toBig(vestRes.slice(0, 66)) : 0n;
+          // Non-zero manager + vesting schedule = a REVOCABLE grant: until
+          // vestingEnd the manager can claw back the unvested tokens.
           isGrant = grantMgr !== ZERO_ADDR && vestingEnd !== 0n;
         }
 
@@ -279,6 +282,7 @@ export async function GET(req: NextRequest) {
           lockEnd: lockEnd.toString(),
           discountBps: discountBps === null ? null : discountBps.toString(),
           isGrant,
+          vestingEnd: vestingEnd.toString(),
         };
       })
     );
