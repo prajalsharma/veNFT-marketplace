@@ -226,11 +226,31 @@ Rules:
 - Never ask for, or discuss providing, a private key or seed phrase.
 - Remind the reader to verify addresses on the explorer when the answer includes one.`;
 
+// Free tiers are capped on tokens per day, not just requests, so the prompt is
+// kept lean: the top few sections, each trimmed. Sections are already topic
+// scoped, so trimming rarely costs an answer, and it roughly halves token spend
+// per question.
+const CONTEXT_CHUNKS = 4;
+const CONTEXT_CHARS = 1400;
+
 function buildPrompt(question: string, chunks: Chunk[]): string {
   const context = chunks
-    .map((c, i) => `[${i + 1}] ${c.page}${c.section ? " > " + c.section : ""}\n${c.text}`)
+    .slice(0, CONTEXT_CHUNKS)
+    .map((c, i) => {
+      const body = c.text.length > CONTEXT_CHARS ? c.text.slice(0, CONTEXT_CHARS).trimEnd() + "…" : c.text;
+      return `[${i + 1}] ${c.page}${c.section ? " > " + c.section : ""}\n${body}`;
+    })
     .join("\n\n---\n\n");
   return `Documentation excerpts:\n\n${context}\n\n---\n\nQuestion: ${question}`;
+}
+
+// Repeat questions are the norm on a docs site (the suggested prompts most of
+// all), so a small cache keeps the provider quota for genuinely new questions.
+const answerCache = new Map<string, { answer: string; at: number }>();
+const ANSWER_TTL_MS = 6 * 60 * 60 * 1000;
+
+function cacheKey(question: string): string {
+  return question.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -256,7 +276,7 @@ async function synthesize(question: string, chunks: Chunk[]): Promise<string | n
       body: JSON.stringify({
         model: process.env.DOCS_CHAT_MODEL || "llama-3.3-70b-versatile",
         temperature: 0.2,
-        max_tokens: 600,
+        max_tokens: 450,
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: prompt },
@@ -377,13 +397,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const key = cacheKey(question);
+  const cached = answerCache.get(key);
+  if (cached && Date.now() - cached.at < ANSWER_TTL_MS) {
+    return NextResponse.json({ mode: "ai", answer: cached.answer, sources, cached: true }, { headers });
+  }
+
   try {
     const answer = await synthesize(question, chunks);
     if (answer) {
+      if (answerCache.size > 200) answerCache.clear();
+      answerCache.set(key, { answer, at: Date.now() });
       return NextResponse.json({ mode: "ai", answer, sources }, { headers });
     }
   } catch {
-    // Provider hiccup or quota: fall through to excerpts rather than failing.
+    // Provider hiccup or daily quota reached: fall through to excerpts. The
+    // widget keeps working, it just stops writing prose until the quota resets.
   }
 
   // Excerpt mode shows documentation prose directly, so strip the markdown
