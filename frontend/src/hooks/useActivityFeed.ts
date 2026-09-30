@@ -8,7 +8,7 @@ import { mezoMainnet, mezoTestnet } from "@/lib/wagmi";
 import { computeDiscountBpsNumber } from "@/lib/computeDiscount";
 
 export interface ActivityEvent {
-  // Bid variants are produced by ActivityContext from the VeNFTBidding contract.
+  // Bid variants come from the VeNFTBidding contract via the subgraph.
   type: "sale" | "listed" | "cancelled" | "bid-placed" | "bid-accepted" | "bid-cancelled";
   listingId: bigint;
   collection: "veBTC" | "veMEZO";

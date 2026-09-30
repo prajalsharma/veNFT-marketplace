@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Header, VezoLogoMark } from "@/components/Header";
 import { NetworkSwitcher } from "@/components/NetworkSwitcher";
-import { ActivityProvider } from "@/context/ActivityContext";
 import { OnboardingTour, openOnboardingTour } from "@/components/OnboardingTour";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SupportNudge } from "@/components/SupportNudge";
@@ -11,7 +10,6 @@ import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ActivityProvider>
     <>
       {/* ── Ambient background — cinematic depth ── */}
       <div
@@ -164,6 +162,5 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* First-visit walkthrough (reopen via the "How it works" footer link) */}
       <OnboardingTour />
     </>
-    </ActivityProvider>
   );
 }

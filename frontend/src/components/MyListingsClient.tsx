@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useMarketplace, useListing, useUserVeNFTs, computeVotingPower } from "@/hooks/useMarketplace";
 import { useActiveTokenBids, useBidding } from "@/hooks/useBidding";
+import { useListingHealth } from "@/hooks/useListingHealth";
 import { parseBiddingError } from "@/lib/biddingErrors";
 import { ListingModal } from "@/components/ListingModal";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
@@ -50,6 +51,17 @@ function UserListingItem({
 }) {
   const { listing, isLoading } = useListing(listingId);
   const { cancelListing, isPending, isConfirming } = useMarketplace();
+
+  // A listing can be active on-chain yet impossible to fulfil, with no event
+  // ever emitted to say so. Without this the seller just sees it vanish from
+  // the marketplace while their own page still counts it as active.
+  const health = useListingHealth(
+    listing?.nftContract as `0x${string}` | undefined,
+    listing?.tokenId,
+    listing?.seller,
+    !!listing?.active
+  );
+  const isDead = health.status === "moved" || health.status === "burned" || health.status === "unapproved";
 
   const active = listing?.active ?? false;
   useEffect(() => {
@@ -109,6 +121,14 @@ function UserListingItem({
               >
                 #{listing.tokenId.toString()}
               </span>
+              {isDead && (
+                <span
+                  className="ml-2 align-middle text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
+                >
+                  {health.status === "burned" ? "Withdrawn" : health.status === "moved" ? "NFT moved" : "Not approved"}
+                </span>
+              )}
             </p>
             <p
               className="text-[12px] font-bold tabular-nums mt-0.5"
@@ -155,6 +175,18 @@ function UserListingItem({
           </button>
         </div>
       </div>
+
+      {isDead && (
+        <div
+          className="px-6 py-3 text-[12.5px] leading-relaxed"
+          style={{ background: "rgba(245,158,11,0.06)", borderTop: "1px solid rgba(245,158,11,0.18)", color: "var(--text-2)" }}
+        >
+          <span className="font-semibold" style={{ color: "#F59E0B" }}>
+            Buyers cannot complete this listing.
+          </span>{" "}
+          {health.reason}
+        </div>
+      )}
     </motion.div>
   );
 }
