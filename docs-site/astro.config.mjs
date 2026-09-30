@@ -93,6 +93,7 @@ export default defineConfig({
           label: "Architecture",
           items: [
             { label: "System Overview", slug: "architecture/overview" },
+            { label: "What We Built, and Why", slug: "architecture/what-we-built" },
             { label: "Smart Contracts", slug: "architecture/contracts" },
             { label: "Security", slug: "architecture/security" },
           ],
@@ -109,6 +110,7 @@ export default defineConfig({
           label: "Resources",
           items: [
             { label: "FAQ", slug: "resources/faq" },
+            { label: "Ask AI About Vezo", slug: "resources/ask-ai" },
             { label: "Links & Addresses", slug: "resources/links" },
           ],
         },
