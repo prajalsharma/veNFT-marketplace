@@ -184,31 +184,42 @@ function rank(question: string, chunks: Chunk[]): Chunk[] {
   }
 
   const idfOf = (t: string) => Math.log(1 + chunks.length / Math.max(1, df.get(t) ?? 1));
-  // Total weight of the question. A term absent from the whole corpus (say a
-  // question about another protocol) carries maximum weight, so a chunk that
-  // matches only the common words cannot clear the coverage gate below.
-  const totalIdf = uniq.reduce((sum, t) => sum + idfOf(t), 0);
+
+  // Coverage is measured only over terms the docs actually contain. Counting
+  // absent terms punished honest questions: a single typo or an incidental word
+  // ("in vezoi") was enough to bury a question the docs answer well. Recall
+  // matters more than precision here, because a wrong "not covered" is worse
+  // than a loosely related section, and the model is told to refuse anyway.
+  const present = uniq.filter((t) => (df.get(t) ?? 0) > 0);
+  if (present.length === 0) return [];
+  const totalIdf = present.reduce((sum, t) => sum + idfOf(t), 0);
 
   const scored = chunks.map((c) => {
     const hay = (c.page + " " + c.section + " " + c.text).toLowerCase();
     const head = (c.page + " " + c.section).toLowerCase();
     let score = 0;
     let covered = 0;
-    for (const t of uniq) {
+    let matched = 0;
+    for (const t of present) {
       const occurrences = hay.split(t).length - 1;
       if (occurrences === 0) continue;
       const idf = idfOf(t);
       covered += idf;
+      matched++;
       // Saturating term frequency, so one long chunk cannot dominate by repetition.
       score += idf * (occurrences / (occurrences + 1.5));
       if (head.includes(t)) score += idf * 0.8; // heading matches are strong signal
     }
     if (hay.includes(question.toLowerCase().trim())) score += 2; // exact phrase
-    return { c, score, coverage: totalIdf > 0 ? covered / totalIdf : 0 };
+    return { c, score, matched, coverage: totalIdf > 0 ? covered / totalIdf : 0 };
   });
 
+  // A single matched term is only convincing when the question was that short;
+  // longer questions need at least two to count as on-topic.
+  const minMatched = present.length === 1 ? 1 : 2;
+
   return scored
-    .filter((s) => s.score > 0.35 && s.coverage >= 0.45)
+    .filter((s) => s.score > 0.35 && s.coverage >= 0.3 && s.matched >= minMatched)
     .sort((a, b) => b.score - a.score)
     .slice(0, TOP_K)
     .map((s) => s.c);

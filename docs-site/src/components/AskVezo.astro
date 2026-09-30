@@ -210,7 +210,7 @@
   }
 </script>
 
-<style>
+<style is:global>
   .vz-ask-fab {
     position: fixed;
     right: 1.25rem;
@@ -313,11 +313,11 @@
   .vz-ask-chips button:hover { border-color: #ff0040; color: var(--sl-color-white); }
 
   .vz-ask-msg { font-size: var(--sl-text-sm); line-height: 1.6; }
-  .vz-ask-msg :global(p) { margin: 0 0 0.6rem; }
-  .vz-ask-msg :global(p:last-child) { margin-bottom: 0; }
-  .vz-ask-msg :global(ul) { margin: 0 0 0.6rem; padding-left: 1.1rem; }
-  .vz-ask-msg :global(li) { margin: 0.15rem 0; }
-  .vz-ask-msg :global(code) { font-size: 0.85em; }
+  .vz-ask-msg p { margin: 0 0 0.6rem; }
+  .vz-ask-msg p:last-child { margin-bottom: 0; }
+  .vz-ask-msg ul { margin: 0 0 0.6rem; padding-left: 1.1rem; }
+  .vz-ask-msg li { margin: 0.15rem 0; }
+  .vz-ask-msg code { font-size: 0.85em; }
 
   .vz-ask-msg.is-me {
     align-self: flex-end;
