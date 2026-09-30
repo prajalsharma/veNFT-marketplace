@@ -7,6 +7,7 @@ import { ActivityProvider } from "@/context/ActivityContext";
 import { OnboardingTour, openOnboardingTour } from "@/components/OnboardingTour";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SupportNudge } from "@/components/SupportNudge";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -96,7 +97,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs">
               <button
                 onClick={openOnboardingTour}
-                className="font-medium transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                className="font-medium py-2 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={{ color: "var(--text-3)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -117,7 +118,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                   href={link.href}
                   target={link.external ? "_blank" : undefined}
                   rel={link.external ? "noopener noreferrer" : undefined}
-                  className="font-medium transition-colors"
+                  className="font-medium py-2 transition-colors"
                   style={{ color: "var(--text-3)" }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -156,6 +157,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* One-time invitation to the support page */}
       <SupportNudge />
+
+      {/* Makes the app installable from the browser */}
+      <ServiceWorkerRegistrar />
 
       {/* First-visit walkthrough (reopen via the "How it works" footer link) */}
       <OnboardingTour />

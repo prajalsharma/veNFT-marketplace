@@ -356,7 +356,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
                 type="button"
                 onClick={() => pickUsd(u)}
                 aria-pressed={active}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                className="px-3.5 min-h-[40px] rounded-lg text-[12.5px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={
                   active
                     ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
@@ -538,7 +538,7 @@ function AddressBlock() {
         <button
           onClick={copy}
           aria-label="Copy address"
-          className="shrink-0 p-2.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+          className="shrink-0 w-10 h-10 inline-flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
           style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: copied ? "#10B981" : "var(--text-2)" }}
         >
           {copied ? <Check style={{ width: 14, height: 14 }} /> : <Copy style={{ width: 14, height: 14 }} />}
@@ -548,7 +548,7 @@ function AddressBlock() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="View on explorer"
-          className="shrink-0 p-2.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+          className="shrink-0 w-10 h-10 inline-flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
           style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }}
         >
           <ExternalLink style={{ width: 14, height: 14 }} />
