@@ -15,7 +15,8 @@ import { useState, useEffect, useMemo } from "react";
 import { formatEther, maxUint256 } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, ArrowRight, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info } from "lucide-react";
+import { X, ArrowRight, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info, Award } from "lucide-react";
+import { CountdownCompact } from "./CountdownTimer";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useReadContract, useWaitForTransactionReceipt, useAccount, useBalance, useConfig, usePublicClient } from "wagmi";
@@ -193,6 +194,17 @@ function AlertBlock({
 }
 
 // ─── Cross-currency context block ──────────────────────────────────────────────
+function SpecRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{label}</span>
+      <span className="text-[13.5px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps) {
   const { contracts } = useNetwork();
@@ -401,6 +413,13 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
   };
   const formattedPrice = listing ? formatAmount(listing.price) : "0";
+  // The position itself, so the buyer sees what they are buying in the same
+  // place they pay for it (there is no second "details" popup).
+  const lockedSym = listing?.collection === "veBTC" ? "BTC" : "MEZO";
+  const lockEndSec = listing ? Number(listing.lockEnd) : 0;
+  const isPermanentLock = lockEndSec === 0;
+  const isExpiredLock = !isPermanentLock && lockEndSec <= Math.floor(Date.now() / 1000);
+
   // USD equivalent of the asking price, from the same live feed as the ticker.
   const priceUsd: number | null = (() => {
     if (!listing) return null;
@@ -602,6 +621,57 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   </span>
                 </div>
               </div>
+
+              {/* What you are actually buying. This used to live in a separate
+                  details popup that most people never opened, which meant the
+                  purchase decision was made with less information than the app
+                  had. One popup, everything in it. */}
+              {step !== "done" && (
+                <div>
+                  <SpecRow label="Intrinsic value" value={`${formatAmount(listing.intrinsicValue)} ${lockedSym}`} />
+                  <SpecRow label="Voting power" value={parseFloat(formatEther(listing.votingPower)).toFixed(2)} />
+                  <SpecRow
+                    label="Lock ends"
+                    value={
+                      isPermanentLock ? "Permanent" : isExpiredLock ? "Expired" : <CountdownCompact lockEnd={listing.lockEnd} />
+                    }
+                  />
+                  <SpecRow
+                    label="Seller"
+                    value={<span className="font-mono">{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</span>}
+                  />
+                </div>
+              )}
+
+              {/* Grant positions carry a revocation risk, so the disclosure sits
+                  with the price, not a click away. */}
+              {step !== "done" && listing.isGrant && (
+                <div
+                  className="flex gap-2.5 p-3.5 rounded-xl"
+                  style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}
+                >
+                  <Award style={{ width: 13, height: 13, color: "#F59E0B", flexShrink: 0, marginTop: 2 }} />
+                  <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                    <span className="font-semibold" style={{ color: "#F59E0B" }}>Grant position.</span>{" "}
+                    Vests until{" "}
+                    <span className="font-semibold" style={{ color: "var(--text-1)" }}>
+                      {listing.vestingEnd > 0n
+                        ? new Date(Number(listing.vestingEnd) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                        : "its vesting date"}
+                    </span>
+                    . Until then the grant manager can revoke any tokens that have not vested yet.{" "}
+                    <a
+                      href="https://docs.vezo.exchange/architecture/what-we-built/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                      style={{ color: "#F59E0B" }}
+                    >
+                      What this means
+                    </a>
+                  </p>
+                </div>
+              )}
 
               {/* USD context + swap note */}
               {listing && step === "confirm" && (

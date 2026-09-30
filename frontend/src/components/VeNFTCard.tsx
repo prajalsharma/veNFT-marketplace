@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { formatEther } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Gavel, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronRight, Gavel } from "lucide-react";
 import { DiscountBadge } from "./DiscountBadge";
 import { CountdownCompact } from "./CountdownTimer";
 import BidsPanel from "./BidsPanel";
@@ -32,7 +32,6 @@ interface VeNFTCardProps {
   /** USD price of one unit of the payment token, for fiat context under the price. */
   unitUsd?: number | null;
   onBuy?: () => void;
-  onDetails?: () => void;
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -61,7 +60,6 @@ export function VeNFTCard({
   isGrant = false,
   unitUsd = null,
   onBuy,
-  onDetails,
 }: VeNFTCardProps) {
   const isVeBTC = collection === "veBTC";
   const lockEndSec = Number(lockEnd);
@@ -96,8 +94,8 @@ export function VeNFTCard({
   const hasOffers  = offerCount > 0;
 
   // Offers expand inline on the card, so several cards' offers can be open and
-  // compared side by side without leaving the grid. The full modal stays one
-  // click away via the "Full details" link inside the expanded section.
+  // compared side by side without leaving the grid. Everything about the
+  // position itself lives in the buy popup, so there is only ever one popup.
   const [offersOpen, setOffersOpen] = useState(false);
 
   return (
@@ -227,16 +225,6 @@ export function VeNFTCard({
                     tokenId={tokenId}
                     currentOwner={seller as `0x${string}`}
                   />
-                  {onDetails && (
-                    <button
-                      onClick={onDetails}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-                      style={{ color: "var(--text-2)" }}
-                    >
-                      Full details
-                      <ExternalLink style={{ width: 11, height: 11 }} />
-                    </button>
-                  )}
                 </div>
               </motion.div>
             )}
