@@ -1,0 +1,402 @@
+---
+// "Ask Vezo" — an assistant embedded in the docs, grounded in these pages.
+//
+// The docs are a static build, so the widget talks to /api/docs-chat on the app
+// (which already runs serverless). Retrieval always works; prose answers appear
+// when a free-tier model key is configured on that deployment. Every answer
+// carries links to the pages it came from, so a reader can check the source.
+---
+
+<button class="vz-ask-fab" type="button" aria-expanded="false" aria-controls="vz-ask-panel" data-open>
+  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <path
+      d="M12 3a9 9 0 0 0-9 9c0 1.6.42 3.1 1.15 4.4L3 21l4.7-1.1A9 9 0 1 0 12 3Z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linejoin="round"></path>
+    <circle cx="8.6" cy="12" r="1.05" fill="currentColor"></circle>
+    <circle cx="12" cy="12" r="1.05" fill="currentColor"></circle>
+    <circle cx="15.4" cy="12" r="1.05" fill="currentColor"></circle>
+  </svg>
+  <span>Ask AI</span>
+</button>
+
+<div class="vz-ask-panel" id="vz-ask-panel" role="dialog" aria-modal="false" aria-label="Ask Vezo" hidden>
+  <header class="vz-ask-head">
+    <div class="vz-ask-title">
+      <span class="vz-ask-dot" aria-hidden="true"></span>
+      <strong>Ask Vezo</strong>
+      <span class="vz-ask-sub">answers from these docs</span>
+    </div>
+    <button class="vz-ask-x" type="button" aria-label="Close" data-close>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"
+        ><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg
+      >
+    </button>
+  </header>
+
+  <div class="vz-ask-log" data-log aria-live="polite">
+    <div class="vz-ask-intro">
+      <p>Ask anything about Vezo and I will answer from the documentation, with links to the pages I used.</p>
+      <div class="vz-ask-chips">
+        <button type="button" data-q="How does a purchase settle without escrow?">How does settlement work?</button>
+        <button type="button" data-q="How is the discount percentage calculated?">How are discounts calculated?</button>
+        <button type="button" data-q="What fees does Vezo charge and who pays them?">What are the fees?</button>
+        <button type="button" data-q="How do I list a veNFT for sale?">How do I sell a veNFT?</button>
+      </div>
+    </div>
+  </div>
+
+  <form class="vz-ask-form" data-form>
+    <input
+      type="text"
+      name="question"
+      data-input
+      placeholder="Ask about Vezo…"
+      autocomplete="off"
+      maxlength="500"
+      aria-label="Your question"
+    />
+    <button type="submit" aria-label="Send">
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"
+        ><path
+          d="M2.5 8h9M8 4.5 11.5 8 8 11.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path></svg
+      >
+    </button>
+  </form>
+  <p class="vz-ask-foot">
+    Generated from the docs. Verify addresses on the
+    <a href="https://explorer.mezo.org" target="_blank" rel="noopener noreferrer">explorer</a> before acting.
+  </p>
+</div>
+
+<script>
+  const API = "https://www.vezo.exchange/api/docs-chat";
+
+  const fab = document.querySelector<HTMLButtonElement>(".vz-ask-fab");
+  const panel = document.querySelector<HTMLElement>(".vz-ask-panel");
+  const log = document.querySelector<HTMLElement>("[data-log]");
+  const form = document.querySelector<HTMLFormElement>("[data-form]");
+  const input = document.querySelector<HTMLInputElement>("[data-input]");
+
+  if (fab && panel && log && form && input) {
+    // The widget is mounted inside Starlight's footer, which sits in its own
+    // stacking context beneath the page asides: a fixed child there can be
+    // painted under the "On this page" sidebar and stop receiving clicks.
+    // Reparenting to <body> puts it in the root stacking context, where its
+    // z-index means what it says.
+    document.body.appendChild(fab);
+    document.body.appendChild(panel);
+
+    const setOpen = (open: boolean) => {
+      panel.hidden = !open;
+      fab.setAttribute("aria-expanded", String(open));
+      fab.classList.toggle("is-open", open);
+      if (open) setTimeout(() => input.focus(), 40);
+    };
+
+    fab.addEventListener("click", () => setOpen(panel.hidden));
+    panel.querySelector("[data-close]")?.addEventListener("click", () => {
+      setOpen(false);
+      fab.focus();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !panel.hidden) {
+        setOpen(false);
+        fab.focus();
+      }
+    });
+
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    // Deliberately tiny markdown: bold, inline code, links, and bullets. The
+    // model's output is escaped first, so nothing it emits can inject markup.
+    const render = (text: string) => {
+      const lines = esc(text).split("\n");
+      let html = "";
+      let inList = false;
+      for (const raw of lines) {
+        const line = raw
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        const bullet = line.match(/^\s*[-*]\s+(.*)$/);
+        if (bullet) {
+          if (!inList) { html += "<ul>"; inList = true; }
+          html += `<li>${bullet[1]}</li>`;
+        } else {
+          if (inList) { html += "</ul>"; inList = false; }
+          if (line.trim()) html += `<p>${line}</p>`;
+        }
+      }
+      if (inList) html += "</ul>";
+      return html;
+    };
+
+    const bubble = (cls: string, html: string) => {
+      const el = document.createElement("div");
+      el.className = `vz-ask-msg ${cls}`;
+      el.innerHTML = html;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    };
+
+    let busy = false;
+
+    const ask = async (question: string) => {
+      if (busy || !question.trim()) return;
+      busy = true;
+      log.querySelector(".vz-ask-intro")?.remove();
+      bubble("is-me", `<p>${esc(question)}</p>`);
+      input.value = "";
+      const thinking = bubble("is-bot is-thinking", "<span></span><span></span><span></span>");
+
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+        thinking.remove();
+
+        if (!res.ok) {
+          bubble("is-bot is-err", `<p>${esc(data?.error || "Something went wrong. Try again.")}</p>`);
+        } else if (data.mode === "excerpts") {
+          const parts = (data.excerpts || [])
+            .map(
+              (x: { title: string; url: string; text: string }) =>
+                `<div class="vz-ask-ex"><a href="${x.url}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><p>${esc(x.text)}</p></div>`
+            )
+            .join("");
+          bubble("is-bot", `<p class="vz-ask-note">Here is what the documentation says:</p>${parts}`);
+        } else {
+          const sources = (data.sources || [])
+            .map(
+              (s: { title: string; url: string }) =>
+                `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>`
+            )
+            .join("");
+          bubble(
+            "is-bot",
+            render(data.answer || "") + (sources ? `<div class="vz-ask-src"><span>Sources</span>${sources}</div>` : "")
+          );
+        }
+      } catch {
+        thinking.remove();
+        bubble("is-bot is-err", "<p>I could not reach the answer service. Check your connection and try again.</p>");
+      } finally {
+        busy = false;
+        input.focus();
+      }
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      ask(input.value);
+    });
+    log.addEventListener("click", (e) => {
+      const chip = (e.target as HTMLElement).closest<HTMLElement>("[data-q]");
+      if (chip) ask(chip.dataset.q || "");
+    });
+  }
+</script>
+
+<style>
+  .vz-ask-fab {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 200;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.95rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    background: var(--sl-color-bg-nav, var(--sl-color-bg));
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 0.14);
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .vz-ask-fab:hover {
+    transform: translateY(-1px);
+    border-color: #ff0040;
+    box-shadow: 0 10px 30px rgb(255 0 64 / 0.18);
+  }
+  .vz-ask-fab svg { color: #ff0040; }
+  .vz-ask-fab.is-open { opacity: 0; pointer-events: none; }
+
+  /* display:flex below would otherwise beat the UA rule for [hidden], leaving
+     an invisible panel on top of the page swallowing every click. */
+  .vz-ask-panel[hidden] { display: none; }
+
+  .vz-ask-panel {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    width: min(420px, calc(100vw - 2rem));
+    max-height: min(620px, calc(100vh - 6rem));
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 1rem;
+    background: var(--sl-color-bg);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.26);
+    overflow: hidden;
+    animation: vz-ask-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes vz-ask-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vz-ask-panel { animation: none; }
+    .vz-ask-fab { transition: none; }
+  }
+
+  .vz-ask-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.85rem 0.95rem;
+    border-bottom: 1px solid var(--sl-color-gray-6, var(--sl-color-gray-5));
+  }
+  .vz-ask-title { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+  .vz-ask-title strong { color: var(--sl-color-white); font-size: var(--sl-text-sm); }
+  .vz-ask-dot {
+    width: 7px; height: 7px; border-radius: 999px; background: #ff0040;
+    align-self: center; flex-shrink: 0;
+  }
+  .vz-ask-sub { color: var(--sl-color-gray-3); font-size: var(--sl-text-xs); }
+  .vz-ask-x {
+    border: 0; background: transparent; color: var(--sl-color-gray-3);
+    cursor: pointer; padding: 0.3rem; border-radius: 0.5rem; line-height: 0;
+  }
+  .vz-ask-x:hover { color: var(--sl-color-white); }
+
+  .vz-ask-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .vz-ask-intro p { margin: 0 0 0.75rem; color: var(--sl-color-gray-2); font-size: var(--sl-text-sm); line-height: 1.55; }
+  .vz-ask-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .vz-ask-chips button {
+    border: 1px solid var(--sl-color-gray-5);
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-xs);
+    font-weight: 500;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .vz-ask-chips button:hover { border-color: #ff0040; color: var(--sl-color-white); }
+
+  .vz-ask-msg { font-size: var(--sl-text-sm); line-height: 1.6; }
+  .vz-ask-msg :global(p) { margin: 0 0 0.6rem; }
+  .vz-ask-msg :global(p:last-child) { margin-bottom: 0; }
+  .vz-ask-msg :global(ul) { margin: 0 0 0.6rem; padding-left: 1.1rem; }
+  .vz-ask-msg :global(li) { margin: 0.15rem 0; }
+  .vz-ask-msg :global(code) { font-size: 0.85em; }
+
+  .vz-ask-msg.is-me {
+    align-self: flex-end;
+    max-width: 85%;
+    background: var(--sl-color-gray-6, var(--sl-color-gray-7));
+    color: var(--sl-color-white);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.85rem 0.85rem 0.2rem 0.85rem;
+  }
+  .vz-ask-msg.is-bot { color: var(--sl-color-gray-1); }
+  .vz-ask-msg.is-err { color: #ff4d6d; }
+  .vz-ask-note { color: var(--sl-color-gray-3); font-size: var(--sl-text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .vz-ask-msg.is-thinking { display: flex; gap: 4px; padding: 0.35rem 0; }
+  .vz-ask-msg.is-thinking span {
+    width: 6px; height: 6px; border-radius: 999px; background: var(--sl-color-gray-4);
+    animation: vz-ask-pulse 1.1s ease-in-out infinite;
+  }
+  .vz-ask-msg.is-thinking span:nth-child(2) { animation-delay: 0.15s; }
+  .vz-ask-msg.is-thinking span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes vz-ask-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .vz-ask-msg.is-thinking span { animation: none; opacity: 0.6; }
+  }
+
+  .vz-ask-ex { margin-top: 0.55rem; padding-left: 0.7rem; border-left: 1px solid var(--sl-color-gray-5); }
+  .vz-ask-ex a { font-size: var(--sl-text-xs); font-weight: 600; }
+  .vz-ask-ex p { margin: 0.2rem 0 0; color: var(--sl-color-gray-2); font-size: var(--sl-text-xs); line-height: 1.55; }
+
+  .vz-ask-src {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;
+    margin-top: 0.6rem; padding-top: 0.6rem;
+    border-top: 1px solid var(--sl-color-gray-6, var(--sl-color-gray-5));
+  }
+  .vz-ask-src span {
+    font-size: var(--sl-text-xs); text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--sl-color-gray-3);
+  }
+  .vz-ask-src a {
+    font-size: var(--sl-text-xs); font-weight: 600; text-decoration: none;
+    padding: 0.2rem 0.5rem; border: 1px solid var(--sl-color-gray-5); border-radius: 999px;
+    color: var(--sl-color-gray-2);
+  }
+  .vz-ask-src a:hover { border-color: #ff0040; color: var(--sl-color-white); }
+
+  .vz-ask-form {
+    display: flex; gap: 0.5rem; align-items: center;
+    padding: 0.7rem 0.75rem 0.5rem;
+    border-top: 1px solid var(--sl-color-gray-6, var(--sl-color-gray-5));
+  }
+  .vz-ask-form input {
+    flex: 1; min-width: 0;
+    background: var(--sl-color-gray-7, var(--sl-color-gray-6));
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.7rem;
+    padding: 0.55rem 0.7rem;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    font-family: inherit;
+  }
+  .vz-ask-form input::placeholder { color: var(--sl-color-gray-3); }
+  .vz-ask-form input:focus { outline: 2px solid #ff0040; outline-offset: 1px; border-color: transparent; }
+  .vz-ask-form button {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 0.7rem; cursor: pointer;
+    background: #ff0040; color: #fff;
+  }
+  .vz-ask-form button:hover { filter: brightness(1.08); }
+
+  .vz-ask-foot {
+    margin: 0; padding: 0 0.85rem 0.7rem;
+    font-size: 0.68rem; line-height: 1.5; color: var(--sl-color-gray-3);
+  }
+
+  @media (max-width: 30rem) {
+    .vz-ask-fab span { display: none; }
+    .vz-ask-fab { padding: 0.7rem; }
+    .vz-ask-panel { right: 0.75rem; left: 0.75rem; bottom: 0.75rem; width: auto; }
+  }
+</style>

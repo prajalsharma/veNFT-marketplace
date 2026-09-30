@@ -60,6 +60,8 @@ export default defineConfig({
       components: {
         SocialIcons: "./src/components/HeaderLinks.astro",
         ThemeSelect: "./src/components/ThemeToggle.astro",
+        // Renders Starlight's own footer plus the Ask Vezo assistant.
+        Footer: "./src/components/Footer.astro",
       },
       sidebar: [
         {

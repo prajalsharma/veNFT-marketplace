@@ -1,0 +1,10 @@
+---
+// Starlight's footer, plus the Ask Vezo assistant. Overriding Footer is the
+// cheapest way to mount a site-wide widget: it renders on every docs page
+// (including the splash home) and the default is re-rendered untouched.
+import Default from "@astrojs/starlight/components/Footer.astro";
+import AskVezo from "./AskVezo.astro";
+---
+
+<Default><slot /></Default>
+<AskVezo />
