@@ -15,7 +15,7 @@ import { useState, useEffect, useMemo } from "react";
 import { formatEther, maxUint256 } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, ArrowRight, ShieldCheck, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info } from "lucide-react";
+import { X, ArrowRight, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info } from "lucide-react";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useReadContract, useWaitForTransactionReceipt, useAccount, useBalance, useConfig, usePublicClient } from "wagmi";
@@ -193,70 +193,6 @@ function AlertBlock({
 }
 
 // ─── Cross-currency context block ──────────────────────────────────────────────
-// When a buyer holds a different token than what the listing requires, show them
-// the USD-equivalent context and a note about using the swap router.
-function CrossCurrencyNote({
-  paySymbol,
-  intrinsicValue,
-  listingPrice,
-  prices,
-}: {
-  paySymbol: string;
-  intrinsicValue: bigint;
-  listingPrice: bigint;
-  prices: ReturnType<typeof usePriceTicker>;
-}) {
-  // Map symbol → USD price
-  const unitPrice: number | null =
-    paySymbol === "BTC"  ? prices.BTC  :
-    paySymbol === "MEZO" ? prices.MEZO :
-    paySymbol === "MUSD" ? prices.MUSD :
-    null;
-
-  const priceEth = parseFloat(formatEther(listingPrice));
-  const ivEth    = parseFloat(formatEther(intrinsicValue));
-
-  const priceUSD = unitPrice !== null ? unitPrice * priceEth : null;
-  const ivUSD    = unitPrice !== null ? unitPrice * ivEth    : null;
-
-  // Only show this block if we have USD data
-  if (!priceUSD) return null;
-
-  const discountUSD = ivUSD ? ((ivUSD - priceUSD) / ivUSD * 100) : null;
-
-  // Cross-currency breakdown — price expressed in every token
-  const tokenRates: Array<{ sym: string; perUnit: number | null; dec: number }> = [
-    { sym: "BTC",  perUnit: prices.BTC,  dec: 8 },
-    { sym: "MEZO", perUnit: prices.MEZO, dec: 4 },
-    { sym: "MUSD", perUnit: prices.MUSD, dec: 2 },
-  ];
-  const crossRows = tokenRates
-    .filter(({ sym, perUnit }) => sym !== paySymbol && perUnit !== null && perUnit > 0)
-    .map(({ sym, perUnit, dec }) => {
-      const amt  = (priceUSD / perUnit!).toFixed(dec);
-      const ivIn = ivUSD !== null ? ivUSD / perUnit! : null;
-      const amtN = priceUSD / perUnit!;
-      const disc = ivIn !== null && amtN < ivIn ? (((ivIn - amtN) / ivIn) * 100).toFixed(1) : null;
-      return { sym, amt, disc };
-    });
-
-  return (
-    <div className="px-1 space-y-0.5">
-      <p className="text-[12px]" style={{ color: "var(--text-3)" }}>
-        {formatUSD(priceUSD)}
-        {discountUSD !== null && discountUSD > 0 && ivUSD !== null && (
-          <> &#183; {discountUSD.toFixed(1)}% below intrinsic value ({formatUSD(ivUSD)})</>
-        )}
-      </p>
-      {crossRows.length > 0 && (
-        <p className="text-[12px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
-          &#8776; {crossRows.map((r) => `${r.amt} ${r.sym}`).join(" \u00b7 ")}
-        </p>
-      )}
-    </div>
-  );
-}
-
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps) {
   const { contracts } = useNetwork();
@@ -465,6 +401,12 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
   };
   const formattedPrice = listing ? formatAmount(listing.price) : "0";
+  // USD equivalent of the asking price, from the same live feed as the ticker.
+  const priceUsd: number | null = (() => {
+    if (!listing) return null;
+    const unit = prices[paymentSymbol as "BTC" | "MEZO" | "MUSD"];
+    return unit ? unit * parseFloat(formatEther(listing.price)) : null;
+  })();
 
   useEffect(() => {
     if (txConfirmed && step === "buying") {
@@ -640,6 +582,11 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   {formattedPrice}{" "}
                   <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paymentSymbol}</span>
                 </p>
+                {priceUsd !== null && (
+                  <p className="text-[12.5px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+                    &#8776; ${priceUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                  </p>
+                )}
                 <div
                   className="flex items-center gap-4 mt-3 pt-3 text-[12.5px]"
                   style={{ borderTop: "1px solid var(--border-subtle)" }}
@@ -659,12 +606,6 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
               {/* USD context + swap note */}
               {listing && step === "confirm" && (
                 <>
-                  <CrossCurrencyNote
-                    paySymbol={paymentSymbol}
-                    intrinsicValue={listing.intrinsicValue}
-                    listingPrice={listing.price}
-                    prices={prices}
-                  />
                   {swapRoute && (
                     <div
                       className="p-4 rounded-xl"
@@ -796,13 +737,12 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 </div>
               )}
 
-              {/* Security note */}
-              <AlertBlock
-                icon={ShieldCheck}
-                variant="blue"
-                title="Atomic settlement"
-                body="NFT transfers to you before payment is routed. If the seller moves the NFT first, the transaction reverts automatically."
-              />
+              {/* One line of reassurance. The full explanation lives in the
+                  docs; a paragraph of protocol theory at the moment of payment
+                  is noise, not comfort. */}
+              <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                The NFT and your payment move in a single transaction. If any part fails, nothing moves.
+              </p>
 
               {/* Error */}
               <AnimatePresence>

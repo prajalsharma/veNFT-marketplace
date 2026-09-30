@@ -165,41 +165,36 @@ export function ListingDetailModal({ isOpen, onClose, listing, unitUsd, onBuy }:
                   label="Seller"
                   value={<span className="font-mono">{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</span>}
                 />
-                <SpecRow label="Payment token" value={paySymbol} />
               </div>
 
-              {/* Grant explainer. Verified against the VeMEZO contract source:
-                  the badge means grantManager != 0 AND vestingEnd != 0, i.e. a
-                  REVOCABLE grant. The material risk for a buyer is revocation
-                  of the unvested tokens (revokeGrant), not merge/split. */}
+              {/* Grant note. The badge plus two sentences: what it is, and the
+                  one thing that can cost a buyer money. The long version lives
+                  in the docs; a wall of text here just gets skipped. */}
               {listing.isGrant && (
                 <div
-                  className="flex gap-3 p-4 rounded-xl"
+                  className="flex gap-2.5 p-3.5 rounded-xl"
                   style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}
                 >
-                  <Award style={{ width: 14, height: 14, color: "#F59E0B", flexShrink: 0, marginTop: 1 }} />
-                  <div>
-                    <p className="text-[13px] font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
-                      Grant position: read before buying
-                    </p>
-                    <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-                      This veNFT was created through the token grant mechanism built
-                      into the veNFT contract, with a vesting schedule
-                      {listing.vestingEnd > 0n && (
-                        <>
-                          {" "}that ends on{" "}
-                          <span className="font-semibold" style={{ color: "var(--text-1)" }}>
-                            {new Date(Number(listing.vestingEnd) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
-                          </span>
-                        </>
-                      )}
-                      . It buys, sells, and votes like any other position, but until
-                      vesting completes the grant manager can revoke the tokens that
-                      have not vested yet, and the position cannot be merged or
-                      split. Tokens already vested can never be taken back. Price
-                      this in before you buy.
-                    </p>
-                  </div>
+                  <Award style={{ width: 13, height: 13, color: "#F59E0B", flexShrink: 0, marginTop: 2 }} />
+                  <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                    <span className="font-semibold" style={{ color: "#F59E0B" }}>Grant position.</span>{" "}
+                    Vests until{" "}
+                    <span className="font-semibold" style={{ color: "var(--text-1)" }}>
+                      {listing.vestingEnd > 0n
+                        ? new Date(Number(listing.vestingEnd) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                        : "its vesting date"}
+                    </span>
+                    . Until then the grant manager can revoke any tokens that have not vested yet.{" "}
+                    <a
+                      href="https://docs.vezo.exchange/architecture/what-we-built/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                      style={{ color: "#F59E0B" }}
+                    >
+                      What this means
+                    </a>
+                  </p>
                 </div>
               )}
 
