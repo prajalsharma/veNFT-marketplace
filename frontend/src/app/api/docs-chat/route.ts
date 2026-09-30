@@ -233,7 +233,18 @@ function buildPrompt(question: string, chunks: Chunk[]): string {
   return `Documentation excerpts:\n\n${context}\n\n---\n\nQuestion: ${question}`;
 }
 
-/** Calls whichever free-tier provider is configured. Returns null if none is. */
+/**
+ * Calls whichever free-tier provider is configured. Returns null if none is.
+ *
+ * Provider keys, all optional and all free to obtain:
+ *   GROQ_API_KEY       console.groq.com  (NOT x.ai: "Groq" the inference company,
+ *                      not "Grok" the xAI chatbot, which is paid)
+ *   GEMINI_API_KEY     aistudio.google.com, free on Flash models
+ *   OPENROUTER_API_KEY openrouter.ai, use a model with the ":free" suffix
+ *
+ * With none set the caller falls back to returning documentation excerpts,
+ * which is a fully working (and free) mode, not an error path.
+ */
 async function synthesize(question: string, chunks: Chunk[]): Promise<string | null> {
   const prompt = buildPrompt(question, chunks);
 
