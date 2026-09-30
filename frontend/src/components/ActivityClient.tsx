@@ -12,9 +12,10 @@
   ✓ Tinted shadows (hue-matched, not generic gray-black)
 */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useActivityFeed } from "@/hooks/useActivityFeed";
+import { useListingOutcomes, OUTCOME_LABEL, OUTCOME_HELP, type ListingOutcome } from "@/hooks/useListingOutcomes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tag,
@@ -123,12 +124,22 @@ function StateBlock({ icon: Icon, title, sub }: { icon: any; title: string; sub:
 }
 
 // ─── Mobile card (table doesn't fit a phone) ─────────────────────────────────
-function MobileActivityCard({ activity, explorer }: { activity: any; explorer: string }) {
+function MobileActivityCard({ activity, explorer, outcome }: { activity: any; explorer: string; outcome?: ListingOutcome }) {
   const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
   return (
     <div className="rounded-xl p-3.5" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}>
       <div className="flex items-center justify-between mb-3">
-        <EventPill type={activity.type} />
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <EventPill type={activity.type} />
+          {outcome && outcome !== "open" && outcome !== "unknown" && (
+            <span
+              className="text-[9.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+              style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
+            >
+              {OUTCOME_LABEL[outcome]}
+            </span>
+          )}
+        </div>
         <a
           href={activity.transactionHash ? `${explorer}/tx/${activity.transactionHash}` : undefined}
           target="_blank"
@@ -167,6 +178,30 @@ function MobileActivityCard({ activity, explorer }: { activity: any; explorer: s
 export default function ActivityClient() {
   const { network, contracts } = useNetwork();
   const { events, isLoading, error, isDeployed } = useActivityFeed(100);
+
+  // A listing that is sold or cancelled emits an event and resolves itself in
+  // this feed. A listing whose veNFT was withdrawn, moved, or un-approved emits
+  // nothing, so without this it would sit here as a LIST row that never ends.
+  // Resolve those from chain state so every listing has a visible outcome.
+  const unresolvedIds = useMemo(() => {
+    const terminal = new Set<string>();
+    events.forEach((e) => {
+      if (e.type === "sale" || e.type === "cancelled" || e.type === "bid-accepted") {
+        terminal.add(e.listingId.toString());
+      }
+    });
+    const ids: bigint[] = [];
+    const seen = new Set<string>();
+    events.forEach((e) => {
+      const key = e.listingId.toString();
+      if (e.type !== "listed" || terminal.has(key) || seen.has(key)) return;
+      seen.add(key);
+      ids.push(e.listingId);
+    });
+    return ids;
+  }, [events]);
+
+  const outcomes = useListingOutcomes(unresolvedIds);
 
   return (
     <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-5 md:px-10 lg:px-16">
@@ -282,9 +317,25 @@ export default function ActivityClient() {
                         onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-2)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
-                        {/* Event type */}
+                        {/* Event type, plus how this listing ultimately ended
+                            when it ended without emitting an event. */}
                         <td className="px-6 py-5">
-                          <EventPill type={activity.type as any} />
+                          <div className="flex flex-col items-start gap-1.5">
+                            <EventPill type={activity.type as any} />
+                            {activity.type === "listed" && (() => {
+                              const o = outcomes.get(activity.listingId.toString());
+                              if (!o || o === "open" || o === "unknown") return null;
+                              return (
+                                <span
+                                  title={OUTCOME_HELP[o]}
+                                  className="inline-flex items-center gap-1 text-[9.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded cursor-help"
+                                  style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
+                                >
+                                  {OUTCOME_LABEL[o]}
+                                </span>
+                              );
+                            })()}
+                          </div>
                         </td>
 
                         {/* Item */}
@@ -406,7 +457,7 @@ export default function ActivityClient() {
           {/* Mobile — stacked cards */}
           <div className="md:hidden space-y-2.5">
             {events.map((activity, index) => (
-              <MobileActivityCard key={`m-${activity.transactionHash}-${index}`} activity={activity} explorer={contracts.explorer} />
+              <MobileActivityCard key={`m-${activity.transactionHash}-${index}`} activity={activity} explorer={contracts.explorer} outcome={activity.type === "listed" ? outcomes.get(activity.listingId.toString()) : undefined} />
             ))}
           </div>
           </>
