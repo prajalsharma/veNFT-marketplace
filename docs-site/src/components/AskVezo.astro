@@ -140,12 +140,15 @@
       return html;
     };
 
-    const bubble = (cls: string, html: string) => {
+    const bubble = (cls: string, html: string, toTop = false) => {
       const el = document.createElement("div");
       el.className = `vz-ask-msg ${cls}`;
       el.innerHTML = html;
       log.appendChild(el);
-      log.scrollTop = log.scrollHeight;
+      // An answer is read from its first line, so bring the top of a reply into
+      // view rather than jumping to the bottom of a long one.
+      if (toTop) log.scrollTop = el.offsetTop - log.offsetTop - 8;
+      else log.scrollTop = log.scrollHeight;
       return el;
     };
 
@@ -155,8 +158,11 @@
       if (busy || !question.trim()) return;
       busy = true;
       log.querySelector(".vz-ask-intro")?.remove();
-      bubble("is-me", `<p>${esc(question)}</p>`);
+      const asked = bubble("is-me", `<p>${esc(question)}</p>`);
       input.value = "";
+      // Park the view on the question so the exchange reads top-down: what was
+      // asked, then the reply beneath it.
+      const showExchange = () => { log.scrollTop = asked.offsetTop - log.offsetTop - 8; };
       const thinking = bubble("is-bot is-thinking", "<span></span><span></span><span></span>");
 
       try {
@@ -173,11 +179,17 @@
         } else if (data.mode === "excerpts") {
           const parts = (data.excerpts || [])
             .map(
-              (x: { title: string; url: string; text: string }) =>
-                `<div class="vz-ask-ex"><a href="${x.url}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><p>${esc(x.text)}</p></div>`
+              (x: { title: string; page: string; url: string; text: string }) =>
+                `<a class="vz-ask-ex" href="${x.url}" target="_blank" rel="noopener noreferrer">
+                   <span class="vz-ask-ex-page">${esc(x.page || "")}</span>
+                   <span class="vz-ask-ex-title">${esc(x.title)}</span>
+                   <span class="vz-ask-ex-text">${esc(x.text)}</span>
+                   <span class="vz-ask-ex-go">Read the page →</span>
+                 </a>`
             )
             .join("");
-          bubble("is-bot", `<p class="vz-ask-note">Here is what the documentation says:</p>${parts}`);
+          bubble("is-bot", `<p class="vz-ask-note">From the documentation</p>${parts}`);
+          showExchange();
         } else {
           const sources = (data.sources || [])
             .map(
@@ -189,6 +201,7 @@
             "is-bot",
             render(data.answer || "") + (sources ? `<div class="vz-ask-src"><span>Sources</span>${sources}</div>` : "")
           );
+          showExchange();
         }
       } catch {
         thinking.remove();
@@ -312,7 +325,7 @@
   }
   .vz-ask-chips button:hover { border-color: #ff0040; color: var(--sl-color-white); }
 
-  .vz-ask-msg { font-size: var(--sl-text-sm); line-height: 1.6; }
+  .vz-ask-msg { font-size: 0.85rem; line-height: 1.65; overflow-wrap: anywhere; }
   .vz-ask-msg p { margin: 0 0 0.6rem; }
   .vz-ask-msg p:last-child { margin-bottom: 0; }
   .vz-ask-msg ul { margin: 0 0 0.6rem; padding-left: 1.1rem; }
@@ -329,7 +342,18 @@
   }
   .vz-ask-msg.is-bot { color: var(--sl-color-gray-1); }
   .vz-ask-msg.is-err { color: #ff4d6d; }
-  .vz-ask-note { color: var(--sl-color-gray-3); font-size: var(--sl-text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+  .vz-ask-note {
+    color: var(--sl-color-gray-3);
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.1rem !important;
+  }
+  /* Links inside answers follow the brand, not the browser's visited purple. */
+  .vz-ask-msg a { color: #ff0040; text-decoration: none; font-weight: 600; }
+  .vz-ask-msg a:hover { text-decoration: underline; }
+  .vz-ask-ex:visited .vz-ask-ex-title { color: var(--sl-color-white); }
 
   .vz-ask-msg.is-thinking { display: flex; gap: 4px; padding: 0.35rem 0; }
   .vz-ask-msg.is-thinking span {
@@ -343,9 +367,52 @@
     .vz-ask-msg.is-thinking span { animation: none; opacity: 0.6; }
   }
 
-  .vz-ask-ex { margin-top: 0.55rem; padding-left: 0.7rem; border-left: 1px solid var(--sl-color-gray-5); }
-  .vz-ask-ex a { font-size: var(--sl-text-xs); font-weight: 600; }
-  .vz-ask-ex p { margin: 0.2rem 0 0; color: var(--sl-color-gray-2); font-size: var(--sl-text-xs); line-height: 1.55; }
+  /* Each excerpt is a card the whole of which is the link to its page: a title,
+     a short teaser that keeps its line breaks (tables and numbered steps are
+     unreadable flattened into a paragraph), and an explicit affordance. */
+  .vz-ask-ex {
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.7rem;
+    background: var(--sl-color-bg-sidebar, transparent);
+    text-decoration: none;
+    transition: border-color 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vz-ask-ex:hover { border-color: #ff0040; transform: translateY(-1px); }
+  .vz-ask-ex-page {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  .vz-ask-ex-title {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--sl-color-white);
+  }
+  .vz-ask-ex-text {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+    white-space: pre-line; /* keeps list and table line breaks */
+    overflow-wrap: anywhere;
+  }
+  .vz-ask-ex-go {
+    display: block;
+    margin-top: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #ff0040;
+  }
 
   .vz-ask-src {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem;

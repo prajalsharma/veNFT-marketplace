@@ -426,30 +426,47 @@ export async function POST(req: NextRequest) {
     // widget keeps working, it just stops writing prose until the quota resets.
   }
 
-  // Excerpt mode shows documentation prose directly, so strip the markdown
-  // syntax that would otherwise show up as literal asterisks and backticks.
+  // Excerpt mode shows documentation prose directly. Markdown syntax is stripped
+  // (it would render as literal asterisks and backticks) but line structure is
+  // deliberately kept: tables and numbered steps flattened into one paragraph
+  // are unreadable, which is exactly how this looked before.
   const plain = (s: string) =>
     s
-      .replace(/```[\s\S]*?```/g, (block) => block.replace(/```\w*\n?/g, "").trim())
+      .replace(/```[\s\S]*?```/g, (block) => block.replace(/```\w*/g, "").trim())
+      .replace(/^\s*\|.*\|\s*$/gm, (row) =>
+        // Markdown table row → "label: value" on its own line.
+        row.split("|").map((cell) => cell.trim()).filter(Boolean).join(": ")
+      )
+      .replace(/^\s*[-:|\s]+$/gm, "") // table separator rows
       .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/(?<![*\w])\*([^*\n]+)\*(?!\w)/g, "$1") // single-asterisk emphasis
       .replace(/`([^`]+)`/g, "$1")
+      .replace(/`/g, "")
       .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
       .replace(/^>\s?/gm, "")
+      .replace(/[ \t]+$/gm, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
+
+  // A short teaser that ends on a sentence, not mid-word. The excerpt exists to
+  // show the reader they are in the right place; the page link carries the rest.
+  const teaser = (s: string, limit = 320) => {
+    if (s.length <= limit) return s;
+    const cut = s.slice(0, limit);
+    const stop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("\n"));
+    return (stop > limit * 0.5 ? cut.slice(0, stop + 1) : cut.trimEnd()) + "…";
+  };
 
   return NextResponse.json(
     {
       mode: "excerpts",
       answer: "",
-      excerpts: chunks.map((c) => {
-        const text = plain(c.text);
-        return {
-          title: c.section ? `${c.page}: ${c.section}` : c.page,
-          url: c.url,
-          text: text.length > 700 ? text.slice(0, 700).trimEnd() + "…" : text,
-        };
-      }),
+      excerpts: chunks.map((c) => ({
+        title: c.section || c.page,
+        page: c.page,
+        url: c.url,
+        text: teaser(plain(c.text)),
+      })),
       sources,
     },
     { headers }
