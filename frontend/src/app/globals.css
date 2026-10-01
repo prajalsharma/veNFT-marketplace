@@ -83,13 +83,13 @@
   --text-4: rgba(255,255,255,0.22);
 
   /* Tinted cinematic shadows */
-  --shadow-xs: 0 1px 4px rgba(0,0,0,0.4);
-  --shadow-sm: 0 2px 10px rgba(0,0,0,0.5);
-  --shadow-md: 0 6px 28px rgba(0,0,0,0.58), inset 0 1px 0 rgba(255,255,255,0.04);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,255,255,0.05);
-  --shadow-xl: 0 28px 72px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06);
-  --shadow-2xl: 0 48px 100px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.07);
-  --shadow-card-hover: 0 22px 64px rgba(0,0,0,0.78), inset 0 1px 0 rgba(255,255,255,0.07);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm: 0 1px 6px rgba(0,0,0,0.35);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-xl: 0 14px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+  --shadow-2xl: 0 20px 56px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07);
+  --shadow-card-hover: 0 10px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
   --shadow-red: 0 0 32px rgba(255,0,64,0.22), 0 0 0 1px rgba(255,0,64,0.12);
   --shadow-red-strong: 0 8px 40px rgba(255,0,64,0.35), 0 0 0 1px rgba(255,0,64,0.18);
 
@@ -148,11 +148,11 @@
   /* Warm tinted shadows */
   --shadow-xs: 0 1px 4px rgba(0,0,0,0.06);
   --shadow-sm: 0 2px 10px rgba(0,0,0,0.08);
-  --shadow-md: 0 6px 28px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.85);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.95);
-  --shadow-xl: 0 28px 72px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,1);
-  --shadow-2xl: 0 48px 100px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,1);
-  --shadow-card-hover: 0 22px 64px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,1);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.85);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.95);
+  --shadow-xl: 0 14px 40px rgba(0,0,0,0.11), inset 0 1px 0 rgba(255,255,255,1);
+  --shadow-2xl: 0 20px 56px rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,1);
+  --shadow-card-hover: 0 10px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,1);
   --shadow-red: 0 0 32px rgba(232,0,58,0.14), 0 0 0 1px rgba(232,0,58,0.09);
   --shadow-red-strong: 0 8px 40px rgba(232,0,58,0.28), 0 0 0 1px rgba(232,0,58,0.14);
 
@@ -302,10 +302,10 @@
   }
 
   .eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--text-3);
     line-height: 1;
   }

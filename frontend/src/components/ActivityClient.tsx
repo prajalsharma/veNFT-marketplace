@@ -18,15 +18,10 @@ import { useActivityFeed } from "@/hooks/useActivityFeed";
 import { useListingOutcomes, OUTCOME_LABEL, OUTCOME_HELP, type ListingOutcome } from "@/hooks/useListingOutcomes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Tag,
-  ShoppingCart,
-  XCircle,
   ArrowUpRight,
   ExternalLink,
   History,
   Clock,
-  ShieldCheck as ShieldCheckIcon,
-  Loader2,
   AlertCircle,
   TrendingUp,
 } from "lucide-react";
@@ -47,7 +42,7 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
   if (discountBps === null) return <span style={{ color: "var(--text-3)" }}>—</span>;
   if (discountBps === 0) return (
     <span
-      className="text-[11.5px] font-bold tabular-nums"
+      className="text-[12px] font-bold tabular-nums"
       style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
     >
       Par
@@ -57,7 +52,7 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
   if (discountBps > 0) {
     return (
       <span
-        className="text-[11.5px] font-black tabular-nums"
+        className="text-[12px] font-black tabular-nums"
         style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}
       >
         {pct}% off
@@ -66,7 +61,7 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
   }
   return (
     <span
-      className="text-[11.5px] font-black tabular-nums"
+      className="text-[12px] font-black tabular-nums"
       style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}
     >
       +{pct}% prem
@@ -77,21 +72,15 @@ function formatDiscount(discountBps: number | null): React.ReactNode {
 // ─── Event type pill ─────────────────────────────────────────────────────────
 function EventPill({ type }: { type: "sale" | "listed" | "cancelled" }) {
   const config = {
-    sale: { icon: ShoppingCart, label: "Sale", color: "#10B981", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.22)" },
-    listed: { icon: Tag, label: "List", color: "#F7931A", bg: "rgba(247,147,26,0.08)", border: "rgba(247,147,26,0.22)" },
-    cancelled: { icon: XCircle, label: "Cancel", color: "var(--text-3)", bg: "var(--bg-2)", border: "var(--border)" },
+    sale: { label: "Sale", color: "#10B981" },
+    listed: { label: "Listed", color: "#F7931A" },
+    cancelled: { label: "Cancelled", color: "var(--text-3)" },
   }[type];
-
-  const Icon = config.icon;
-
   return (
-    <div
-      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11.5px] font-black uppercase tracking-widest"
-      style={{ background: config.bg, border: `1px solid ${config.border}`, color: config.color }}
-    >
-      <Icon style={{ width: 10, height: 10 }} />
+    <span className="inline-flex items-center gap-2 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: config.color }} />
       {config.label}
-    </div>
+    </span>
   );
 }
 
@@ -124,6 +113,16 @@ function StateBlock({ icon: Icon, title, sub }: { icon: any; title: string; sub:
 }
 
 // ─── Mobile card (table doesn't fit a phone) ─────────────────────────────────
+// Prices arrive from the feed as fixed four-decimal strings; present them like
+// the marketplace cards do, with separators and no dead zeros.
+function fmtPrice(p: string): string {
+  const v = parseFloat(p);
+  if (!isFinite(v)) return p;
+  if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
+  return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
+}
+
 function MobileActivityCard({ activity, explorer, outcome }: { activity: any; explorer: string; outcome?: ListingOutcome }) {
   const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
   return (
@@ -133,7 +132,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
           <EventPill type={activity.type} />
           {outcome && outcome !== "open" && outcome !== "unknown" && (
             <span
-              className="text-[9.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+              className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
               style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
             >
               {OUTCOME_LABEL[outcome]}
@@ -159,14 +158,14 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
               {activity.collection} <span className="tabular-nums" style={{ color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>#{activity.tokenId.toString()}</span>
             </span>
           </div>
-          <div className="flex items-center gap-1 text-[10.5px] font-mono" style={{ color: "var(--text-3)" }}>
+          <div className="flex items-center gap-1 text-[11px] font-mono" style={{ color: "var(--text-3)" }}>
             <span>{activity.from ? short(activity.from) : "—"}</span>
             {activity.to && <><ArrowUpRight style={{ width: 9, height: 9 }} /><span>{short(activity.to)}</span></>}
           </div>
         </div>
         <div className="text-right shrink-0">
           <p className="text-[15px] font-bold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {activity.price}<span className="text-[11.5px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
+            {fmtPrice(activity.price)}<span className="text-[12px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
           </p>
           <div className="mt-0.5">{formatDiscount(activity.discountBps)}</div>
         </div>
@@ -229,16 +228,11 @@ export default function ActivityClient() {
             transition={{ delay: 0.2, duration: 0.4 }}
             className="flex items-center gap-4 pb-1"
           >
-            <div className="flex items-center gap-2 text-[10.5px] font-black uppercase tracking-widest" style={{ color: "#10B981" }}>
-              <ShieldCheckIcon style={{ width: 11, height: 11 }} />
-              On-chain verified
-            </div>
-            <div className="h-3 w-px" style={{ background: "var(--border)" }} />
             <a
               href={contracts.explorer}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold transition-colors"
               style={{ color: "var(--text-3)" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -257,9 +251,27 @@ export default function ActivityClient() {
             sub="This activity stream will appear here as soon as the first listings and trades go live on this network."
           />
         ) : isLoading ? (
-          <div className="flex items-center gap-3 py-16" style={{ color: "var(--text-3)" }}>
-            <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" />
-            <span className="text-sm font-medium">Loading on-chain events…</span>
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}
+            aria-busy="true"
+            aria-label="Loading activity"
+          >
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="grid items-center gap-6 px-6 py-5"
+                style={{ gridTemplateColumns: "90px 1.4fr 1fr 0.8fr 1fr 1fr 0.7fr", borderTop: i ? "1px solid var(--border-subtle)" : undefined }}
+              >
+                <div className="h-3 w-14 skeleton rounded" />
+                <div className="h-3 w-28 skeleton rounded" />
+                <div className="h-3 w-24 skeleton rounded" />
+                <div className="h-3 w-12 skeleton rounded" />
+                <div className="h-3 w-20 skeleton rounded" />
+                <div className="h-3 w-20 skeleton rounded" />
+                <div className="h-3 w-12 skeleton rounded justify-self-end" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <StateBlock
@@ -328,7 +340,7 @@ export default function ActivityClient() {
                               return (
                                 <span
                                   title={OUTCOME_HELP[o]}
-                                  className="inline-flex items-center gap-1 text-[9.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded cursor-help"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded cursor-help"
                                   style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
                                 >
                                   {OUTCOME_LABEL[o]}
@@ -363,9 +375,9 @@ export default function ActivityClient() {
                             className="text-sm font-bold tabular-nums"
                             style={{ fontVariantNumeric: "tabular-nums" }}
                           >
-                            {activity.price}
+                            {fmtPrice(activity.price)}
                           </span>
-                          <span className="text-[11.5px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>
+                          <span className="text-[12px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>
                             {activity.paymentToken}
                           </span>
                         </td>
@@ -463,44 +475,13 @@ export default function ActivityClient() {
           </>
         )}
 
-        {/* ── Audit / explorer footer bar ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-          className="mt-8 flex items-center justify-between p-5 rounded-xl"
-          style={{
-            background: "var(--bg-1)",
-            border: "1px solid var(--border-subtle)",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.18)" }}
-            >
-              <ShieldCheckIcon style={{ width: 14, height: 14, color: "#10B981" }} />
-            </div>
-            <div>
-              <p className="text-[13.5px] font-semibold" style={{ letterSpacing: "-0.01em" }}>
-                Verifiable Trading History
-              </p>
-              <p className="text-[12px]" style={{ color: "var(--text-2)" }}>
-                Every transaction corresponds to an atomic on-chain event on the Mezo EVM.
-              </p>
-            </div>
-          </div>
-          <a
-            href={contracts.explorer}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-outline text-[11px] py-2 px-4 inline-flex items-center gap-1.5"
-          >
-            View Explorer
-            <ExternalLink style={{ width: 11, height: 11 }} />
+        <p className="mt-8 text-[13px]" style={{ color: "var(--text-3)" }}>
+          Every row is an on-chain event. Open any transaction on the{" "}
+          <a href={contracts.explorer} target="_blank" rel="noopener noreferrer" className="font-semibold underline-offset-2 hover:underline" style={{ color: "var(--text-2)" }}>
+            Mezo explorer
           </a>
-        </motion.div>
+          .
+        </p>
       </div>
     </div>
   );

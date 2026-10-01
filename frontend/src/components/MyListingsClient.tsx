@@ -123,7 +123,7 @@ function UserListingItem({
               </span>
               {isDead && (
                 <span
-                  className="ml-2 align-middle text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  className="ml-2 align-middle text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
                   style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
                 >
                   {health.status === "burned" ? "Withdrawn" : health.status === "moved" ? "NFT moved" : "Not approved"}
@@ -142,7 +142,7 @@ function UserListingItem({
 
         <div className="flex items-center gap-3">
           <div
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-black uppercase tracking-widest"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-widest"
             style={{
               background: "rgba(16,185,129,0.08)",
               border: "1px solid rgba(16,185,129,0.2)",
@@ -178,7 +178,7 @@ function UserListingItem({
 
       {isDead && (
         <div
-          className="px-6 py-3 text-[12.5px] leading-relaxed"
+          className="px-6 py-3 text-[13px] leading-relaxed"
           style={{ background: "rgba(245,158,11,0.06)", borderTop: "1px solid rgba(245,158,11,0.18)", color: "var(--text-2)" }}
         >
           <span className="font-semibold" style={{ color: "#F59E0B" }}>
@@ -250,7 +250,7 @@ function IncomingBidsForListing({
         style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(74,144,226,0.04)" }}
       >
         <Gavel style={{ width: 12, height: 12, color: "#4A90E2" }} />
-        <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: "#4A90E2" }}>
+        <span className="text-[12px] font-semibold" style={{ color: "#4A90E2" }}>
           {bids.length} incoming bid{bids.length !== 1 ? "s" : ""} on Listing #{listingId}
         </span>
       </div>
@@ -319,7 +319,7 @@ function IncomingBidsForListing({
         </p>
       )}
 
-      <p className="px-4 pb-3 text-[11.5px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+      <p className="px-4 pb-3 text-[12px] leading-relaxed" style={{ color: "var(--text-3)" }}>
         Accepting sends the veNFT and pulls payment in one transaction. The first
         accept also asks for a one-time approval of the bidding contract.
       </p>
@@ -400,7 +400,7 @@ function WalletNFTCard({
               style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.22)" }}
             >
               <Award style={{ width: 10, height: 10, color: "#F59E0B" }} />
-              <span className="text-[8px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
                 Grant
               </span>
             </div>
@@ -482,8 +482,8 @@ function ConnectPrompt() {
           <Wallet style={{ width: 18, height: 18, color: "var(--text-3)" }} />
         </div>
         <div>
-          <h1 className="display-lg mb-3" style={{ color: "var(--text-1)" }}>
-            Connect wallet.
+          <h1 className="text-[24px] font-bold mb-2" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
+            Connect a wallet
           </h1>
           <p className="text-[15px] leading-relaxed mb-6" style={{ color: "var(--text-2)", maxWidth: "42ch" }}>
             Connect your wallet to manage listed veNFTs and view your trading history.

@@ -14,10 +14,6 @@ import {
   BarChart3,
   MousePointer2,
   TrendingUp,
-  ShoppingBag,
-  Tag,
-  Gavel,
-  ArrowLeftRight,
   ShieldCheck,
 } from "lucide-react";
 import { useRef, useCallback } from "react";
@@ -85,8 +81,8 @@ function FeatureRow({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      whileInView={{ opacity: 1, x: 0 }}
+      initial={{ x: 20 }}
+      whileInView={{ x: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="flex items-start gap-6 py-8"
@@ -106,7 +102,7 @@ function FeatureRow({
       </motion.div>
       <div className="flex-1 min-w-0">
         <h4
-          className="font-semibold text-[19px] mb-2"
+          className="font-semibold text-[20px] mb-2"
           style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}
         >
           {title}
@@ -179,29 +175,15 @@ export default function HomeClient() {
             {/* ── Left: headline + CTA ── */}
             <motion.div>
 
-              {/* Live status badge */}
-              <motion.div
-                initial={{ opacity: 0, y: -14 }}
+              <motion.p
+                initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="inline-flex items-center gap-2.5 mb-8 px-3.5 py-2 rounded-full"
-                style={{
-                  background: "var(--bg-2)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "var(--shadow-sm)",
-                }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="mb-6 text-[13px] font-semibold"
+                style={{ color: "var(--text-3)" }}
               >
-                <div className="relative flex h-2 w-2">
-                  <span
-                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
-                    style={{ background: "#FF0040" }}
-                  />
-                  <span className="relative inline-flex rounded-full h-2 w-2 live-dot" style={{ background: "#FF0040" }} />
-                </div>
-                <span className="eyebrow" style={{ color: "var(--text-2)" }}>
-                  Live on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
-                </span>
-              </motion.div>
+                Live on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
+              </motion.p>
 
               {/* Headline */}
               <motion.h1
@@ -266,7 +248,7 @@ export default function HomeClient() {
                 <div className="w-px self-stretch" style={{ background: "var(--border-subtle)" }} />
                 <StatChip label="Protocol fee" value="1.00%" color="var(--text-2)" />
                 <div className="w-px self-stretch" style={{ background: "var(--border-subtle)" }} />
-                <StatChip label="Settlement" value="Atomic" color="#10B981" />
+                <StatChip label="Settlement" value="Atomic" color="var(--text-1)" />
               </motion.div>
             </motion.div>
 
@@ -287,8 +269,8 @@ export default function HomeClient() {
       <section className="py-10 px-5 md:px-10 lg:px-16">
         <div className="max-w-[1280px] mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 12 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-wrap items-center justify-center gap-4"
@@ -320,22 +302,22 @@ export default function HomeClient() {
           {/* Left sticky label */}
           <div className="lg:sticky lg:top-32">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             >
               <h2 className="display-lg mb-6" style={{ color: "var(--text-1)" }}>
                 Built on<br />security &<br />fairness.
               </h2>
-              <p className="text-[17px] leading-[1.65] mb-8" style={{ color: "var(--text-2)", maxWidth: "34ch", textWrap: "pretty" }}>
+              <p className="text-[16px] leading-[1.65] mb-8" style={{ color: "var(--text-2)", maxWidth: "34ch", textWrap: "pretty" }}>
                 The Mezo ecosystem needed a way to exit locked positions without surrendering voting rights until the final moment. Vezo makes that possible.
               </p>
 
               {/* Mark repeat — small */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ scale: 0.9 }}
+                whileInView={{ scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="mb-8"
@@ -400,8 +382,8 @@ export default function HomeClient() {
       <section className="py-20 px-5 md:px-10 lg:px-16">
         <div className="max-w-[1280px] mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 16 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-14"
@@ -409,88 +391,75 @@ export default function HomeClient() {
             <h2 className="display-lg mb-4" style={{ color: "var(--text-1)" }}>
               Everything you can do on Vezo.
             </h2>
-            <p className="text-[17px] leading-[1.65] mx-auto" style={{ color: "var(--text-2)", maxWidth: "58ch", textWrap: "pretty" }}>
+            <p className="text-[16px] leading-[1.65] mx-auto" style={{ color: "var(--text-2)", maxWidth: "58ch", textWrap: "pretty" }}>
               Buy, sell, bid, or pay in any token. Every action settles atomically on-chain, and you keep custody until the trade completes.
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div
+            className="grid sm:grid-cols-2 gap-x-14 gap-y-10 max-w-[960px] mx-auto"
+          >
             {[
               {
-                icon: ShoppingBag,
                 title: "Buy",
                 color: "#FF0040",
                 desc: "Purchase a listed veBTC or veMEZO at a market-set discount to its locked value.",
                 detail: "NFT and payment swap in one atomic transaction.",
               },
               {
-                icon: Tag,
                 title: "Sell",
                 color: "#F7931A",
                 desc: "List your position at any price in BTC, MEZO, or MUSD. It stays in your wallet until it sells.",
                 detail: "Escrowless. Cancel anytime, no penalty.",
               },
               {
-                icon: Gavel,
                 title: "Bid",
                 color: "#10B981",
                 desc: "Don't see your price? Make an offer on any veNFT and the owner accepts it on-chain.",
                 detail: "Your funds stay put until a bid is accepted.",
               },
               {
-                icon: ArrowLeftRight,
                 title: "Pay in any token",
                 color: "#4A90E2",
                 desc: "Pay with BTC even when a listing is priced in MUSD. Vezo routes the swap for you.",
                 detail: "Converted through Mezo's on-chain DEX automatically.",
               },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 18 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="nft-card p-7 rounded-2xl relative overflow-hidden"
-                  style={{ background: "var(--bg-1)" }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
-                    style={{ background: `${item.color}14`, border: `1px solid ${item.color}33` }}
-                  >
-                    <Icon style={{ width: 22, height: 22, color: item.color }} />
-                  </div>
-                  <h3 className="text-[21px] font-bold mb-2.5" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
+            ].map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ y: 14 }}
+                whileInView={{ y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                className="grid grid-cols-[14px_1fr] gap-x-4"
+              >
+                <span className="w-2 h-2 rounded-full mt-[9px]" style={{ background: item.color }} />
+                <div>
+                  <h3 className="text-[20px] font-bold mb-2" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
                     {item.title}
                   </h3>
-                  <p className="text-[16px] leading-[1.6] mb-4" style={{ color: "var(--text-2)", textWrap: "pretty" }}>
+                  <p className="text-[16px] leading-[1.6] mb-2" style={{ color: "var(--text-2)", textWrap: "pretty" }}>
                     {item.desc}
                   </p>
-                  <p
-                    className="text-[13.5px] leading-relaxed pt-4 flex items-start gap-2.5"
-                    style={{ color: "var(--text-3)", borderTop: "1px solid var(--border-subtle)" }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full mt-[6px] shrink-0" style={{ background: item.color }} />
-                    <span>{item.detail}</span>
+                  <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                    {item.detail}
                   </p>
-                </motion.div>
-              );
-            })}
+                </div>
+              </motion.div>
+            ))}
           </div>
 
           {/* Atomic / escrowless footnote */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 12 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="flex items-start gap-3 mt-6 p-5 rounded-2xl"
             style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
           >
             <ShieldCheck style={{ width: 18, height: 18, color: "#10B981", flexShrink: 0, marginTop: 1 }} />
-            <p className="text-[14.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
               <span className="font-semibold" style={{ color: "var(--text-1)" }}>Escrowless and atomic.</span>{" "}
               Sellers keep custody until the moment of sale. The NFT transfers first, then payment routes, in a single transaction. If anything is off, the whole trade reverts. No custody, no counterparty risk.
             </p>
@@ -502,8 +471,8 @@ export default function HomeClient() {
       <section className="py-20 px-5 md:px-10 lg:px-16">
         <div className="max-w-[1280px] mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 26 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ y: 26 }}
+            whileInView={{ y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="rounded-3xl p-12 md:p-16 relative overflow-hidden"
@@ -513,24 +482,6 @@ export default function HomeClient() {
               boxShadow: "var(--shadow-lg)",
             }}
           >
-            {/* Background blob */}
-            <div
-              aria-hidden
-              className="absolute -top-24 -right-24 w-[600px] h-[600px] rounded-full pointer-events-none"
-              style={{
-                background: "radial-gradient(ellipse, rgba(255,0,64,0.065) 0%, transparent 70%)",
-                filter: "blur(50px)",
-              }}
-            />
-            <div
-              aria-hidden
-              className="absolute -bottom-16 -left-16 w-[350px] h-[350px] rounded-full pointer-events-none"
-              style={{
-                background: "radial-gradient(ellipse, rgba(247,147,26,0.045) 0%, transparent 70%)",
-                filter: "blur(50px)",
-              }}
-            />
-
             <div className="relative z-10 max-w-lg">
               <VezoLogoMark size={50} />
               <h2 className="display-lg mt-7 mb-4" style={{ color: "var(--text-1)" }}>

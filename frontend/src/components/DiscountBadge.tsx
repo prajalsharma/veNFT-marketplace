@@ -11,7 +11,7 @@ export function DiscountBadge({ discountBps }: DiscountBadgeProps) {
   if (discountBps === null) {
     return (
       <div
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] font-semibold"
         style={{
           background: "var(--bg-3)",
           border: "1px solid var(--border)",
@@ -28,7 +28,7 @@ export function DiscountBadge({ discountBps }: DiscountBadgeProps) {
   if (discount === 0) {
     return (
       <div
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] font-semibold"
         style={{
           background: "var(--bg-3)",
           border: "1px solid var(--border)",
@@ -47,7 +47,7 @@ export function DiscountBadge({ discountBps }: DiscountBadgeProps) {
       initial={{ scale: 0.88, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+      className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] font-bold tabular-nums"
       style={{
         background: isDiscount ? "rgba(16,185,129,0.09)" : "rgba(239,68,68,0.09)",
         border: isDiscount ? "1px solid rgba(16,185,129,0.24)" : "1px solid rgba(239,68,68,0.24)",

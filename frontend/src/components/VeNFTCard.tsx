@@ -38,7 +38,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
       <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{label}</span>
-      <span className="text-[13.5px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+      <span className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
         {value}
       </span>
     </div>
@@ -117,7 +117,7 @@ export function VeNFTCard({
             <span className="text-[14px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>#{tokenId.toString()}</span>
             {isGrant && (
               <span
-                className="text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 cursor-help"
+                className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 cursor-help"
                 style={{ color: "#F59E0B", background: "rgba(245,158,11,0.1)" }}
                 title="Grant-vested position: until vesting ends, the grant manager can revoke unvested tokens, and merge/split are disabled. Open the details for the vesting date."
               >
@@ -130,7 +130,6 @@ export function VeNFTCard({
 
         {/* Price — the focal point */}
         <div className="mb-4">
-          <p className="text-[10.5px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-3)" }}>Price</p>
           <div className="flex items-baseline gap-1.5">
             <span className="font-bold tabular-nums" style={{ fontSize: "1.95rem", letterSpacing: "-0.04em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
               {formattedPrice}
@@ -138,7 +137,7 @@ export function VeNFTCard({
             <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paySymbol}</span>
           </div>
           {(unitUsd || discountPct > 0) && (
-            <p className="text-[12.5px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[13px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
               {unitUsd ? (
                 <>&#8776; ${(unitUsd * parseFloat(formatEther(price))).toLocaleString("en-US", { maximumFractionDigits: 2 })}</>
               ) : null}
@@ -184,7 +183,7 @@ export function VeNFTCard({
             onClick={() => setOffersOpen((o) => !o)}
             aria-expanded={offersOpen}
             aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, ${offersOpen ? "collapse" : "expand"}` : "Offers"}
-            className="w-full flex items-center justify-between py-3 px-4 rounded-xl text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="w-full flex items-center justify-between py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={
               hasOffers
                 ? { background: "rgba(255,0,64,0.06)", border: "1px solid rgba(255,0,64,0.22)", color: "var(--text-1)" }

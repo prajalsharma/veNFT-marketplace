@@ -35,7 +35,7 @@ export function PriceTicker() {
   ] as const;
 
   return (
-    <div className="hidden xl:flex items-center gap-3 text-[10.5px] font-semibold text-white/40 flex-shrink-0">
+    <div className="hidden xl:flex items-center gap-3 text-[11px] font-semibold text-white/40 flex-shrink-0">
       {tokens.map((t, i) => {
         const pos = t.change !== null && t.change > 0.05;
         const neg = t.change !== null && t.change < -0.05;
@@ -45,12 +45,12 @@ export function PriceTicker() {
             <span className="text-white/28 font-bold">{t.sym}</span>
             <span className="text-white/55 tabular-nums">{fmt(t.sym, t.price)}</span>
             {pos && (
-              <span className="flex items-center gap-0.5 text-emerald-400 text-[9.5px]">
+              <span className="flex items-center gap-0.5 text-emerald-400 text-[10px]">
                 <TrendingUp className="w-2.5 h-2.5" />{Math.abs(t.change!).toFixed(1)}%
               </span>
             )}
             {neg && (
-              <span className="flex items-center gap-0.5 text-red-400 text-[9.5px]">
+              <span className="flex items-center gap-0.5 text-red-400 text-[10px]">
                 <TrendingDown className="w-2.5 h-2.5" />{Math.abs(t.change!).toFixed(1)}%
               </span>
             )}

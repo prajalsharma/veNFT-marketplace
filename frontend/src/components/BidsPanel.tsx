@@ -200,13 +200,13 @@ function PlaceBidForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-3)" }}>
-        Place a Bid
+      <p className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
+        Place a bid
       </p>
 
       {/* Payment token selector */}
       <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: "var(--text-3)" }}>
+        <span className="text-[12px] font-semibold mr-1" style={{ color: "var(--text-3)" }}>
           Currency
         </span>
         {PAYMENT_TOKENS.filter((t) => !t.isNative).map((t) => {
@@ -268,7 +268,7 @@ function PlaceBidForm({
 
       {/* Expiry — segmented chips, consistent with the token selector above */}
       <div className="flex items-center gap-1.5 mt-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: "var(--text-3)" }}>
+        <span className="text-[12px] font-semibold mr-1" style={{ color: "var(--text-3)" }}>
           Expires
         </span>
         {["1", "3", "7", "14", "30"].map((d) => (
@@ -363,7 +363,7 @@ function BidRow({
           </span>
           {isBidder && (
             <span
-              className="text-[10.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+              className="text-[11px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
               style={{ background: "rgba(255,0,64,0.1)", color: "#FF0040" }}
             >
               you
@@ -382,7 +382,7 @@ function BidRow({
           </span>
           <div className="flex items-center gap-1" style={{ color: expired ? "#EF4444" : "#10B981" }}>
             <Clock style={{ width: 9, height: 9 }} />
-            <span className="text-[10.5px] font-semibold">{label}</span>
+            <span className="text-[11px] font-semibold">{label}</span>
           </div>
         </div>
       </div>
@@ -484,13 +484,13 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Gavel style={{ width: 12, height: 12, color: "var(--text-3)" }} />
-          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "var(--text-3)" }}>
-            Active Offers
+          <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
+            Active offers
           </span>
         </div>
         {bids.length > 0 && (
           <span
-            className="text-[10.5px] font-black px-2 py-0.5 rounded-full"
+            className="text-[11px] font-black px-2 py-0.5 rounded-full"
             style={{ background: "rgba(255,0,64,0.08)", color: "#FF0040", border: "1px solid rgba(255,0,64,0.18)" }}
           >
             {bids.length}
@@ -530,7 +530,7 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
       )}
 
       {isOwner && bids.length > 0 && (
-        <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+        <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-3)" }}>
           Accepting an offer needs a one-time approval for the bidding contract, so
           the first accept asks for two signatures.
         </p>

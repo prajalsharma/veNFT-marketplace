@@ -273,7 +273,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             That&apos;s on-chain. Thank you.
           </p>
         </div>
-        <p className="text-[13.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+        <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
           {anon
             ? "You'll show on the board as an anonymous supporter."
             : sanitizeName(name)
@@ -312,7 +312,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <Heart style={{ width: 15, height: 15, color: "#FF0040", fill: "#FF0040" }} />
-          <h2 className="text-[17px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
+          <h2 className="text-[16px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
             Back the build
           </h2>
         </div>
@@ -356,7 +356,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
                 type="button"
                 onClick={() => pickUsd(u)}
                 aria-pressed={active}
-                className="px-3.5 min-h-[40px] rounded-lg text-[12.5px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                className="px-3.5 min-h-[40px] rounded-lg text-[13px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={
                   active
                     ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
@@ -392,7 +392,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             }}
           />
           <span
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12.5px] font-bold pointer-events-none"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[13px] font-bold pointer-events-none"
             style={{ color: "var(--text-3)" }}
           >
             {token}
@@ -418,7 +418,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             value={anon ? "" : name}
             disabled={anon}
             onChange={(e) => setName(e.target.value)}
-            className="flex-1 min-w-0 rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium focus:outline-none focus:ring-1 focus:ring-[#FF0040] disabled:opacity-50"
+            className="flex-1 min-w-0 rounded-xl px-3.5 py-2.5 text-[14px] font-medium focus:outline-none focus:ring-1 focus:ring-[#FF0040] disabled:opacity-50"
             style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-1)" }}
           />
           <button
@@ -435,7 +435,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             Stay anonymous
           </button>
         </div>
-        <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-4)" }}>
+        <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-4)" }}>
           The name travels inside your own transaction. The board is rebuilt from the
           chain, not from a database we could edit.
         </p>
@@ -447,7 +447,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-[12.5px]"
+            className="text-[13px]"
             style={{ color: "#EF4444" }}
             role="alert"
           >
@@ -524,7 +524,7 @@ function AddressBlock() {
       <p className="text-[13px] font-semibold mb-1" style={{ color: "var(--text-1)" }}>
         Prefer your own wallet?
       </p>
-      <p className="text-[12.5px] leading-relaxed mb-3" style={{ color: "var(--text-3)" }}>
+      <p className="text-[13px] leading-relaxed mb-3" style={{ color: "var(--text-3)" }}>
         Send BTC, MEZO, or MUSD on the Mezo network directly. Anything that arrives
         here counts as support, because this wallet does nothing else.
       </p>
@@ -606,10 +606,10 @@ function SupportersBoard({
     >
       <div className="p-6 pb-5 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-[17px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
+          <h2 className="text-[16px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
             Supporters
           </h2>
-          <p className="text-[12.5px]" style={{ color: "var(--text-3)" }}>
+          <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
             {data && data.donors.length > 0
               ? `${data.donors.length} ${data.donors.length === 1 ? "supporter" : "supporters"} · ${data.donationCount} ${data.donationCount === 1 ? "contribution" : "contributions"}`
               : "Every contribution, straight from the chain."}
@@ -619,7 +619,7 @@ function SupportersBoard({
           href={`${EXPLORER}/address/${SUPPORT_ADDRESS}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-wider shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
           style={{ color: "var(--text-3)" }}
         >
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#10B981" }} />
@@ -633,7 +633,7 @@ function SupportersBoard({
           className="mx-6 mb-4 px-4 py-3 rounded-xl flex items-baseline justify-between gap-3 flex-wrap"
           style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
         >
-          <span className="text-[12px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+          <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
             Raised so far
           </span>
           <span className="text-right">
@@ -662,7 +662,7 @@ function SupportersBoard({
           <p className="text-[14px] font-semibold mb-1" style={{ color: "var(--text-2)" }}>
             No names on the board yet.
           </p>
-          <p className="text-[12.5px]" style={{ color: "var(--text-3)" }}>
+          <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
             The first one is the most fun to be.
           </p>
         </div>
@@ -689,7 +689,7 @@ function SupportersBoard({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`truncate text-[14px] font-semibold ${d.mono ? "font-mono text-[12.5px]" : ""}`}
+                      className={`truncate text-[14px] font-semibold ${d.mono ? "font-mono text-[13px]" : ""}`}
                       style={{ color: d.anon ? "var(--text-2)" : "var(--text-1)" }}
                     >
                       {d.display}
@@ -703,7 +703,7 @@ function SupportersBoard({
                       </span>
                     )}
                   </div>
-                  <p className="text-[11.5px] tabular-nums mt-0.5" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+                  <p className="text-[12px] tabular-nums mt-0.5" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
                     {(["BTC", "MEZO", "MUSD"] as const)
                       .filter((t) => BigInt(d[t]) > 0n)
                       .map((t) => `${fmtAmount(BigInt(d[t]))} ${t}`)
@@ -875,7 +875,7 @@ export default function SupportClient() {
             href="https://dune.com/vezo/vezo"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 text-[12.5px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="inline-flex items-center justify-center gap-1.5 text-[13px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ color: "#FF0040" }}
           >
             <BarChart3 style={{ width: 13, height: 13, flexShrink: 0 }} />

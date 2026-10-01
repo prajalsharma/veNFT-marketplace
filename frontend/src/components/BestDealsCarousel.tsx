@@ -78,7 +78,7 @@ function DealCard({ listing }: { listing: Listing }) {
 
         {/* Intrinsic value */}
         <div className="px-5 pb-4">
-          <p className="text-[9px] font-bold tracking-[0.12em] uppercase text-white/30 mb-1">Intrinsic Value</p>
+          <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-white/30 mb-1">Intrinsic Value</p>
           <div className="flex items-baseline gap-2">
             <span className="text-[1.75rem] font-bold tabular-nums tracking-tight leading-none">
               {formattedIntrinsic}
@@ -94,7 +94,7 @@ function DealCard({ listing }: { listing: Listing }) {
           <div className="rounded-xl bg-white/[0.025] border border-white/[0.04] px-4 py-3">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Tag className="w-3 h-3 text-emerald-400" />
-              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/30">Ask Price</span>
+              <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-white/30">Ask Price</span>
             </div>
             <p className="text-[13px] font-bold tabular-nums text-emerald-400 leading-none">
               {formattedPrice}{" "}
@@ -105,7 +105,7 @@ function DealCard({ listing }: { listing: Listing }) {
           <div className="rounded-xl bg-white/[0.025] border border-white/[0.04] px-4 py-3">
             <div className="flex items-center gap-1.5 mb-1.5">
               <TrendingUp className="w-3 h-3 text-emerald-400" />
-              <span className="text-[9px] font-bold tracking-[0.1em] uppercase text-white/30">Discount</span>
+              <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-white/30">Discount</span>
             </div>
             <p className="text-[13px] font-bold tabular-nums text-emerald-400 leading-none">
               {discountPct}% OFF

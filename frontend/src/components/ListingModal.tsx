@@ -72,6 +72,14 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
     setTxError(null);
   }, [isOpen]);
 
+  // Escape closes the dialog, like the backdrop and the close button do.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
+
   if (!veNFT) return null;
 
   const nftContract = veNFT.collection === "veBTC" ? contracts.veBTC : contracts.veMEZO;
@@ -109,7 +117,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="List veNFT for sale">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -151,12 +159,13 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     #{veNFT.tokenId.toString()}
                   </span>
                 </h2>
-                <p className="text-[12.5px] mt-1" style={{ color: "var(--text-2)" }}>
+                <p className="text-[13px] mt-1" style={{ color: "var(--text-2)" }}>
                   Configure your secondary market listing.
                 </p>
               </div>
               <button
                 onClick={onClose}
+                aria-label="Close"
                 className="p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={{ color: "var(--text-3)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
@@ -201,7 +210,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   <label className="eyebrow">Set Asking Price</label>
                   {price && discount > 0 && (
                     <span
-                      className="text-[11.5px] font-bold tabular-nums"
+                      className="text-[12px] font-bold tabular-nums"
                       style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}
                     >
                       {discount.toFixed(1)}% discount vs spot
@@ -232,7 +241,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                       <button
                         key={token.symbol}
                         onClick={() => setPaymentToken(token.symbol)}
-                        className="px-3 py-1.5 rounded-lg text-[11.5px] font-black transition-all"
+                        className="px-3 py-1.5 rounded-lg text-[12px] font-black transition-all"
                         style={{
                           background:
                             paymentToken === token.symbol ? "#FF0040" : "var(--bg-3)",
@@ -267,7 +276,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     <p className="text-[13px] font-semibold mb-0.5" style={{ color: "#F59E0B" }}>
                       Grant NFT: vesting applies
                     </p>
-                    <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                    <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                       This position was created as a grant with a vesting schedule.
                       It can be listed and sold normally, but until vesting ends the
                       grant manager can revoke unvested tokens, and merge and split
@@ -290,7 +299,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   <p className="text-[13px] font-semibold mb-0.5" style={{ letterSpacing: "-0.01em" }}>
                     Escrowless Listing
                   </p>
-                  <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                  <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-3)" }}>
                     The NFT stays in your wallet. You keep earning rewards and voting power until the moment it is sold.
                   </p>
                 </div>
@@ -303,7 +312,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   style={{ background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.18)" }}
                 >
                   <CheckCircle2 style={{ width: 13, height: 13, color: "#10B981" }} />
-                  <span className="text-[12.5px] font-semibold" style={{ color: "#10B981" }}>
+                  <span className="text-[13px] font-semibold" style={{ color: "#10B981" }}>
                     Marketplace approved, ready to list
                   </span>
                 </div>
@@ -323,7 +332,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     }}
                   >
                     <AlertCircle style={{ width: 14, height: 14, color: "#EF4444", flexShrink: 0, marginTop: 1 }} />
-                    <p className="text-[12.5px] leading-relaxed" style={{ color: "#EF4444" }}>
+                    <p className="text-[13px] leading-relaxed" style={{ color: "#EF4444" }}>
                       {txError}
                     </p>
                   </motion.div>

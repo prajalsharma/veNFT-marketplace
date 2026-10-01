@@ -90,7 +90,7 @@ function Chip({ label, accent }: { label: string; accent?: boolean }) {
   );
 }
 
-const lbl = "text-[9px] font-bold uppercase tracking-widest";
+const lbl = "text-[11px] font-semibold";
 const num = "tabular-nums";
 
 function StepVisual({ i }: { i: number }) {
@@ -112,7 +112,7 @@ function StepVisual({ i }: { i: number }) {
           {[["Browse", "listings"], ["Buy", "atomically"], ["Sell", "anytime"]].map(([a, b]) => (
             <div key={a} className="rounded-xl p-2.5 text-center" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}>
               <p className="text-[12px] font-bold" style={{ color: "var(--text-1)" }}>{a}</p>
-              <p className="text-[9px] mt-0.5" style={{ color: "var(--text-3)" }}>{b}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: "var(--text-3)" }}>{b}</p>
             </div>
           ))}
         </div>
@@ -323,10 +323,10 @@ export function OnboardingTour() {
                         {step.badge}
                       </span>
                     </div>
-                    <h2 id="vezo-tour-title" className="text-[21px] font-bold tracking-tight leading-tight" style={{ color: "var(--text-1)" }}>
+                    <h2 id="vezo-tour-title" className="text-[20px] font-bold tracking-tight leading-tight" style={{ color: "var(--text-1)" }}>
                       {step.title}
                     </h2>
-                    <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                    <p className="mt-2 text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                       {step.body}
                     </p>
                   </div>

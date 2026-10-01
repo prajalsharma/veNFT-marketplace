@@ -16,22 +16,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         className="fixed inset-0 -z-50 pointer-events-none"
         style={{ background: "var(--bg)", transition: "background 380ms var(--ease-spring)" }}
       >
-        {/* Static ambient glows — intentionally NOT animated. Animating transform
-            on a large blurred element re-composites the whole blur every frame,
-            which janks badly on mobile. Static blurred gradients rasterize once.
-            Fewer/smaller blobs on small screens. */}
-        <div
-          className="absolute top-[-12%] left-[8%] w-[420px] sm:w-[560px] h-[420px] sm:h-[560px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(255,0,64,0.05) 0%, transparent 62%)", filter: "blur(48px)" }}
-        />
-        <div
-          className="hidden sm:block absolute top-[24%] right-[-8%] w-[460px] h-[460px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(255,0,64,0.026) 0%, transparent 65%)", filter: "blur(56px)" }}
-        />
-        <div
-          className="hidden md:block absolute bottom-[-8%] left-[4%] w-[520px] h-[520px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(74,144,226,0.03) 0%, transparent 65%)", filter: "blur(56px)" }}
-        />
       </div>
 
       <Header />
@@ -46,16 +30,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           transition: "border-color 380ms var(--ease-spring)",
         }}
       >
-        {/* Gradient accent line */}
-        <div
-          aria-hidden
-          className="absolute top-0 left-0 right-0 h-px"
-          style={{
-            background: "linear-gradient(90deg, transparent 0%, var(--vezo-red) 35%, var(--vezo-red) 65%, transparent 100%)",
-            opacity: 0.22,
-          }}
-        />
-
         <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16 py-12">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
 
@@ -83,7 +57,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                   vezo
                 </span>
                 <span
-                  className="text-[7px] font-bold tracking-[0.2em] uppercase leading-none mt-0.5 block"
+                  className="text-[10px] font-bold tracking-[0.2em] uppercase leading-none mt-0.5 block"
                   style={{ color: "var(--vezo-red)" }}
                 >
                   veNFT Marketplace

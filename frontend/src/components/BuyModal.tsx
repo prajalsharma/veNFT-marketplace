@@ -136,7 +136,7 @@ function StepPill({
 
   return (
     <div
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold"
       style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color }}
     >
       {state === "done" ? (
@@ -145,7 +145,7 @@ function StepPill({
         <Loader2 style={{ width: 11, height: 11 }} className="animate-spin" />
       ) : (
         <span
-          className="w-3 h-3 rounded-full border flex items-center justify-center text-[8px] font-black"
+          className="w-3 h-3 rounded-full border flex items-center justify-center text-[10px] font-black"
           style={{ borderColor: "currentColor" }}
         >
           {num}
@@ -185,7 +185,7 @@ function AlertBlock({
         <p className="text-[13px] font-semibold mb-1" style={{ color: palette.color }}>
           {title}
         </p>
-        <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+        <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
           {body}
         </p>
       </div>
@@ -198,7 +198,7 @@ function SpecRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
       <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{label}</span>
-      <span className="text-[13.5px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+      <span className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
         {value}
       </span>
     </div>
@@ -452,6 +452,17 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (step === "done" || step === "confirm" || step === "error") handleClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, step]);
+
   function handleClose() {
     setStep("confirm");
     setPhase("approve");
@@ -533,7 +544,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={listing ? `Buy ${listing.collection} #${listing.tokenId.toString()}` : "Buy veNFT"}>
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -578,6 +589,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
               </div>
               <button
                 onClick={handleClose}
+                aria-label="Close"
                 className="p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={{ color: "var(--text-3)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
@@ -602,12 +614,12 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paymentSymbol}</span>
                 </p>
                 {priceUsd !== null && (
-                  <p className="text-[12.5px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+                  <p className="text-[13px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
                     &#8776; ${priceUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
                   </p>
                 )}
                 <div
-                  className="flex items-center gap-4 mt-3 pt-3 text-[12.5px]"
+                  className="flex items-center gap-4 mt-3 pt-3 text-[13px]"
                   style={{ borderTop: "1px solid var(--border-subtle)" }}
                 >
                   <span style={{ color: "var(--text-3)" }}>
@@ -651,7 +663,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}
                 >
                   <Award style={{ width: 13, height: 13, color: "#F59E0B", flexShrink: 0, marginTop: 2 }} />
-                  <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                  <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                     <span className="font-semibold" style={{ color: "#F59E0B" }}>Grant position.</span>{" "}
                     Vests until{" "}
                     <span className="font-semibold" style={{ color: "var(--text-1)" }}>
@@ -686,7 +698,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                         <button
                           onClick={() => setPayWithSwap(false)}
                           disabled={isBusy}
-                          className="flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-colors"
+                          className="flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors"
                           style={
                             !payWithSwap
                               ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
@@ -698,7 +710,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                         <button
                           onClick={() => setPayWithSwap(true)}
                           disabled={isBusy}
-                          className="flex-1 py-2 rounded-lg text-[12.5px] font-bold transition-colors inline-flex items-center justify-center gap-1.5"
+                          className="flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors inline-flex items-center justify-center gap-1.5"
                           style={
                             payWithSwap
                               ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }

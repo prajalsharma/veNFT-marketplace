@@ -51,7 +51,7 @@ function StatBar({
     <div className="flex flex-col gap-1" title={hint}>
       <span className="eyebrow" style={hint ? { cursor: "help" } : undefined}>{label}</span>
       <span
-        className={isNote ? "text-[13px] font-semibold leading-none" : "text-[19px] font-bold tabular-nums leading-none"}
+        className={isNote ? "text-[13px] font-semibold leading-none" : "text-[20px] font-bold tabular-nums leading-none"}
         style={{
           color: isNote ? "var(--text-3)" : color,
           fontVariantNumeric: "tabular-nums",
@@ -180,7 +180,7 @@ function ActiveFilterPill({ label, onRemove }: { label: string; onRemove: () => 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.88 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-bold"
+      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-bold"
       style={{
         background: "rgba(255,0,64,0.08)",
         border: "1px solid rgba(255,0,64,0.22)",
@@ -594,7 +594,7 @@ export default function MarketplaceClient() {
                   )}
                   <button
                     onClick={resetFilters}
-                    className="text-[12.5px] font-bold px-2.5 py-1.5 transition-colors"
+                    className="text-[13px] font-bold px-2.5 py-1.5 transition-colors"
                     style={{ color: "var(--text-3)" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; }}
@@ -619,18 +619,6 @@ export default function MarketplaceClient() {
               </span>{" "}
               {filters.activeOnly ? "active " : ""}listing{filteredListings.length !== 1 ? "s" : ""}
             </p>
-            <div className="h-3 w-px" style={{ background: "var(--border)" }} />
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest"
-              style={{
-                background: "rgba(16,185,129,0.08)",
-                border: "1px solid rgba(16,185,129,0.2)",
-                color: "#10B981",
-              }}
-            >
-              <ShieldCheckIcon style={{ width: 10, height: 10 }} />
-              Audit Passed
-            </div>
           </motion.div>
 
           {/* ── Grid ──

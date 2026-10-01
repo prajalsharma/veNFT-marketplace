@@ -99,7 +99,7 @@ function PresetChip({
       onClick={onClick}
       aria-pressed={active}
       title={hint}
-      className="h-10 px-3 rounded-xl border text-[12.5px] font-bold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
+      className="h-10 px-3 rounded-xl border text-[13px] font-bold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
       style={{
         background: active ? "rgba(255,0,64,0.10)" : "var(--bg-2)",
         borderColor: active ? "rgba(255,0,64,0.45)" : "var(--border)",
@@ -177,6 +177,14 @@ export function FilterSidebar({
     showAutoLockOnly: appliedAutoLock,
     showEndingSoon: appliedEndingSoon,
   });
+  // Escape dismisses the drawer without applying the draft, same as the backdrop.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
+
   useEffect(() => {
     if (isOpen) {
       setDraft({
@@ -245,6 +253,9 @@ export function FilterSidebar({
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
             className="fixed top-0 right-0 h-full w-full max-w-[340px] z-[95] flex flex-col overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filters"
             style={{
               background: "var(--bg-1)",
               borderLeft: "1px solid var(--border)",
@@ -265,7 +276,8 @@ export function FilterSidebar({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg transition-colors"
+                aria-label="Close filters"
+                className="p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={{ color: "var(--text-3)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; (e.currentTarget as HTMLElement).style.background = "var(--bg-3)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
@@ -347,7 +359,7 @@ export function FilterSidebar({
                       className="w-full"
                     />
                   </div>
-                  <div className="flex justify-between text-[10.5px] font-bold" style={{ color: "var(--text-4)" }}>
+                  <div className="flex justify-between text-[11px] font-bold" style={{ color: "var(--text-4)" }}>
                     <span>0%</span>
                     <span>25%</span>
                     <span>50%</span>
@@ -424,7 +436,7 @@ export function FilterSidebar({
                     >
                       <div>
                         <p className="text-sm font-bold">{toggle.label}</p>
-                        <p className="text-[11.5px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
+                        <p className="text-[12px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
                       </div>
                       <ToggleSwitch checked={toggle.val} onChange={toggle.set} />
                     </div>

@@ -36,7 +36,7 @@ function VezoLogotype() {
     >
       <VezoLogoMark size={24} />
       <span
-        className="text-[18px] sm:text-[19px]"
+        className="text-[18px] sm:text-[20px]"
         style={{ fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: "var(--text-1)", transition: "color 380ms ease" }}
       >
         vezo
@@ -128,7 +128,7 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
     const neg = t.change !== null && t.change < -0.05;
     return (
       <div className="flex items-center gap-2 px-6 shrink-0">
-        <span className="text-[12.5px] font-bold uppercase tracking-wide" style={{ color: "var(--text-2)" }}>{t.label}</span>
+        <span className="text-[13px] font-bold uppercase tracking-wide" style={{ color: "var(--text-2)" }}>{t.label}</span>
         <span
           className="text-[14px] font-bold tabular-nums"
           style={{ color: t.value === "—" ? "var(--text-3)" : "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
@@ -136,13 +136,13 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
           {t.value}
         </span>
         {pos && (
-          <span className="flex items-center gap-0.5 text-[11.5px] font-bold tabular-nums" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
+          <span className="flex items-center gap-0.5 text-[12px] font-bold tabular-nums" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
             <TrendingUp style={{ width: 12, height: 12 }} />
             {Math.abs(t.change!).toFixed(2)}%
           </span>
         )}
         {neg && (
-          <span className="flex items-center gap-0.5 text-[11.5px] font-bold tabular-nums" style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}>
+          <span className="flex items-center gap-0.5 text-[12px] font-bold tabular-nums" style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}>
             <TrendingDown style={{ width: 12, height: 12 }} />
             {Math.abs(t.change!).toFixed(2)}%
           </span>
@@ -162,7 +162,7 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
         style={{ color: "var(--text-3)" }}
       >
         <TrendingUp style={{ width: 12, height: 12 }} />
-        <span className="text-xs font-black uppercase tracking-widest">Live Prices</span>
+        <span className="text-xs font-semibold">Live prices</span>
         <div className="w-px h-3 ml-3" style={{ background: "var(--border)" }} />
       </div>
 
@@ -347,7 +347,7 @@ export function Header() {
             {/* Primary routes live in the bottom tab bar; this drawer is settings. */}
             <div className="px-4 py-5">
               <div className="space-y-3">
-                <p className="text-[9px] font-black uppercase tracking-widest px-1" style={{ color: "var(--text-3)" }}>Network</p>
+                <p className="text-[10px] font-black uppercase tracking-widest px-1" style={{ color: "var(--text-3)" }}>Network</p>
                 <div className="flex items-center rounded-full p-0.5 relative" style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}>
                   <motion.div className="absolute top-[3px] bottom-[3px] rounded-full z-0" animate={{ left: isTestnet ? "3px" : "50%", right: isTestnet ? "50%" : "3px", backgroundColor: isTestnet ? "rgba(251,191,36,0.14)" : "rgba(34,197,94,0.14)" }} transition={{ type: "spring", stiffness: 100, damping: 20 }} />
                   <button onClick={isTestnet ? undefined : handleNetworkSwitch} className="relative z-10 flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold cursor-pointer" style={{ color: isTestnet ? "#FBBF24" : "var(--text-3)" }}>
