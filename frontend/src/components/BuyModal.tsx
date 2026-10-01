@@ -18,6 +18,7 @@ import { createPortal } from "react-dom";
 import { X, ArrowRight, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info, Award } from "lucide-react";
 import { CountdownCompact } from "./CountdownTimer";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useReadContract, useWaitForTransactionReceipt, useAccount, useBalance, useConfig, usePublicClient } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
@@ -209,6 +210,7 @@ function SpecRow({ label, value }: { label: string; value: React.ReactNode }) {
 export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps) {
   const { contracts } = useNetwork();
   const { address: buyerAddress } = useAccount();
+  const { openConnectModal } = useConnectModal();
   const wagmiConfig = useConfig();
   const { buyListing, approveTokenForBuy, executeBuy, isPending, isConfirming } = useMarketplace();
   const prices = usePriceTicker();
@@ -859,8 +861,17 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 )}
               </AnimatePresence>
 
-              {/* CTA */}
-              {step === "done" ? (
+              {/* CTA. Disconnected visitors are asked to connect first: offering
+                  "Approve" to someone with no wallet is an action they cannot take. */}
+              {!buyerAddress && step === "confirm" ? (
+                <button
+                  onClick={() => openConnectModal?.()}
+                  className="btn-buy w-full h-12 rounded-xl text-[15px] font-semibold inline-flex items-center justify-center gap-2"
+                >
+                  <Wallet style={{ width: 16, height: 16 }} />
+                  Connect wallet to buy
+                </button>
+              ) : step === "done" ? (
                 <motion.button
                   onClick={handleClose}
                   whileTap={{ y: 1, scale: 0.985 }}

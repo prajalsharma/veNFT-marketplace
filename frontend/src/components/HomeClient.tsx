@@ -1,520 +1,318 @@
 "use client";
 
+// The landing page sells Vezo with the product itself. The hero's right side is
+// the live market, not an illustration: real listings, real prices, real
+// discounts, read from the same API the marketplace uses. Everything below
+// explains, in the order a newcomer asks, what they would be buying, how a
+// trade settles, and what the rules are. No figure on this page is invented.
+
 import Link from "next/link";
-import nextDynamic from "next/dynamic";
+import { useMemo } from "react";
+import { formatEther } from "viem";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { useNetwork } from "@/hooks/useNetwork";
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-} from "framer-motion";
-import {
-  ArrowRight,
-  Shield,
-  BarChart3,
-  MousePointer2,
-  TrendingUp,
-  ShieldCheck,
-} from "lucide-react";
-import { useRef, useCallback } from "react";
-import { VezoLogoMark } from "@/components/Header";
+import { useActiveListings, type Listing } from "@/hooks/useMarketplace";
+import { usePriceTicker } from "@/hooks/usePriceTicker";
+import { getPaymentTokenSymbol } from "@/lib/tokens";
+import { CountdownCompact } from "@/components/CountdownTimer";
+import { PositionGlyph, PriceValueBar } from "@/components/market/PositionVisuals";
+import { fmtAmount, DiscountText, GrantTag } from "@/components/VeNFTCard";
 
-const Hero3D = nextDynamic(() => import("@/components/Hero3D"), { ssr: false });
+const ease = [0.16, 1, 0.3, 1] as const;
 
-// ─── Magnetic button ──────────────────────────────────────────────────────────
-function MagneticButton({
-  children,
-  className,
-  href,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  href?: string;
-}) {
-  const ref = useRef<HTMLAnchorElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const springX = useSpring(x, { stiffness: 120, damping: 22 });
-  const springY = useSpring(y, { stiffness: 120, damping: 22 });
+function useLiveMarket() {
+  const { listings, isLoading } = useActiveListings();
+  return useMemo(() => {
+    const open = listings.filter((l) => l.active);
+    const byDiscount = [...open].sort((a, b) => Number((b.discountBps ?? -1n) - (a.discountBps ?? -1n)));
+    const priced = open.filter((l) => l.discountBps !== null);
+    const avg = priced.length
+      ? priced.reduce((s, l) => s + Number(l.discountBps), 0) / priced.length / 100
+      : null;
+    return { open, top: byDiscount.slice(0, 3), best: byDiscount[0] ?? null, avg, isLoading };
+  }, [listings, isLoading]);
+}
 
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect) return;
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    x.set((e.clientX - cx) * 0.22);
-    y.set((e.clientY - cy) * 0.22);
-  }, [x, y]);
+// ─── Hero: the live market ───────────────────────────────────────────────────
 
-  const onMouseLeave = useCallback(() => {
-    x.set(0);
-    y.set(0);
-  }, [x, y]);
+function MarketRow({ l }: { l: Listing }) {
+  return (
+    <Link
+      href="/marketplace"
+      className="market-row grid grid-cols-[auto_1fr_auto] items-center gap-x-4 px-5 py-4"
+      style={{ borderTop: "1px solid var(--hairline)" }}
+    >
+      <PositionGlyph collection={l.collection} lockEnd={l.lockEnd} size={36} />
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[14px] font-semibold truncate" style={{ color: "var(--text-1)" }}>
+            {l.collection} <span className="tabular-nums" style={{ color: "var(--text-3)" }}>#{l.tokenId.toString()}</span>
+          </span>
+          {l.isGrant && <GrantTag />}
+        </div>
+        <div className="mt-2 max-w-[180px]"><PriceValueBar discountBps={l.discountBps} /></div>
+      </div>
+      <div className="text-right">
+        <div className="text-[15px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>
+          {fmtAmount(l.price)} <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>{getPaymentTokenSymbol(l.paymentToken)}</span>
+        </div>
+        <div className="text-[13px] font-semibold"><DiscountText discountBps={l.discountBps} /></div>
+      </div>
+    </Link>
+  );
+}
 
+function LiveMarketPanel() {
+  const { open, top, avg, isLoading } = useLiveMarket();
   return (
     <motion.div
-      style={{ x: springX, y: springY }}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-      className="inline-block"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.15, ease }}
+      className="rounded-2xl overflow-hidden"
+      style={{ background: "var(--surface)", border: "1px solid var(--hairline)", boxShadow: "var(--shadow-lg)" }}
+      aria-label="Live market"
     >
-      <Link href={href || "#"} ref={ref as any} className={className}>
-        {children}
+      <div className="flex items-baseline justify-between px-5 pt-5 pb-4">
+        <div>
+          <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>Market now</p>
+          <p className="text-[12px] mt-0.5" style={{ color: "var(--text-3)" }}>Live listings, best discount first</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[20px] font-bold tabular-nums" style={{ color: avg !== null ? "var(--success)" : "var(--text-3)", letterSpacing: "-0.02em" }}>
+            {avg !== null ? `${avg.toFixed(1)}%` : "n/a"}
+          </p>
+          <p className="text-[12px]" style={{ color: "var(--text-3)" }}>average discount</p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        [0, 1, 2].map((i) => (
+          <div key={i} className="grid grid-cols-[36px_1fr_80px] items-center gap-x-4 px-5 py-4" style={{ borderTop: "1px solid var(--hairline)" }}>
+            <div className="w-9 h-9 rounded-full skeleton" />
+            <div className="space-y-2"><div className="h-3 w-28 skeleton rounded" /><div className="h-1.5 w-40 skeleton rounded-full" /></div>
+            <div className="h-4 w-20 skeleton rounded justify-self-end" />
+          </div>
+        ))
+      ) : top.length === 0 ? (
+        <div className="px-5 py-10 text-center" style={{ borderTop: "1px solid var(--hairline)" }}>
+          <p className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>No open listings right now</p>
+          <p className="text-[13px] mt-1" style={{ color: "var(--text-3)" }}>Holders list positions as they need liquidity.</p>
+        </div>
+      ) : (
+        top.map((l) => <MarketRow key={`${l.collection}-${l.tokenId}`} l={l} />)
+      )}
+
+      <Link
+        href="/marketplace"
+        className="market-row flex items-center justify-between px-5 py-3.5 text-[13px] font-semibold"
+        style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-2)" }}
+      >
+        {open.length > 0 ? `View all ${open.length} listing${open.length === 1 ? "" : "s"}` : "Open the market"}
+        <ArrowRight style={{ width: 14, height: 14 }} />
       </Link>
     </motion.div>
   );
 }
 
-// ─── Feature row ──────────────────────────────────────────────────────────────
-function FeatureRow({
-  icon: Icon,
-  title,
-  desc,
-  index,
-  accentColor,
-}: {
-  icon: any;
-  title: string;
-  desc: string;
-  index: number;
-  accentColor: string;
-}) {
+// ─── Worked example from the best live listing ───────────────────────────────
+
+function WorkedExample() {
+  const { best } = useLiveMarket();
+  const prices = usePriceTicker();
+  if (!best || best.discountBps === null) return null;
+  const sym = getPaymentTokenSymbol(best.paymentToken);
+  const lockedSym = best.collection === "veBTC" ? "BTC" : "MEZO";
+  const unit = prices[sym as "BTC" | "MEZO" | "MUSD"];
+  const usd = unit ? unit * parseFloat(formatEther(best.price)) : null;
+  const rows: [string, React.ReactNode][] = [
+    ["You pay", <>{fmtAmount(best.price)} {sym}{usd !== null && <span style={{ color: "var(--text-3)" }}> &#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>}</>],
+    ["The position holds", <>{fmtAmount(best.intrinsicValue)} {lockedSym}</>],
+    ["Discount", <DiscountText key="d" discountBps={best.discountBps} />],
+    ["Unlocks in", Number(best.lockEnd) === 0 ? "Permanent lock" : <CountdownCompact key="c" lockEnd={best.lockEnd} />],
+    ["Voting power", parseFloat(formatEther(best.votingPower)).toLocaleString("en-US", { maximumFractionDigits: 2 })],
+  ];
   return (
-    <motion.div
-      initial={{ x: 20 }}
-      whileInView={{ x: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-start gap-6 py-8"
-      style={{ borderBottom: "1px solid var(--border-subtle)" }}
-    >
-      <motion.div
-        className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center mt-0.5"
-        style={{
-          background: `${accentColor}10`,
-          border: `1px solid ${accentColor}22`,
-          boxShadow: `0 0 24px ${accentColor}0e`,
-        }}
-        whileHover={{ scale: 1.1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      >
-        <Icon style={{ color: accentColor, width: 20, height: 20 }} />
-      </motion.div>
-      <div className="flex-1 min-w-0">
-        <h4
-          className="font-semibold text-[20px] mb-2"
-          style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}
-        >
-          {title}
-        </h4>
-        <p className="text-[16px] leading-[1.6]" style={{ color: "var(--text-2)", maxWidth: "58ch", textWrap: "pretty" }}>
-          {desc}
+    <div className="rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--hairline)" }}>
+      <div className="flex items-center gap-3 px-5 py-4">
+        <PositionGlyph collection={best.collection} lockEnd={best.lockEnd} size={32} />
+        <p className="text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>
+          {best.collection} #{best.tokenId.toString()}
+          <span className="font-normal" style={{ color: "var(--text-3)" }}>, listed now</span>
         </p>
       </div>
-    </motion.div>
-  );
-}
-
-// ─── Stat chip ────────────────────────────────────────────────────────────────
-function StatChip({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="eyebrow" style={{ color: "var(--text-3)" }}>{label}</span>
-      <span
-        className="font-bold tabular-nums"
-        style={{
-          fontSize: "clamp(1rem, 1.8vw, 1.3rem)",
-          letterSpacing: "-0.035em",
-          color,
-          fontVariantNumeric: "tabular-nums",
-        }}
-      >
-        {value}
-      </span>
+      <dl>
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between gap-4 px-5 py-3" style={{ borderTop: "1px solid var(--hairline)" }}>
+            <dt className="text-[14px]" style={{ color: "var(--text-3)" }}>{k}</dt>
+            <dd className="text-[14px] font-semibold tabular-nums text-right" style={{ color: "var(--text-1)" }}>{v}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
 
-// ─── Trust pill ────────────────────────────────────────────────────────────────
-function TrustPill({ label, color, large }: { label: string; color: string; large?: boolean }) {
-  return (
-    <div
-      className={
-        large
-          ? "inline-flex items-center gap-2.5 px-5 py-3 rounded-full text-[15px] font-semibold"
-          : "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold"
-      }
-      style={{
-        background: `${color}0e`,
-        border: `1px solid ${color}20`,
-        color: large ? "var(--text-1)" : "var(--text-2)",
-      }}
-    >
-      <span className={`${large ? "w-2 h-2" : "w-1.5 h-1.5"} rounded-full shrink-0`} style={{ background: color }} />
-      {label}
-    </div>
-  );
-}
+// ─── Page ────────────────────────────────────────────────────────────────────
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+const STEPS = [
+  {
+    title: "The seller lists",
+    body: "They set a price in BTC, MEZO or MUSD and approve the marketplace. The veNFT stays in their wallet, still voting and still earning, and they can cancel at any time.",
+  },
+  {
+    title: "A buyer accepts the price",
+    body: "Or makes an offer instead. Offers are approvals too, so the buyer's funds stay in their own wallet until the seller accepts.",
+  },
+  {
+    title: "One transaction settles both sides",
+    body: "The contract checks ownership, approval and expiry, moves the veNFT to the buyer and the payment to the seller together. If any check fails, nothing moves.",
+  },
+];
+
+const RULES: [string, string][] = [
+  ["Protocol fee", "1% of the sale, deducted from the seller's proceeds. Buyers pay the listed price."],
+  ["Fee limits", "Hard-capped at 5% in the contract. Any change waits behind a 48-hour on-chain timelock."],
+  ["Custody", "None. Listings are approvals, bids are approvals, and no contract ever holds a position between trades."],
+  ["Audit", "The contracts were audited by the Mezo team before mainnet launch."],
+];
+
 export default function HomeClient() {
   const { network } = useNetwork();
 
   return (
-    <div className="relative min-h-[100dvh]">
-
-      {/* ══ HERO ══ */}
-      <section className="relative pt-24 pb-14 lg:pt-40 lg:pb-24 px-5 md:px-10 lg:px-16 overflow-hidden">
-
-        {/* Subtle grid */}
-        <div aria-hidden className="absolute inset-0 pointer-events-none grid-overlay" />
-
-        <div className="max-w-[1280px] mx-auto relative" style={{ zIndex: 1 }}>
-          <div className="grid lg:grid-cols-[1fr_460px] xl:grid-cols-[1fr_500px] gap-16 xl:gap-24 items-center">
-
-            {/* ── Left: headline + CTA ── */}
-            <motion.div>
-
-              <motion.p
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-6 text-[13px] font-semibold"
-                style={{ color: "var(--text-3)" }}
-              >
-                Live on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
-              </motion.p>
-
-              {/* Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 28 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="display-xl mb-6"
-                style={{ color: "var(--text-1)" }}
-              >
-                The liquidity<br />
-                layer for locked<br />
-                <span style={{ color: "#FF0040" }}>Bitcoin.</span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="text-base leading-relaxed mb-10"
-                style={{ color: "var(--text-2)", maxWidth: "46ch" }}
-              >
-                Buy and sell vote-escrowed BTC and MEZO positions.
-                Governance NFTs at market-determined discounts. Atomic, escrowless, on Mezo.
-              </motion.p>
-
-              {/* CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-wrap gap-3 mb-14"
-              >
-                <MagneticButton href="/marketplace" className="btn-primary text-sm gap-2">
-                  Enter Marketplace
-                  <ArrowRight style={{ width: 14, height: 14 }} />
-                </MagneticButton>
-                <MagneticButton href="https://docs.vezo.exchange" className="btn-outline text-sm">
-                  Read the Docs
-                </MagneticButton>
-                <a
-                  href="https://dune.com/vezo/vezo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-outline text-sm gap-2"
-                >
-                  <BarChart3 style={{ width: 14, height: 14 }} />
-                  Analytics
-                </a>
-              </motion.div>
-
-              {/* Stats row */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.55, duration: 0.5 }}
-                className="flex flex-wrap gap-x-8 gap-y-5 pt-8"
-                style={{ borderTop: "1px solid var(--border-subtle)" }}
-              >
-                <StatChip label="Network" value="Mezo EVM" color="var(--text-1)" />
-                <div className="w-px self-stretch" style={{ background: "var(--border-subtle)" }} />
-                <StatChip label="Assets" value="veBTC · veMEZO" color="var(--text-1)" />
-                <div className="w-px self-stretch" style={{ background: "var(--border-subtle)" }} />
-                <StatChip label="Protocol fee" value="1.00%" color="var(--text-2)" />
-                <div className="w-px self-stretch" style={{ background: "var(--border-subtle)" }} />
-                <StatChip label="Settlement" value="Atomic" color="var(--text-1)" />
-              </motion.div>
-            </motion.div>
-
-            {/* ── Right: the Vezo mark as a 3D object ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden lg:block"
-            >
-              <Hero3D />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ TRUST STRIP ══ */}
-      <section className="py-10 px-5 md:px-10 lg:px-16">
-        <div className="max-w-[1280px] mx-auto">
-          <motion.div
-            initial={{ y: 12 }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-wrap items-center justify-center gap-4"
+    <div className="px-5 md:px-10 lg:px-16">
+      {/* ══ Hero ══ */}
+      <section className="max-w-[1320px] mx-auto pt-32 md:pt-40 pb-20 md:pb-28 grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-12 lg:gap-16 items-center">
+        <div>
+          <motion.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease }}
+            className="text-[13px] font-semibold mb-5"
+            style={{ color: "var(--text-3)" }}
           >
-            {[
-              "NFT stays in your wallet",
-              "Rewards continue until sale",
-              "No whitelist or curation",
-              "Audited smart contracts",
-              "Atomic settlement",
-            ].map((label) => (
-              <TrustPill key={label} label={label} color="var(--text-3)" large />
-            ))}
+            The veNFT market on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
+          </motion.p>
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.05, ease }}
+            className="font-bold mb-6"
+            style={{ fontSize: "clamp(2.5rem, 5.2vw, 4.25rem)", lineHeight: 1.02, letterSpacing: "-0.04em", color: "var(--text-1)", textWrap: "balance" }}
+          >
+            Buy locked Bitcoin positions for less than they hold.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.1, ease }}
+            className="text-[17px] leading-[1.6] mb-8"
+            style={{ color: "var(--text-2)", maxWidth: "52ch", textWrap: "pretty" }}
+          >
+            Vezo is where veBTC and veMEZO holders who need liquidity sell their lock.
+            Buyers get the whole position, its voting power and its rewards, at a
+            discount set by the market. Every trade settles in a single transaction.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.15, ease }}
+            className="flex flex-wrap gap-3"
+          >
+            <Link href="/marketplace" className="btn-buy h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+              Browse the market
+              <ArrowRight style={{ width: 16, height: 16 }} />
+            </Link>
+            <Link href="/my-listings" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center">
+              Sell a position
+            </Link>
           </motion.div>
         </div>
+        <LiveMarketPanel />
       </section>
 
-      {/* ══ FEATURES ══ */}
-      <section className="py-20 px-5 md:px-10 lg:px-16 relative">
-        <div className="max-w-[1280px] mx-auto mb-14">
-          <div className="rule-fade" />
-        </div>
-
-        {/* Near-even split. The old [1fr_560px] with gap-32 left the heading
-            stranded on the far left and the rows on the far right, with a dead
-            band down the middle at desktop widths. */}
-        <div className="max-w-[1280px] mx-auto grid lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)] gap-12 xl:gap-16 items-start">
-
-          {/* Left sticky label */}
-          <div className="lg:sticky lg:top-32">
-            <motion.div
-              initial={{ y: 20 }}
-              whileInView={{ y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <h2 className="display-lg mb-6" style={{ color: "var(--text-1)" }}>
-                Built on<br />security &<br />fairness.
-              </h2>
-              <p className="text-[16px] leading-[1.65] mb-8" style={{ color: "var(--text-2)", maxWidth: "34ch", textWrap: "pretty" }}>
-                The Mezo ecosystem needed a way to exit locked positions without surrendering voting rights until the final moment. Vezo makes that possible.
-              </p>
-
-              {/* Mark repeat — small */}
-              <motion.div
-                initial={{ scale: 0.9 }}
-                whileInView={{ scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-8"
-              >
-                <VezoLogoMark size={38} />
-              </motion.div>
-
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: "NFT stays in your wallet", color: "#FF0040" },
-                  { label: "Rewards continue until sale", color: "#F7931A" },
-                  { label: "No whitelist or curation", color: "#10B981" },
-                ].map((m) => (
-                  <div
-                    key={m.label}
-                    className="flex items-center gap-2.5 text-[14px] font-semibold"
-                    style={{ color: "var(--text-2)" }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: m.color }} />
-                    {m.label}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right feature rows */}
-          <div>
-            {[
-              {
-                icon: Shield,
-                title: "Escrowless by design",
-                desc: "Your NFT stays in your wallet. Voting rights and reward accrual continue until the exact block of sale.",
-                color: "#FF0040",
-              },
-              {
-                icon: BarChart3,
-                title: "Real-time intrinsic value",
-                desc: "Each listing calculates locked BTC value accounting for voting power decay across veBTC and veMEZO lock structures.",
-                color: "#F7931A",
-              },
-              {
-                icon: TrendingUp,
-                title: "Market-driven price discovery",
-                desc: "Discounts are determined entirely by supply and demand. No oracle manipulation, no admin pricing.",
-                color: "#10B981",
-              },
-              {
-                icon: MousePointer2,
-                title: "Open market, no gatekeeping",
-                desc: "Any holder can list. Price discovery is driven by live bids and asks, with no whitelists or curation.",
-                color: "#4A90E2",
-              },
-            ].map((f, i) => (
-              <FeatureRow key={f.title} {...f} index={i} accentColor={f.color} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ HOW IT WORKS ══ */}
-      <section className="py-20 px-5 md:px-10 lg:px-16">
-        <div className="max-w-[1280px] mx-auto">
-          <motion.div
-            initial={{ y: 16 }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center mb-14"
-          >
-            <h2 className="display-lg mb-4" style={{ color: "var(--text-1)" }}>
-              Everything you can do on Vezo.
-            </h2>
-            <p className="text-[16px] leading-[1.65] mx-auto" style={{ color: "var(--text-2)", maxWidth: "58ch", textWrap: "pretty" }}>
-              Buy, sell, bid, or pay in any token. Every action settles atomically on-chain, and you keep custody until the trade completes.
+      {/* ══ What you are buying ══ */}
+      <section className="max-w-[1320px] mx-auto py-20 md:py-28 grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-12 lg:gap-20 items-start" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <div className="lg:sticky lg:top-32">
+          <h2 className="font-bold mb-5" style={{ fontSize: "clamp(1.9rem, 3.2vw, 2.6rem)", lineHeight: 1.08, letterSpacing: "-0.035em", color: "var(--text-1)", textWrap: "balance" }}>
+            Why a locked position trades below its value
+          </h2>
+          <div className="space-y-4 text-[16px] leading-[1.7]" style={{ color: "var(--text-2)", maxWidth: "54ch" }}>
+            <p>
+              Locking BTC or MEZO on Mezo mints a veNFT: a position that votes on
+              emissions and earns rewards until the lock ends, when the tokens can
+              be withdrawn. Until then they cannot be.
             </p>
-          </motion.div>
-
-          <div
-            className="grid sm:grid-cols-2 gap-x-14 gap-y-10 max-w-[960px] mx-auto"
-          >
-            {[
-              {
-                title: "Buy",
-                color: "#FF0040",
-                desc: "Purchase a listed veBTC or veMEZO at a market-set discount to its locked value.",
-                detail: "NFT and payment swap in one atomic transaction.",
-              },
-              {
-                title: "Sell",
-                color: "#F7931A",
-                desc: "List your position at any price in BTC, MEZO, or MUSD. It stays in your wallet until it sells.",
-                detail: "Escrowless. Cancel anytime, no penalty.",
-              },
-              {
-                title: "Bid",
-                color: "#10B981",
-                desc: "Don't see your price? Make an offer on any veNFT and the owner accepts it on-chain.",
-                detail: "Your funds stay put until a bid is accepted.",
-              },
-              {
-                title: "Pay in any token",
-                color: "#4A90E2",
-                desc: "Pay with BTC even when a listing is priced in MUSD. Vezo routes the swap for you.",
-                detail: "Converted through Mezo's on-chain DEX automatically.",
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={item.title}
-                initial={{ y: 14 }}
-                whileInView={{ y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
-                className="grid grid-cols-[14px_1fr] gap-x-4"
-              >
-                <span className="w-2 h-2 rounded-full mt-[9px]" style={{ background: item.color }} />
-                <div>
-                  <h3 className="text-[20px] font-bold mb-2" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
-                    {item.title}
-                  </h3>
-                  <p className="text-[16px] leading-[1.6] mb-2" style={{ color: "var(--text-2)", textWrap: "pretty" }}>
-                    {item.desc}
-                  </p>
-                  <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-3)" }}>
-                    {item.detail}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Atomic / escrowless footnote */}
-          <motion.div
-            initial={{ y: 12 }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-start gap-3 mt-6 p-5 rounded-2xl"
-            style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
-          >
-            <ShieldCheck style={{ width: 18, height: 18, color: "#10B981", flexShrink: 0, marginTop: 1 }} />
-            <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-              <span className="font-semibold" style={{ color: "var(--text-1)" }}>Escrowless and atomic.</span>{" "}
-              Sellers keep custody until the moment of sale. The NFT transfers first, then payment routes, in a single transaction. If anything is off, the whole trade reverts. No custody, no counterparty risk.
+            <p>
+              A holder who needs that capital now has two choices: wait, or sell the
+              lock. The discount is the price of not waiting. The buyer pays less
+              than the position holds, and in return takes on the wait along with
+              everything the position earns along the way.
             </p>
-          </motion.div>
+            <p>
+              The bar on every listing shows that relationship directly: the filled
+              part is what you pay, the space after it is the discount.
+            </p>
+          </div>
         </div>
+        <WorkedExample />
       </section>
 
-      {/* ══ CTA ══ */}
-      <section className="py-20 px-5 md:px-10 lg:px-16">
-        <div className="max-w-[1280px] mx-auto">
-          <motion.div
-            initial={{ y: 26 }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-3xl p-12 md:p-16 relative overflow-hidden"
-            style={{
-              background: "var(--bg-1)",
-              border: "1px solid var(--border-subtle)",
-              boxShadow: "var(--shadow-lg)",
-            }}
-          >
-            <div className="relative z-10 max-w-lg">
-              <VezoLogoMark size={50} />
-              <h2 className="display-lg mt-7 mb-4" style={{ color: "var(--text-1)" }}>
-                Join the Mezo<br />governance market.
-              </h2>
-              <p className="text-sm leading-relaxed mb-8" style={{ color: "var(--text-2)", maxWidth: "44ch" }}>
-                Whether you want to exit a locked position or acquire voting exposure to Bitcoin rewards, Vezo is where that trade happens.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <MagneticButton href="/marketplace" className="btn-primary text-sm gap-2">
-                  Start trading
-                  <ArrowRight style={{ width: 14, height: 14 }} />
-                </MagneticButton>
-                <a
-                  href="https://dune.com/vezo/vezo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-outline text-sm gap-2"
-                >
-                  <BarChart3 style={{ width: 14, height: 14 }} />
-                  Analytics
-                </a>
-                <a
-                  href="https://github.com/prajalsharma/veNFT-marketplace"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-outline text-sm"
-                >
-                  Source code
-                </a>
-              </div>
+      {/* ══ How a trade settles: a real sequence, so it is numbered ══ */}
+      <section className="max-w-[1320px] mx-auto py-20 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <h2 className="font-bold mb-12 md:mb-16" style={{ fontSize: "clamp(1.9rem, 3.2vw, 2.6rem)", lineHeight: 1.08, letterSpacing: "-0.035em", color: "var(--text-1)", maxWidth: "20ch" }}>
+          How a trade settles
+        </h2>
+        <ol className="grid md:grid-cols-3 gap-10 md:gap-8">
+          {STEPS.map((s, i) => (
+            <li key={s.title} className="pt-6" style={{ borderTop: "2px solid var(--text-1)" }}>
+              <p className="text-[13px] font-semibold tabular-nums mb-3" style={{ color: "var(--text-3)" }}>Step {i + 1}</p>
+              <h3 className="text-[19px] font-bold mb-3" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>{s.title}</h3>
+              <p className="text-[15px] leading-[1.65]" style={{ color: "var(--text-2)" }}>{s.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ══ The rules ══ */}
+      <section className="max-w-[1320px] mx-auto py-20 md:py-28 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-12 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <div>
+          <h2 className="font-bold mb-4" style={{ fontSize: "clamp(1.9rem, 3.2vw, 2.6rem)", lineHeight: 1.08, letterSpacing: "-0.035em", color: "var(--text-1)" }}>
+            The rules, in full
+          </h2>
+          <p className="text-[16px] leading-[1.65]" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
+            Short enough to read before your first trade. The{" "}
+            <a href="https://docs.vezo.exchange" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>
+              documentation
+            </a>{" "}
+            covers the contracts line by line.
+          </p>
+        </div>
+        <dl>
+          {RULES.map(([k, v]) => (
+            <div key={k} className="grid sm:grid-cols-[160px_1fr] gap-x-8 gap-y-1 py-5" style={{ borderTop: "1px solid var(--hairline)" }}>
+              <dt className="text-[15px] font-semibold" style={{ color: "var(--text-1)" }}>{k}</dt>
+              <dd className="text-[15px] leading-[1.6]" style={{ color: "var(--text-2)" }}>{v}</dd>
             </div>
-          </motion.div>
+          ))}
+        </dl>
+      </section>
+
+      {/* ══ Close ══ */}
+      <section className="max-w-[1320px] mx-auto py-20 md:py-24 flex flex-col md:flex-row md:items-end justify-between gap-8" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <h2 className="font-bold" style={{ fontSize: "clamp(1.9rem, 3.2vw, 2.6rem)", lineHeight: 1.08, letterSpacing: "-0.035em", color: "var(--text-1)", maxWidth: "18ch" }}>
+          See what is listed right now.
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/marketplace" className="btn-buy h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+            Browse the market
+            <ArrowRight style={{ width: 16, height: 16 }} />
+          </Link>
+          <a href="https://dune.com/vezo/vezo" target="_blank" rel="noopener noreferrer" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center">
+            Market data on Dune
+          </a>
         </div>
       </section>
     </div>

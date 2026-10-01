@@ -518,8 +518,8 @@ export default function MyListingsClient() {
   if (!isConnected) return <ConnectPrompt />;
 
   return (
-    <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-5 md:px-10 lg:px-16">
-      <div className="max-w-[1280px] mx-auto">
+    <div className="min-h-[100dvh] pt-28 md:pt-36 pb-20 px-5 md:px-10 lg:px-16">
+      <div className="max-w-[1320px] mx-auto">
 
         {/* ── Header ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
@@ -528,11 +528,11 @@ export default function MyListingsClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="display-lg mb-2" style={{ color: "var(--text-1)" }}>
-              Your positions.
+            <h1 className="text-[32px] md:text-[36px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.035em" }}>
+              My listings
             </h1>
-            <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
-              Monitor and manage your active sell orders and unlisted positions.
+            <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
+              Positions you have listed, and the ones in your wallet you could list.
             </p>
           </motion.div>
 

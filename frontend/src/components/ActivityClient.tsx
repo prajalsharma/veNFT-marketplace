@@ -12,9 +12,10 @@
   ✓ Tinted shadows (hue-matched, not generic gray-black)
 */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useActivityFeed } from "@/hooks/useActivityFeed";
+import { MetricStrip } from "@/components/market/MarketParts";
 import { useListingOutcomes, OUTCOME_LABEL, OUTCOME_HELP, type ListingOutcome } from "@/hooks/useListingOutcomes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -202,9 +203,18 @@ export default function ActivityClient() {
 
   const outcomes = useListingOutcomes(unresolvedIds);
 
+  // Event-type filter. Counts come from the full feed so the tabs describe it.
+  const [kind, setKind] = useState<"all" | "sale" | "listed" | "cancelled">("all");
+  const counts = useMemo(() => ({
+    sale: events.filter((e) => e.type === "sale").length,
+    listed: events.filter((e) => e.type === "listed").length,
+    cancelled: events.filter((e) => e.type === "cancelled").length,
+  }), [events]);
+  const shown = useMemo(() => (kind === "all" ? events : events.filter((e) => e.type === kind)), [events, kind]);
+
   return (
-    <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-5 md:px-10 lg:px-16">
-      <div className="max-w-[1280px] mx-auto">
+    <div className="min-h-[100dvh] pt-28 md:pt-36 pb-20 px-5 md:px-10 lg:px-16">
+      <div className="max-w-[1320px] mx-auto">
 
         {/* ── Header — left-aligned, asymmetric ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
@@ -213,12 +223,11 @@ export default function ActivityClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="display-lg mb-2" style={{ color: "var(--text-1)" }}>
-              Global activity.
+            <h1 className="text-[32px] md:text-[36px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.035em" }}>
+              Activity
             </h1>
-            <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
-              Real-time trading and listing history on Mezo{" "}
-              {network === "testnet" ? "Testnet" : "Mainnet"}.
+            <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
+              Every listing, sale and cancellation on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}, read from the chain.
             </p>
           </motion.div>
 
@@ -242,6 +251,24 @@ export default function ActivityClient() {
             </a>
           </motion.div>
         </div>
+
+        {isDeployed && !isLoading && !error && events.length > 0 && (
+          <div className="mb-6 space-y-4">
+            <MetricStrip
+              metrics={[
+                { label: "Sales", value: String(counts.sale), note: "settled on-chain" },
+                { label: "Listings", value: String(counts.listed), note: "positions listed" },
+                { label: "Cancellations", value: String(counts.cancelled), note: "withdrawn by sellers" },
+                { label: "Events shown", value: String(events.length), note: "most recent first" },
+              ]}
+            />
+            <div className="segmented" role="group" aria-label="Event type">
+              {([["all","All"],["sale","Sales"],["listed","Listings"],["cancelled","Cancellations"]] as const).map(([k,label]) => (
+                <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>{label}</button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Content area ── */}
         {!isDeployed ? (
@@ -315,7 +342,7 @@ export default function ActivityClient() {
                 </thead>
                 <tbody>
                   <AnimatePresence>
-                    {events.map((activity, index) => (
+                    {shown.map((activity, index) => (
                       <motion.tr
                         key={`${activity.transactionHash}-${index}`}
                         initial={{ opacity: 0, y: 6 }}
@@ -468,7 +495,7 @@ export default function ActivityClient() {
 
           {/* Mobile — stacked cards */}
           <div className="md:hidden space-y-2.5">
-            {events.map((activity, index) => (
+            {shown.map((activity, index) => (
               <MobileActivityCard key={`m-${activity.transactionHash}-${index}`} activity={activity} explorer={contracts.explorer} outcome={activity.type === "listed" ? outcomes.get(activity.listingId.toString()) : undefined} />
             ))}
           </div>

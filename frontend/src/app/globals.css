@@ -881,3 +881,136 @@ select option {
 /* Slower marquee for the wider desktop ticker; pause while hovered */
 .marquee-slow { animation-duration: 30s; }
 .marquee-hover-pause:hover .marquee-track { animation-play-state: paused; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Vezo marketplace system (Oct 2026 redesign)
+
+   One accent (Vezo red) reserved for brand and the single primary action per
+   view. Green means "below value" and nothing else. Prices use Outfit's
+   tabular figures with tight tracking; everything secondary recedes to text-3.
+   Radius: 8px controls, 12px objects, 16px panels. Motion: 160–320ms on the
+   house curve, transform and opacity only.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --success: #10B981;
+  --surface: var(--bg-1);
+  --surface-hover: #121212;
+  --hairline: rgba(255,255,255,0.08);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+.light {
+  --success: #0E9F6E;
+  --surface-hover: #FFFFFF;
+  --hairline: rgba(0,0,0,0.08);
+}
+
+/* Prices: the most important text on the page */
+.price-figure {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A listing: a flat object on the page, lifted only when touched */
+.position-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  transition:
+    transform 220ms var(--ease-out),
+    border-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out),
+    background 220ms var(--ease-out);
+}
+@media (hover: hover) {
+  .position-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+    box-shadow: var(--shadow-md);
+  }
+  .position-card:hover .glyph-arc { stroke-width: 5; }
+}
+.glyph-arc { transition: stroke-width 220ms var(--ease-out), stroke-dasharray 600ms var(--ease-out); }
+.bar-fill { transform-origin: left; animation: bar-in 700ms var(--ease-out) both; }
+@keyframes bar-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Primary action: solid ink, not a gradient, with a physical press */
+.btn-buy {
+  background: var(--text-1);
+  color: var(--bg);
+  transition: transform 120ms var(--ease-out), opacity 160ms var(--ease-out);
+}
+.btn-buy:hover:not(:disabled) { opacity: 0.88; }
+.btn-buy:active:not(:disabled) { transform: scale(0.98); }
+.btn-buy:disabled { background: var(--bg-2); color: var(--text-3); }
+
+.btn-quiet {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--hairline);
+  transition: color 160ms var(--ease-out), border-color 160ms var(--ease-out), transform 120ms var(--ease-out);
+}
+.btn-quiet:hover { color: var(--text-1); border-color: var(--border-strong); }
+.btn-quiet:active { transform: scale(0.98); }
+
+/* Metric strip: one bordered object divided by hairlines, fixed geometry */
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(var(--metric-cols, 4), minmax(0, 1fr));
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.metric-cell {
+  display: grid;
+  grid-template-rows: 16px 32px 16px; /* label · value · note, identical in every cell */
+  row-gap: 6px;
+  padding: 16px 20px;
+  min-width: 0;
+}
+.metric-cell + .metric-cell { border-left: 1px solid var(--hairline); }
+@media (max-width: 767px) {
+  .metric-strip { --metric-cols: 2; }
+  .metric-cell:nth-child(3) { border-left: 0; }
+  .metric-cell:nth-child(n + 3) { border-top: 1px solid var(--hairline); }
+}
+
+/* Segmented control used by filters and the view toggle */
+.segmented { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--bg-2); }
+.segmented button {
+  height: 32px; padding: 0 12px; border-radius: 7px;
+  font-size: 13px; font-weight: 600; color: var(--text-3);
+  transition: color 160ms var(--ease-out), background 160ms var(--ease-out);
+}
+.segmented button[aria-pressed="true"] { background: var(--surface); color: var(--text-1); box-shadow: var(--shadow-xs); }
+.segmented button:hover:not([aria-pressed="true"]) { color: var(--text-1); }
+
+/* Table view rows */
+.position-row { transition: background 160ms var(--ease-out); }
+.position-row:hover { background: var(--bg-2); }
+
+/* Route transitions: content settles in, never blocks navigation */
+.route-enter { animation: route-in 280ms var(--ease-out) both; }
+@keyframes route-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .position-card, .btn-buy, .btn-quiet, .glyph-arc { transition: none; }
+  .position-card:hover { transform: none; }
+  .bar-fill, .route-enter { animation: none; }
+}
+
+.rail-check {
+  width: 16px; height: 16px; border-radius: 4px; cursor: pointer;
+  accent-color: var(--text-1);
+}
+
+.market-row { transition: background 160ms var(--ease-out); }
+.market-row:hover { background: var(--bg-2); }
+
+/* Metric figures scale with their cell so a value like "11.5k MEZO" never truncates */
+.metric-value { font-size: clamp(18px, 1.9vw, 24px); }
+@media (max-width: 767px) { .metric-value { font-size: 22px; } }

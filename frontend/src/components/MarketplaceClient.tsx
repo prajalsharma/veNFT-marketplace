@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { formatEther } from "viem";
 import { VeNFTCard, VeNFTCardSkeleton } from "@/components/VeNFTCard";
+import { MetricStrip, FilterRail, ViewToggle, ListingsTable, type MarketView } from "@/components/market/MarketParts";
 import { FilterSidebar, FilterButton, FilterState } from "@/components/FilterSidebar";
 import { BuyModal } from "@/components/BuyModal";
 import { useActiveListings, Listing } from "@/hooks/useMarketplace";
@@ -296,6 +297,17 @@ export default function MarketplaceClient() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeBuyListing, setActiveBuyListing] = useState<Listing | null>(null);
   const [purchasedIds, setPurchasedIds] = useState<Set<number>>(new Set());
+  const [view, setViewState] = useState<MarketView>("grid");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("vezo-market-view");
+      if (v === "grid" || v === "table") setViewState(v);
+    } catch { /* storage unavailable */ }
+  }, []);
+  const setView = (v: MarketView) => {
+    setViewState(v);
+    try { localStorage.setItem("vezo-market-view", v); } catch { /* ignore */ }
+  };
 
   function setFilter<K extends keyof FilterState>(key: K, val: FilterState[K]) {
     setFilters((prev) => ({ ...prev, [key]: val }));
@@ -460,227 +472,190 @@ export default function MarketplaceClient() {
         }}
       />
 
-      <div className="min-h-[100dvh] pt-24 md:pt-32 pb-20 px-5 md:px-10 lg:px-16">
-        <div className="max-w-[1280px] mx-auto">
+      <div className="min-h-[100dvh] pt-28 md:pt-36 pb-20 px-5 md:px-10 lg:px-16">
+        <div className="max-w-[1320px] mx-auto">
 
-          {/* ── Page header — left-aligned, asymmetric two-part ── */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <h1
-                className="display-lg mb-2"
-                style={{ color: "var(--text-1)" }}
-              >
-                Secondary liquidity.
+          {/* ── Market header: what this is, then the state of the market ── */}
+          <header className="mb-8">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-5">
+              <h1 className="text-[32px] md:text-[36px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.035em" }}>
+                Market
               </h1>
-              <p
-                className="text-[15px] leading-relaxed"
-                style={{ color: "var(--text-2)", maxWidth: "52ch" }}
-              >
-                Acquire locked governance positions from the Mezo ecosystem at market rates.
+              <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
+                Locked veBTC and veMEZO positions, sold below the value they hold.
               </p>
-            </motion.div>
+            </div>
+            <MetricStrip
+              metrics={[
+                {
+                  label: "Listed",
+                  value: listingsLoading ? "…" : String(searchableListings.filter((l) => l.active).length),
+                  note: "open positions",
+                },
+                {
+                  label: "veBTC floor",
+                  value: marketStats.veBTCFloor === "No listings" ? "None listed" : marketStats.veBTCFloor,
+                  note: "lowest ask",
+                  tone: marketStats.veBTCFloor === "No listings" ? "muted" : "default",
+                  hint: "The cheapest veBTC position listed right now, compared across payment currencies at live rates.",
+                },
+                {
+                  label: "veMEZO floor",
+                  value: marketStats.veMEZOFloor === "No listings" ? "None listed" : marketStats.veMEZOFloor,
+                  note: "lowest ask",
+                  tone: marketStats.veMEZOFloor === "No listings" ? "muted" : "default",
+                  hint: "The cheapest veMEZO position listed right now, compared across payment currencies at live rates.",
+                },
+                {
+                  label: "Average discount",
+                  value: marketStats.avgDiscount === "No listings" ? "None listed" : marketStats.avgDiscount,
+                  note: "below intrinsic value",
+                  tone: marketStats.avgDiscount === "No listings" || marketStats.avgDiscount === "—" ? "muted" : "positive",
+                  hint: "Average discount to intrinsic value across every open listing, grant positions included.",
+                },
+              ]}
+            />
+          </header>
 
-            {/* Stats — tabular-nums, right-side */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="flex items-end gap-8 pb-1"
-            >
-              <StatBar label="veBTC Floor" value={marketStats.veBTCFloor} color="#F7931A" hint="The cheapest veBTC position listed right now, compared across payment currencies at live rates." />
-              <StatBar label="veMEZO Floor" value={marketStats.veMEZOFloor} color="#4A90E2" hint="The cheapest veMEZO position listed right now, compared across payment currencies at live rates." />
-              <StatBar
-                label={marketStats.listingCount > 0 ? `Avg Discount (${marketStats.listingCount} listings)` : "Avg Discount"}
-                value={marketStats.avgDiscount}
-                hint="Average discount to intrinsic value across every open listing, grant positions included."
-                color="#10B981"
+          <div className="grid lg:grid-cols-[232px_minmax(0,1fr)] gap-x-10 items-start">
+            {/* ── Filter rail (wide screens) ── */}
+            <div className="hidden lg:block sticky top-[124px]">
+              <FilterRail
+                filters={filters}
+                setFilter={setFilter}
+                onReset={resetFilters}
+                activeCount={activeFilterCount}
+                counts={{
+                  veBTC: searchableListings.filter((l) => l.collection === "veBTC").length,
+                  veMEZO: searchableListings.filter((l) => l.collection === "veMEZO").length,
+                  grant: searchableListings.filter((l) => l.isGrant).length,
+                }}
               />
-            </motion.div>
-          </div>
-
-          {/* ── Toolbar — sticky, GPU backdrop ── */}
-          <div
-            className="sticky top-[108px] z-30 py-3 mb-5"
-            style={{
-              background: "linear-gradient(to bottom, var(--bg) 70%, transparent)",
-            }}
-          >
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              {/* Search */}
-              <div className="relative flex-1 group">
-                <Search
-                  style={{
-                    position: "absolute",
-                    left: 14,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: 14,
-                    height: 14,
-                    color: searchQuery ? "#FF0040" : "var(--text-3)",
-                    transition: "color 180ms ease",
-                    pointerEvents: "none",
-                  }}
-                />
-                <input
-                  id="marketplace-search"
-                  name="marketplace-search"
-                  type="text"
-                  placeholder="Token ID, collection, or seller address…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input-field w-full"
-                  style={{ paddingLeft: 38, paddingRight: searchQuery ? 36 : 14 }}
-                />
-                <AnimatePresence>
-                  {searchQuery && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      onClick={() => setSearchQuery("")}
-                      style={{
-                        position: "absolute",
-                        right: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "var(--text-3)",
-                        cursor: "pointer",
-                        background: "none",
-                        border: "none",
-                        padding: 0,
-                        lineHeight: 1,
-                      }}
-                    >
-                      <X style={{ width: 13, height: 13 }} />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <div className="flex gap-2">
-                {/* Sort */}
-                <SortMenu value={filters.sortBy} onChange={(v) => setFilter("sortBy", v)} />
-                <FilterButton onClick={() => setSidebarOpen(true)} activeFilters={activeFilterCount} />
-              </div>
             </div>
 
-            {/* Active filter pills */}
-            <AnimatePresence>
-              {activeFilterCount > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex flex-wrap gap-2 mt-3 overflow-hidden"
-                >
+            <section aria-label="Listings" className="min-w-0">
+              {/* ── Toolbar: search leads, sort and layout sit with the results ── */}
+              <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
+                <div className="relative flex-1">
+                  <Search
+                    style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 15, height: 15, color: "var(--text-3)", pointerEvents: "none" }}
+                  />
+                  <input
+                    id="marketplace-search"
+                    name="marketplace-search"
+                    type="search"
+                    placeholder="Search token ID, collection or seller"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="input-field w-full h-11"
+                    style={{ paddingLeft: 40, paddingRight: searchQuery ? 36 : 14 }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Clear search"
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }}
+                    >
+                      <X style={{ width: 14, height: 14 }} />
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <SortMenu value={filters.sortBy} onChange={(v) => setFilter("sortBy", v)} />
+                  <div className="lg:hidden">
+                    <FilterButton onClick={() => setSidebarOpen(true)} activeFilters={activeFilterCount} />
+                  </div>
+                  <div className="hidden md:block">
+                    <ViewToggle view={view} onChange={setView} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Result line + active filter summary */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4 min-h-[28px]">
+                <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
+                  <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{filteredListings.length}</span>{" "}
+                  {filteredListings.length === 1 ? "listing" : "listings"}
+                </p>
+                <AnimatePresence>
                   {filters.collectionFilter !== "all" && (
-                    <ActiveFilterPill label={filters.collectionFilter} onRemove={() => setFilter("collectionFilter", "all")} />
+                    <ActiveFilterPill key="c" label={filters.collectionFilter} onRemove={() => setFilter("collectionFilter", "all")} />
                   )}
                   {filters.minDiscount > 0 && (
-                    <ActiveFilterPill label={`Min ${filters.minDiscount}% off`} onRemove={() => setFilter("minDiscount", 0)} />
+                    <ActiveFilterPill key="d" label={`${filters.minDiscount}%+ off`} onRemove={() => setFilter("minDiscount", 0)} />
                   )}
                   {filters.showGrantOnly && (
-                    <ActiveFilterPill label="Grant NFTs" onRemove={() => setFilter("showGrantOnly", false)} />
+                    <ActiveFilterPill key="g" label="Grant positions" onRemove={() => setFilter("showGrantOnly", false)} />
                   )}
                   {filters.showAutoLockOnly && (
-                    <ActiveFilterPill label="Auto max-lock" onRemove={() => setFilter("showAutoLockOnly", false)} />
+                    <ActiveFilterPill key="a" label="Auto max-lock" onRemove={() => setFilter("showAutoLockOnly", false)} />
                   )}
                   {filters.showEndingSoon && (
-                    <ActiveFilterPill label="Ending soon" onRemove={() => setFilter("showEndingSoon", false)} />
+                    <ActiveFilterPill key="e" label="Unlocks within 7 days" onRemove={() => setFilter("showEndingSoon", false)} />
                   )}
-                  <button
-                    onClick={resetFilters}
-                    className="text-[13px] font-bold px-2.5 py-1.5 transition-colors"
-                    style={{ color: "var(--text-3)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; }}
-                  >
+                </AnimatePresence>
+                {activeFilterCount > 0 && (
+                  <button onClick={resetFilters} className="text-[13px] font-semibold hover:underline underline-offset-2" style={{ color: "var(--text-2)" }}>
                     Clear all
                   </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                )}
+              </div>
 
-          {/* Result count + audit badge */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="flex items-center gap-4 mb-6 px-1"
-          >
-            <p className="text-[13px] font-medium" style={{ color: "var(--text-2)" }}>
-              <span style={{ color: "var(--text-1)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                {filteredListings.length}
-              </span>{" "}
-              {filters.activeOnly ? "active " : ""}listing{filteredListings.length !== 1 ? "s" : ""}
-            </p>
-          </motion.div>
-
-          {/* ── Grid ──
-              Taste-skill: ban 3-col equal grid — use responsive cols that allow
-              visual variation. AnimatePresence + layout for smooth re-order. */}
-          {showSkeletons ? (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start stagger">
-              {[...Array(6)].map((_, i) => <VeNFTCardSkeleton key={i} />)}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start stagger">
-              <AnimatePresence mode="popLayout">
-                {filteredListings.map((listing) => (
-                  <VeNFTCard
-                    key={`${listing.collection}-${listing.tokenId}`}
-                    listingId={listing.listingId}
-                    collection={listing.collection}
-                    nftContract={listing.nftContract}
-                    tokenId={listing.tokenId}
-                    price={listing.price}
-                    paymentToken={listing.paymentToken}
-                    intrinsicValue={listing.intrinsicValue}
-                    lockEnd={listing.lockEnd}
-                    votingPower={listing.votingPower}
-                    discountBps={listing.discountBps}
-                    unitUsd={prices[getPaymentTokenSymbol(listing.paymentToken) as "BTC" | "MEZO" | "MUSD"] ?? null}
-                    seller={listing.seller}
-                    active={listing.active}
-                    isGrant={listing.isGrant}
-                    onBuy={() => setActiveBuyListing(listing)}
-                  />
-                ))}
-              </AnimatePresence>
-
-              {filteredListings.length === 0 && dataLoaded && (
+              {/* ── Results ── */}
+              {showSkeletons ? (
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => <VeNFTCardSkeleton key={i} />)}
+                </div>
+              ) : filteredListings.length === 0 && dataLoaded ? (
                 !isMarketplaceReady ? (
-                  <LoadFailureState
-                    notDeployed
-                    marketplaceAddress={marketplaceAddress}
-                    onRetry={refetch}
-                  />
+                  <LoadFailureState notDeployed marketplaceAddress={marketplaceAddress} onRetry={refetch} />
                 ) : listingsError ? (
-                  <LoadFailureState
-                    notDeployed={false}
-                    marketplaceAddress={marketplaceAddress}
-                    message={listingsErrorObj?.message}
-                    onRetry={refetch}
-                  />
+                  <LoadFailureState notDeployed={false} marketplaceAddress={marketplaceAddress} message={listingsErrorObj?.message} onRetry={refetch} />
                 ) : (
                   <EmptyState
                     variant={
                       activeFilterCount > 0 || searchQuery.length > 0
                         ? "filtered"
                         : searchableListings.length > 0
-                          ? "unavailable" // listings exist on-chain but all expired/sold/unbuyable
+                          ? "unavailable"
                           : "empty"
                     }
                   />
                 )
+              ) : view === "table" ? (
+                <div className="hidden md:block">
+                  <ListingsTable listings={filteredListings} prices={prices as unknown as Record<string, number | null>} onBuy={(l) => setActiveBuyListing(l)} />
+                </div>
+              ) : null}
+
+              {!showSkeletons && filteredListings.length > 0 && (
+                <div className={`grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start ${view === "table" ? "md:hidden" : ""}`}>
+                  <AnimatePresence mode="popLayout">
+                    {filteredListings.map((listing) => (
+                      <VeNFTCard
+                        key={`${listing.collection}-${listing.tokenId}`}
+                        listingId={listing.listingId}
+                        collection={listing.collection}
+                        nftContract={listing.nftContract}
+                        tokenId={listing.tokenId}
+                        price={listing.price}
+                        paymentToken={listing.paymentToken}
+                        intrinsicValue={listing.intrinsicValue}
+                        lockEnd={listing.lockEnd}
+                        votingPower={listing.votingPower}
+                        discountBps={listing.discountBps}
+                        unitUsd={prices[getPaymentTokenSymbol(listing.paymentToken) as "BTC" | "MEZO" | "MUSD"] ?? null}
+                        seller={listing.seller}
+                        active={listing.active}
+                        isGrant={listing.isGrant}
+                        onBuy={() => setActiveBuyListing(listing)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
               )}
-            </div>
-          )}
+            </section>
+          </div>
         </div>
       </div>
 

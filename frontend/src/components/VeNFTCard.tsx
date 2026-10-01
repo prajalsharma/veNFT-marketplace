@@ -1,21 +1,25 @@
 "use client";
 
-// Restrained, professional listing card. Price is the single focal point; the
-// rest is a clean label/value spec sheet. No 3D tilt, cursor spotlight, gradient
-// bands, edge accents, or button shimmer — those "demo" effects are what made the
-// card read as AI-generated. One discount badge, one CTA, consistent type scale.
+// A listing, presented as a financial position rather than a dashboard widget.
+//
+// Hierarchy, in the order a buyer reads it: what the position is and how long
+// it is locked (glyph + name), what it costs (the one large number), how that
+// price relates to what it holds (the value bar), then the action. Voting
+// power and the seller are secondary and live in the buy popup, where the
+// purchase decision is actually made. Offers expand inline so several
+// listings' offers can be compared side by side.
 
 import { useState } from "react";
 import { formatEther } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Gavel } from "lucide-react";
-import { DiscountBadge } from "./DiscountBadge";
+import { ChevronDown } from "lucide-react";
 import { CountdownCompact } from "./CountdownTimer";
 import BidsPanel from "./BidsPanel";
+import { PositionGlyph, PriceValueBar } from "./market/PositionVisuals";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { useActiveTokenBids } from "@/hooks/useBidding";
 
-interface VeNFTCardProps {
+export interface VeNFTCardProps {
   listingId: number;
   collection: "veBTC" | "veMEZO";
   nftContract?: string;
@@ -34,14 +38,33 @@ interface VeNFTCardProps {
   onBuy?: () => void;
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+export function fmtAmount(wei: bigint): string {
+  const v = parseFloat(formatEther(wei));
+  if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
+  return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
+}
+
+export function GrantTag() {
   return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-      <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{label}</span>
-      <span className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-        {value}
-      </span>
-    </div>
+    <span
+      className="text-[11px] font-semibold px-1.5 py-0.5 rounded shrink-0 cursor-help"
+      style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}
+      title="Grant-vested position: until vesting ends, the grant manager can revoke unvested tokens, and merge/split are disabled."
+    >
+      Grant
+    </span>
+  );
+}
+
+export function DiscountText({ discountBps }: { discountBps: bigint | null }) {
+  if (discountBps === null) return <span style={{ color: "var(--text-3)" }}>n/a</span>;
+  const d = Number(discountBps) / 100;
+  if (d === 0) return <span style={{ color: "var(--text-2)" }}>At value</span>;
+  return (
+    <span className="tabular-nums" style={{ color: d > 0 ? "var(--success)" : "#EF4444", fontVariantNumeric: "tabular-nums" }}>
+      {d > 0 ? `${d.toFixed(1)}% off` : `${(-d).toFixed(1)}% over`}
+    </span>
   );
 }
 
@@ -53,7 +76,6 @@ export function VeNFTCard({
   paymentToken,
   intrinsicValue,
   lockEnd,
-  votingPower,
   discountBps,
   seller,
   active = true,
@@ -61,202 +83,125 @@ export function VeNFTCard({
   unitUsd = null,
   onBuy,
 }: VeNFTCardProps) {
-  const isVeBTC = collection === "veBTC";
   const lockEndSec = Number(lockEnd);
   const isPermanent = lockEndSec === 0;
   const isExpired = !isPermanent && lockEndSec <= Math.floor(Date.now() / 1000);
   const disabled = isExpired || !active;
-
-  const lockedSym = isVeBTC ? "BTC" : "MEZO";
-  // Market-standard number display: commas for thousands, no dead zeros.
-  const fmtAmount = (wei: bigint) => {
-    const v = parseFloat(formatEther(wei));
-    if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 0 });
-    if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
-    return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
-  };
-  const formattedPrice = fmtAmount(price);
-  const formattedIntrinsic = fmtAmount(intrinsicValue);
-  const formattedVoting = parseFloat(formatEther(votingPower)).toFixed(2);
+  const lockedSym = collection === "veBTC" ? "BTC" : "MEZO";
   const paySymbol = getPaymentTokenSymbol(paymentToken);
-  const discountPct = discountBps !== null ? Number(discountBps) / 100 : 0;
+  const usd = unitUsd ? unitUsd * parseFloat(formatEther(price)) : null;
 
-  // A small, muted per-collection dot — the only color cue (keeps the brand calm).
-  const dot = isVeBTC ? "#F7931A" : "#4A90E2";
-
-  // Live offer count for the collapsed row. Reads batch through Multicall3, so
-  // one call covers every card on screen rather than one request per card.
-  const { data: activeBids } = useActiveTokenBids(
-    nftContract as `0x${string}` | undefined,
-    tokenId
-  );
+  // Batched through Multicall3: one read covers every card on screen.
+  const { data: activeBids } = useActiveTokenBids(nftContract as `0x${string}` | undefined, tokenId);
   const offerCount = Array.isArray(activeBids) ? activeBids.length : 0;
-  const hasOffers  = offerCount > 0;
-
-  // Offers expand inline on the card, so several cards' offers can be open and
-  // compared side by side without leaving the grid. Everything about the
-  // position itself lives in the buy popup, so there is only ever one popup.
   const [offersOpen, setOffersOpen] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
+    <motion.article
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97 }}
+      exit={{ opacity: 0, scale: 0.98 }}
       layout
-      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
-      className={`nft-card rounded-2xl overflow-hidden ${disabled ? "nft-card--disabled" : ""}`}
-      style={{ background: "var(--bg-1)" }}
+      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+      className={`position-card rounded-xl overflow-hidden ${disabled ? "nft-card--disabled" : ""}`}
     >
       <div className="p-5">
-        {/* Header — collection + id, discount badge */}
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: dot }} />
-            <span className="text-[14px] font-bold" style={{ color: "var(--text-1)" }}>{collection}</span>
-            <span className="text-[14px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>#{tokenId.toString()}</span>
-            {isGrant && (
-              <span
-                className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 cursor-help"
-                style={{ color: "#F59E0B", background: "rgba(245,158,11,0.1)" }}
-                title="Grant-vested position: until vesting ends, the grant manager can revoke unvested tokens, and merge/split are disabled. Open the details for the vesting date."
-              >
-                Grant
-              </span>
-            )}
+        {/* Identity: what this is, and how locked it is */}
+        <div className="flex items-center gap-3 mb-5">
+          <PositionGlyph collection={collection} lockEnd={lockEnd} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-[15px] font-bold truncate" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
+                {collection} <span className="tabular-nums font-semibold" style={{ color: "var(--text-3)" }}>#{tokenId.toString()}</span>
+              </h3>
+              {isGrant && <GrantTag />}
+            </div>
+            <p className="text-[13px] mt-0.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+              {isPermanent ? "Permanent lock" : isExpired ? "Lock expired" : <>Unlocks in <CountdownCompact lockEnd={lockEnd} /></>}
+            </p>
           </div>
-          <DiscountBadge discountBps={discountBps === null ? null : Number(discountBps)} />
         </div>
 
-        {/* Price — the focal point */}
-        <div className="mb-4">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-bold tabular-nums" style={{ fontSize: "1.95rem", letterSpacing: "-0.04em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-              {formattedPrice}
-            </span>
-            <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paySymbol}</span>
-          </div>
-          {(unitUsd || discountPct > 0) && (
-            <p className="text-[13px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
-              {unitUsd ? (
-                <>&#8776; ${(unitUsd * parseFloat(formatEther(price))).toLocaleString("en-US", { maximumFractionDigits: 2 })}</>
-              ) : null}
-              {unitUsd && discountPct > 0 ? " · " : null}
-              {discountPct > 0 && (
-                <span className="font-semibold" style={{ color: "#10B981" }}>
-                  {discountPct.toFixed(1)}% below intrinsic value
-                </span>
+        {/* Price, the focal point */}
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="price-figure" style={{ color: "var(--text-1)" }}>
+            {fmtAmount(price)}
+            <span className="text-[14px] font-semibold ml-1.5" style={{ color: "var(--text-2)", letterSpacing: 0 }}>{paySymbol}</span>
+          </p>
+          <span className="text-[14px] font-semibold"><DiscountText discountBps={discountBps} /></span>
+        </div>
+        <p className="text-[13px] mt-1 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+          {usd !== null ? <>&#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : " "}
+        </p>
+
+        {/* Price against what the position holds */}
+        <div className="mt-4">
+          <PriceValueBar discountBps={discountBps} />
+          <p className="text-[12px] mt-2 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+            Holds <span className="font-semibold" style={{ color: "var(--text-2)" }}>{fmtAmount(intrinsicValue)} {lockedSym}</span>
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 mt-5">
+          <button
+            onClick={onBuy}
+            disabled={disabled}
+            className="btn-buy flex-1 h-11 rounded-lg text-[14px] font-semibold disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
+          >
+            {!active ? "Inactive" : isExpired ? "Lock expired" : "Buy"}
+          </button>
+          {nftContract && (
+            <button
+              onClick={() => setOffersOpen((o) => !o)}
+              aria-expanded={offersOpen}
+              aria-label={offerCount > 0 ? `${offerCount} offers` : "Offers"}
+              className="btn-quiet h-11 px-4 rounded-lg text-[14px] font-semibold inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            >
+              Offers
+              {offerCount > 0 && (
+                <span className="tabular-nums" style={{ color: "#FF0040" }}>{offerCount}</span>
               )}
-            </p>
+              <ChevronDown style={{ width: 14, height: 14, transform: offersOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s cubic-bezier(0.16,1,0.3,1)" }} />
+            </button>
           )}
         </div>
-
-        {/* Spec rows */}
-        <div className="mb-5">
-          <Row label="Intrinsic value" value={`${formattedIntrinsic} ${lockedSym}`} />
-          <Row label="Voting power" value={formattedVoting} />
-          <Row label="Lock ends" value={isPermanent ? "Permanent" : isExpired ? "Expired" : <CountdownCompact lockEnd={lockEnd} />} />
-          <Row label="Seller" value={<span className="font-mono">{seller.slice(0, 6)}…{seller.slice(-4)}</span>} />
-        </div>
-
-        {/* CTA */}
-        <button
-          onClick={onBuy}
-          disabled={disabled}
-          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2 disabled:cursor-not-allowed"
-          style={{
-            background: disabled ? "var(--bg-2)" : "var(--text-1)",
-            color: disabled ? "var(--text-3)" : "var(--bg)",
-            border: disabled ? "1px solid var(--border-subtle)" : "none",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {!active ? "Inactive" : isExpired ? "Position expired" : "Buy now"}
-          {!disabled && <ChevronRight style={{ width: 15, height: 15 }} />}
-        </button>
       </div>
 
-      {/* Offers — expands inline so offers on several veNFTs can be read at once */}
-      {nftContract && (
-        <div className="px-5 pb-5">
-          <button
-            onClick={() => setOffersOpen((o) => !o)}
-            aria-expanded={offersOpen}
-            aria-label={hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}, ${offersOpen ? "collapse" : "expand"}` : "Offers"}
-            className="w-full flex items-center justify-between py-3 px-4 rounded-xl text-[14px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-            style={
-              hasOffers
-                ? { background: "rgba(255,0,64,0.06)", border: "1px solid rgba(255,0,64,0.22)", color: "var(--text-1)" }
-                : { background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }
-            }
+      <AnimatePresence initial={false}>
+        {offersOpen && nftContract && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
           >
-            <span className="flex items-center gap-2.5">
-              <Gavel style={{ width: 14, height: 14, color: hasOffers ? "#FF0040" : "currentColor" }} />
-              {hasOffers ? `${offerCount} active ${offerCount === 1 ? "offer" : "offers"}` : "Offers"}
-            </span>
-            <span className="flex items-center gap-2">
-              {hasOffers && (
-                <span
-                  className="min-w-[22px] h-[22px] px-1.5 inline-flex items-center justify-center rounded-full text-[12px] font-black tabular-nums"
-                  style={{ background: "#FF0040", color: "#fff", fontVariantNumeric: "tabular-nums" }}
-                >
-                  {offerCount}
-                </span>
-              )}
-              <ChevronDown
-                style={{ width: 14, height: 14, transform: offersOpen ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }}
-              />
-            </span>
-          </button>
-
-          <AnimatePresence initial={false}>
-            {offersOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden"
-              >
-                <div className="pt-3 space-y-2">
-                  <BidsPanel
-                    collection={nftContract as `0x${string}`}
-                    tokenId={tokenId}
-                    currentOwner={seller as `0x${string}`}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-    </motion.div>
+            <div className="px-5 pb-5">
+              <BidsPanel collection={nftContract as `0x${string}`} tokenId={tokenId} currentOwner={seller as `0x${string}`} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.article>
   );
 }
 
-// ─── Skeleton — matches the new simpler layout ───────────────────────────────
 export function VeNFTCardSkeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-sm)" }}>
-      <div className="p-5 space-y-4">
-        <div className="flex justify-between items-center">
-          <div className="h-3 w-24 skeleton rounded" />
-          <div className="h-5 w-14 skeleton rounded-full" />
+    <div className="position-card rounded-xl p-5" aria-hidden>
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-11 h-11 rounded-full skeleton" />
+        <div className="space-y-2 flex-1">
+          <div className="h-3.5 w-28 skeleton rounded" />
+          <div className="h-3 w-20 skeleton rounded" />
         </div>
-        <div className="space-y-2">
-          <div className="h-2.5 w-12 skeleton rounded" />
-          <div className="h-8 w-32 skeleton rounded" />
-        </div>
-        <div className="space-y-2.5">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex justify-between pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-              <div className="h-2.5 w-20 skeleton rounded" />
-              <div className="h-2.5 w-16 skeleton rounded" />
-            </div>
-          ))}
-        </div>
-        <div className="h-11 skeleton rounded-xl" />
       </div>
+      <div className="h-8 w-36 skeleton rounded mb-2" />
+      <div className="h-3 w-16 skeleton rounded mb-5" />
+      <div className="h-1.5 w-full skeleton rounded-full mb-2" />
+      <div className="h-3 w-28 skeleton rounded mb-5" />
+      <div className="h-11 w-full skeleton rounded-lg" />
     </div>
   );
 }
