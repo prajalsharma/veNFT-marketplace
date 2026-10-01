@@ -57,7 +57,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                   vezo
                 </span>
                 <span
-                  className="text-[10px] font-bold tracking-[0.2em] uppercase leading-none mt-0.5 block"
+                  className="text-[12px] font-semibold leading-none mt-1 block"
                   style={{ color: "var(--vezo-red)" }}
                 >
                   veNFT Marketplace
@@ -113,7 +113,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               >
                 Built on Mezo Network
               </a>
-              <span className="text-[10px]" style={{ color: "var(--text-4)" }}>
+              <span className="text-[12px]" style={{ color: "var(--text-3)" }}>
                 © 2026 Vezo. All rights reserved.
               </span>
             </div>

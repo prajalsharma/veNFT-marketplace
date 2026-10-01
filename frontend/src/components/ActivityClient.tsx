@@ -40,8 +40,25 @@ function formatTime(timestamp: number | null): string {
   return `${seconds}s ago`;
 }
 
-function formatDiscount(discountBps: number | null): React.ReactNode {
-  if (discountBps === null) return <span style={{ color: "var(--text-3)" }}>—</span>;
+function formatDiscount(discountBps: number | null, activity?: { type: string; collection: string; paymentToken: string }): React.ReactNode {
+  if (discountBps === null) {
+    // A cancellation has no price. A cross-currency listing (veMEZO priced in
+    // MUSD, say) has no honest historical discount: it would need the exchange
+    // rate at that moment, and there is no on-chain MEZO market to read it from.
+    const locked = activity?.collection === "veBTC" ? "BTC" : "MEZO";
+    if (activity && activity.type !== "cancelled" && activity.paymentToken && activity.paymentToken !== locked) {
+      return (
+        <span
+          className="text-[12px] cursor-help"
+          style={{ color: "var(--text-3)" }}
+          title={`Priced in ${activity.paymentToken} against a ${locked} position. A discount would need the ${locked}/${activity.paymentToken} rate at the time of the trade, which is not recorded on-chain.`}
+        >
+          {activity.paymentToken} price
+        </span>
+      );
+    }
+    return <span style={{ color: "var(--text-3)" }}>—</span>;
+  }
   if (discountBps === 0) return (
     <span
       className="text-[12px] font-bold tabular-nums"
@@ -134,7 +151,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
           <EventPill type={activity.type} />
           {outcome && outcome !== "open" && outcome !== "unknown" && (
             <span
-              className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
+              className="text-[12px] font-semibold px-1.5 py-0.5 rounded"
               style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
             >
               {OUTCOME_LABEL[outcome]}
@@ -145,7 +162,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
           href={activity.transactionHash ? `${explorer}/tx/${activity.transactionHash}` : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[11px] font-medium tabular-nums"
+          className="flex items-center gap-1 text-[12px] font-medium tabular-nums"
           style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
         >
           <Clock style={{ width: 10, height: 10 }} />
@@ -160,7 +177,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
               {activity.collection} <span className="tabular-nums" style={{ color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>#{activity.tokenId.toString()}</span>
             </span>
           </div>
-          <div className="flex items-center gap-1 text-[11px] font-mono" style={{ color: "var(--text-3)" }}>
+          <div className="flex items-center gap-1 text-[12px] font-mono" style={{ color: "var(--text-3)" }}>
             <span>{activity.from ? short(activity.from) : "—"}</span>
             {activity.to && <><ArrowUpRight style={{ width: 9, height: 9 }} /><span>{short(activity.to)}</span></>}
           </div>
@@ -169,7 +186,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
           <p className="text-[15px] font-bold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
             {fmtPrice(activity.price)}<span className="text-[12px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
           </p>
-          <div className="mt-0.5">{formatDiscount(activity.discountBps)}</div>
+          <div className="mt-0.5">{formatDiscount(activity.discountBps, activity)}</div>
         </div>
       </div>
     </div>
@@ -384,7 +401,7 @@ export default function ActivityClient() {
                               return (
                                 <span
                                   title={OUTCOME_HELP[o]}
-                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded cursor-help"
+                                  className="inline-flex items-center gap-1 text-[12px] font-semibold px-1.5 py-0.5 rounded cursor-help"
                                   style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
                                 >
                                   {OUTCOME_LABEL[o]}
@@ -428,11 +445,11 @@ export default function ActivityClient() {
 
                         {/* Discount */}
                         <td className="px-6 py-5">
-                          {formatDiscount(activity.discountBps)}
+                          {formatDiscount(activity.discountBps, activity)}
                         </td>
 
                         {/* From */}
-                        <td className="px-6 py-5 font-mono text-[11px]" style={{ color: "var(--text-3)" }}>
+                        <td className="px-6 py-5 font-mono text-[12px]" style={{ color: "var(--text-3)" }}>
                           {activity.from ? (
                             <a
                               href={`${contracts.explorer}/address/${activity.from}`}
@@ -455,7 +472,7 @@ export default function ActivityClient() {
                         </td>
 
                         {/* To */}
-                        <td className="px-6 py-5 font-mono text-[11px]" style={{ color: "var(--text-3)" }}>
+                        <td className="px-6 py-5 font-mono text-[12px]" style={{ color: "var(--text-3)" }}>
                           {activity.to ? (
                             <a
                               href={`${contracts.explorer}/address/${activity.to}`}
@@ -484,7 +501,7 @@ export default function ActivityClient() {
                               href={`${contracts.explorer}/tx/${activity.transactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-end gap-1.5 text-[11px] font-medium transition-colors tabular-nums"
+                              className="inline-flex items-center justify-end gap-1.5 text-[12px] font-medium transition-colors tabular-nums"
                               style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
                               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -494,7 +511,7 @@ export default function ActivityClient() {
                             </a>
                           ) : (
                             <span
-                              className="inline-flex items-center justify-end gap-1.5 text-[11px] font-medium tabular-nums"
+                              className="inline-flex items-center justify-end gap-1.5 text-[12px] font-medium tabular-nums"
                               style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
                             >
                               <Clock style={{ width: 10, height: 10 }} />

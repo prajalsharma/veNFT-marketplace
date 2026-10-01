@@ -368,7 +368,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             );
           })}
           {!prices[token] && (
-            <span className="text-[11px]" style={{ color: "var(--text-4)" }}>
+            <span className="text-[12px]" style={{ color: "var(--text-4)" }}>
               waiting for live prices…
             </span>
           )}
@@ -844,7 +844,7 @@ export default function SupportClient() {
           className="mt-6 rounded-2xl px-6 py-7 text-center"
           style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
+          <p className="text-[12px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
             March 16 &rarr; September 16, 2026 &middot; six months on mainnet
           </p>
           <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 mb-5">

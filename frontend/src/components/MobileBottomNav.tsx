@@ -47,7 +47,7 @@ export function MobileBottomNav() {
               <span className="relative flex items-center justify-center">
                 <Icon style={{ width: 20, height: 20 }} strokeWidth={active ? 2.4 : 2} />
               </span>
-              <span className="text-[10px] font-bold" style={{ letterSpacing: "-0.01em" }}>{t.label}</span>
+              <span className="text-[12px] font-semibold" style={{ letterSpacing: "-0.01em" }}>{t.label}</span>
             </Link>
           );
         })}

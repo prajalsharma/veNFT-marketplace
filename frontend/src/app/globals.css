@@ -1052,3 +1052,45 @@ select option {
 .chart-fade--late { animation-delay: 500ms; }
 @keyframes chart-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .chart-draw, .chart-fade { animation: none; } }
+
+.bar-fill--late { animation-delay: 180ms; }
+
+/* ── Landing motion ───────────────────────────────────────────────────────────
+   Scroll-driven where the browser supports it (animation-timeline), static
+   everywhere else. Only transform and clip-path move; nothing starts invisible,
+   so a browser without support, a screenshot or a paused tab shows the page
+   complete. Reduced motion turns all of it off. */
+.hero-wipe { animation: hero-wipe 900ms var(--ease-out) both; }
+@keyframes hero-wipe { from { clip-path: inset(0 0 100% 0); transform: translateY(18px); } to { clip-path: inset(0 0 -10% 0); transform: none; } }
+
+.cta-arrow { transition: transform 200ms var(--ease-out); }
+a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
+
+@supports (animation-timeline: view()) {
+  .reveal-up {
+    animation: reveal-up linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+  @keyframes reveal-up { from { transform: translateY(28px) scale(0.985); } to { transform: none; } }
+
+  .hero-parallax {
+    animation: hero-parallax linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 700px;
+  }
+  @keyframes hero-parallax { to { transform: translateY(-36px); } }
+
+  .step-line {
+    transform-origin: left;
+    animation: step-line linear both;
+    animation-timeline: view();
+    animation-range: entry 20% cover 45%;
+  }
+  @keyframes step-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-wipe, .reveal-up, .hero-parallax, .step-line { animation: none !important; }
+  .cta-arrow { transition: none; }
+}

@@ -48,7 +48,7 @@ export function fmtAmount(wei: bigint): string {
 export function GrantTag() {
   return (
     <span
-      className="text-[11px] font-semibold px-1.5 py-0.5 rounded shrink-0 cursor-help"
+      className="text-[12px] font-semibold px-1.5 py-0.5 rounded shrink-0 cursor-help"
       style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}
       title="Grant-vested position: until vesting ends, the grant manager can revoke unvested tokens, and merge/split are disabled."
     >
@@ -136,8 +136,8 @@ export function VeNFTCard({
 
         {/* Price against what the position holds */}
         <div className="mt-4">
-          <PriceValueBar discountBps={discountBps} />
-          <p className="text-[12px] mt-2 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+          <PriceValueBar discountBps={discountBps} legend />
+          <p className="text-[12px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
             Holds <span className="font-semibold" style={{ color: "var(--text-2)" }}>{fmtAmount(intrinsicValue)} {lockedSym}</span>
           </p>
         </div>

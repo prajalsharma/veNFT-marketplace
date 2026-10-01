@@ -39,6 +39,9 @@ const LOOK_BACK_BLOCKS_MAINNET = 200_000n;
 const LOOK_BACK_BLOCKS_TESTNET = 200_000n;
 const CHUNK_SIZE = 2_000n;
 
+/** (collection:tokenId:block) -> [intrinsicValue, lockEnd] at block-1. Immutable. */
+const HISTORICAL_IV = new Map<string, [bigint, bigint]>();
+
 // ── Adapter ABI (getIntrinsicValue only) ─────────────────────────────────────
 const ADAPTER_ABI_IV = [
   {
@@ -143,36 +146,44 @@ async function fetchActivityFromSubgraph(
   if (json.errors) throw new Error("subgraph query error");
   const rows = json.data.activityEvents as Record<string, string>[];
 
-  // Intrinsic value per unique (collection, tokenId) for the discount column.
+  // Intrinsic value AS OF EACH EVENT, read at the block before it. A discount
+  // is a historical fact: reading today's value instead misreports every
+  // position its buyer later merged into (inflating the discount) or withdrew
+  // (dropping it to nothing). Past state never changes, so results are cached
+  // for the session and each block is read once.
   const ivMap = new Map<string, bigint>();
   const lockMap = new Map<string, bigint>();
-  const pairs = Array.from(new Set(rows.map((r) => `${r.collection.toLowerCase()}:${r.tokenId}`)))
-    .map((k) => { const [c, t] = k.split(":"); return { key: k, collection: c, tokenId: BigInt(t) }; });
-  const ivResults = await Promise.allSettled(
-    pairs.map((p) =>
-      withFallback(chainId, (client) =>
+  const evKey = (coll: string, tok: string, blk: string) => `${coll.toLowerCase()}:${tok}:${blk}`;
+  const pending = Array.from(new Set(rows.map((r) => evKey(r.collection, r.tokenId, r.blockNumber))))
+    .filter((k) => !HISTORICAL_IV.has(k));
+  const results = await Promise.allSettled(
+    pending.map((k) => {
+      const [c, t, b] = k.split(":");
+      return withFallback(chainId, (client) =>
         client.readContract({
           address: adapter as `0x${string}`,
           abi: ADAPTER_ABI_IV,
           functionName: "getIntrinsicValue",
-          args: [p.collection as `0x${string}`, p.tokenId],
+          args: [c as `0x${string}`, BigInt(t)],
+          blockNumber: BigInt(b) - 1n,
         })
-      )
-    )
+      );
+    })
   );
-  pairs.forEach((p, i) => {
-    const r = ivResults[i];
-    if (r.status === "fulfilled") {
-      const [amount, lockEnd] = r.value as [bigint, bigint];
-      ivMap.set(p.key, amount);
-      lockMap.set(p.key, lockEnd);
-    }
+  pending.forEach((k, i) => {
+    const r = results[i];
+    if (r.status === "fulfilled") HISTORICAL_IV.set(k, r.value as [bigint, bigint]);
+  });
+  rows.forEach((r) => {
+    const k = evKey(r.collection, r.tokenId, r.blockNumber);
+    const v = HISTORICAL_IV.get(k);
+    if (v) { ivMap.set(k, v[0]); lockMap.set(k, v[1]); }
   });
 
   return rows.map((r) => {
     const collLower = r.collection.toLowerCase();
     const isVeBTC = collLower === veBTC.toLowerCase();
-    const key = `${collLower}:${r.tokenId}`;
+    const key = evKey(r.collection, r.tokenId, r.blockNumber);
     const iv = ivMap.get(key) ?? 0n;
     const priceWei = BigInt(r.price ?? "0");
     const nftTokenAddr = isVeBTC ? BTC_ADDR : MEZO_ADDR;
@@ -216,6 +227,36 @@ export function useActivityFeed(limit = 50) {
       try {
         // Preferred: read activity from the subgraph index (one query, no getLogs
         // block-limit). Falls through to the on-chain scan if unset or it fails.
+        // Mainnet: the server route reads the index and computes each discount
+        // at its event's block, batched and cached (see /api/activity), so the
+        // browser makes one request instead of ~100 rate-limited RPC reads.
+        if (chainId === 31612) {
+          try {
+            const res = await fetch(`/api/activity?limit=${limit}`);
+            const body = res.ok ? await res.json() : null;
+            if (body?.status === "ok" && body.events.length > 0) {
+              const evs: ActivityEvent[] = body.events.map((e: Record<string, unknown>) => ({
+                type: e.type as ActivityEvent["type"],
+                listingId: BigInt(e.listingId as string),
+                collection: e.collection as "veBTC" | "veMEZO",
+                tokenId: BigInt(e.tokenId as string),
+                price: parseFloat(formatEther(BigInt(e.price as string))).toFixed(4),
+                paymentToken: getPaymentSymbol(e.paymentToken as string, contracts.MUSD),
+                discountBps: (e.discountBps as number | null) ?? null,
+                from: e.from as string,
+                to: (e.to as string | null) ?? null,
+                blockNumber: BigInt(e.blockNumber as string),
+                transactionHash: e.transactionHash as string,
+                timestamp: e.timestamp as number,
+              }));
+              if (!cancelled) setEvents(evs);
+              return;
+            }
+          } catch {
+            // fall through to the direct subgraph read
+          }
+        }
+
         const subUrl = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
         if (subUrl) {
           try {
@@ -287,42 +328,47 @@ export function useActivityFeed(limit = 50) {
 
         if (isAdapterReady) {
           // Collect unique pairs from all log types
-          const pairs: { collection: string; tokenId: bigint; key: string }[] = [];
+          // Read each position's value as of its Listed block (the block before
+          // it), never today's: later merges or withdrawals would otherwise
+          // distort or erase the discount. Fallback path only; the subgraph
+          // path reads at each event's own block.
+          const pairs: { collection: string; tokenId: bigint; key: string; block?: bigint }[] = [];
           const seen = new Set<string>();
 
-          const collectPair = (collection: string, tokenId: bigint) => {
+          const collectPair = (collection: string, tokenId: bigint, block?: bigint) => {
             if (!collection || tokenId === undefined) return;
             const key = `${collection.toLowerCase()}:${tokenId}`;
             if (!seen.has(key)) {
               seen.add(key);
-              pairs.push({ collection, tokenId, key });
+              pairs.push({ collection, tokenId, key, block });
             }
           };
 
           for (const log of listedLogs as any[]) {
             const a = log.args ?? {};
-            collectPair(String(a.collection ?? ""), a.tokenId ?? 0n);
+            collectPair(String(a.collection ?? ""), a.tokenId ?? 0n, log.blockNumber ?? undefined);
           }
           for (const log of purchasedLogs as any[]) {
             const a = log.args ?? {};
             const ll = (listedLogs as any[]).find((l: any) => l.args?.listingId === a.listingId);
-            if (ll) collectPair(String(ll.args?.collection ?? ""), ll.args?.tokenId ?? 0n);
+            if (ll) collectPair(String(ll.args?.collection ?? ""), ll.args?.tokenId ?? 0n, ll.blockNumber ?? undefined);
           }
           for (const log of cancelledLogs as any[]) {
             const a = log.args ?? {};
             const ll = (listedLogs as any[]).find((l: any) => l.args?.listingId === a.listingId);
-            if (ll) collectPair(String(ll.args?.collection ?? ""), ll.args?.tokenId ?? 0n);
+            if (ll) collectPair(String(ll.args?.collection ?? ""), ll.args?.tokenId ?? 0n, ll.blockNumber ?? undefined);
           }
 
           // Batch fetch intrinsic values; silently ignore failures per token
           const ivResults = await Promise.allSettled(
-            pairs.map(({ collection, tokenId }) =>
+            pairs.map(({ collection, tokenId, block }) =>
               withFallback(chainId, (client) =>
                 client.readContract({
                   address: adapterAddress,
                   abi: ADAPTER_ABI_IV,
                   functionName: "getIntrinsicValue",
                   args: [collection as `0x${string}`, tokenId],
+                  ...(block ? { blockNumber: block - 1n } : {}),
                 })
               )
             )

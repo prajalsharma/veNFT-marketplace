@@ -70,30 +70,41 @@ export function PositionGlyph({
 }
 
 /**
- * Price against value. The filled share of the track is what the buyer pays as
- * a fraction of the position's intrinsic value; the gap at the end is the
- * discount. Hidden when the discount cannot be computed.
+ * Price against value, as two segments of one track: solid ink is what the
+ * buyer pays, solid green is the discount, the part of the position's value
+ * they get without paying for it. A premium (priced above value) shows the
+ * overpay in red instead. Hidden when the discount cannot be computed.
  */
-export function PriceValueBar({ discountBps }: { discountBps: bigint | null }) {
+export function PriceValueBar({ discountBps, legend = false }: { discountBps: bigint | null; legend?: boolean }) {
   if (discountBps === null) return null;
   const d = Number(discountBps) / 10_000;
-  const paid = Math.max(0, Math.min(1, 1 - d));
   const premium = d < 0;
+  const paid = Math.max(0, Math.min(1, premium ? 1 / (1 - d) : 1 - d));
+  const rest = 1 - paid;
+  const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
   return (
-    <div
-      className="h-1.5 w-full rounded-full overflow-hidden"
-      style={{ background: premium ? "rgba(239,68,68,0.18)" : "rgba(16,185,129,0.18)" }}
-      role="img"
-      aria-label={
-        premium
-          ? `Priced ${(-d * 100).toFixed(1)}% above intrinsic value`
-          : `Priced at ${(paid * 100).toFixed(1)}% of intrinsic value`
-      }
-    >
+    <div>
       <div
-        className="h-full rounded-full bar-fill"
-        style={{ width: `${paid * 100}%`, background: premium ? "#EF4444" : "var(--text-1)" }}
-      />
+        className="flex h-2 w-full gap-[3px]"
+        role="img"
+        aria-label={premium ? `Priced ${pct(-d)} above intrinsic value` : `You pay ${pct(paid)} of intrinsic value; ${pct(rest)} discount`}
+      >
+        <div className="h-full rounded-full bar-fill" style={{ width: `${paid * 100}%`, background: "var(--text-1)" }} />
+        {rest > 0.002 && (
+          <div
+            className="h-full rounded-full bar-fill bar-fill--late"
+            style={{ width: `${rest * 100}%`, background: premium ? "#EF4444" : "var(--success)" }}
+          />
+        )}
+      </div>
+      {legend && (
+        <div className="flex justify-between mt-2 text-[12px] font-semibold tabular-nums">
+          <span style={{ color: "var(--text-2)" }}>You pay {pct(paid)}</span>
+          <span style={{ color: premium ? "#EF4444" : "var(--success)" }}>
+            {premium ? `${pct(-d)} over value` : `${pct(rest)} discount`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
