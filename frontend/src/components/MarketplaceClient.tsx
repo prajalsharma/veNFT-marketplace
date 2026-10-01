@@ -37,17 +37,26 @@ function StatBar({
   label,
   value,
   color,
+  hint,
 }: {
   label: string;
   value: string;
   color: string;
+  hint?: string;
 }) {
+  // "No listings" is prose, not a figure: rendering it at figure size and in the
+  // collection's accent colour makes an empty market look like a broken stat.
+  const isNote = value === "No listings" || value === "—" || value === "Loading…";
   return (
-    <div className="flex flex-col gap-1">
-      <span className="eyebrow">{label}</span>
+    <div className="flex flex-col gap-1" title={hint}>
+      <span className="eyebrow" style={hint ? { cursor: "help" } : undefined}>{label}</span>
       <span
-        className="text-[19px] font-bold tabular-nums leading-none"
-        style={{ color, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em" }}
+        className={isNote ? "text-[13px] font-semibold leading-none" : "text-[19px] font-bold tabular-nums leading-none"}
+        style={{
+          color: isNote ? "var(--text-3)" : color,
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: isNote ? "-0.01em" : "-0.03em",
+        }}
       >
         {value}
       </span>
@@ -369,11 +378,36 @@ export default function MarketplaceClient() {
       if (!unit || unit <= 0) return null;
       return parseFloat(formatEther(l.price)) * unit;
     };
+    const fmtFloor = (l: Listing): string => {
+      const sym = getPaymentTokenSymbol(l.paymentToken);
+      const v = parseFloat(formatEther(l.price));
+      const f =
+        v >= 1e6 ? `${(v / 1e6).toFixed(2)}M`
+        : v >= 1000 ? `${(v / 1000).toFixed(1)}k`
+        : v < 1 ? v.toFixed(4)
+        : v.toFixed(2);
+      return `${f} ${sym}`;
+    };
     const floorLabel = (group: Listing[]): string => {
+      // Nothing listed is a fact about the market, not a failure to compute it.
+      // A bare dash reads as broken, so say which it is.
+      if (!group.length) return "No listings";
+
       const priced = group
         .map((l) => ({ l, usd: usdOf(l) }))
         .filter((x): x is { l: Listing; usd: number } => x.usd !== null);
-      if (!priced.length) return "—";
+
+      if (!priced.length) {
+        // The USD feed is unavailable. Ranking across currencies is impossible,
+        // but if every listing here is quoted in the same token the amounts are
+        // directly comparable, so the floor is still answerable.
+        const sym0 = getPaymentTokenSymbol(group[0]!.paymentToken);
+        const uniform = group.every((l) => getPaymentTokenSymbol(l.paymentToken) === sym0);
+        if (!uniform) return "—";
+        const cheapestRaw = group.reduce((a, b) => (b.price < a.price ? b : a));
+        return fmtFloor(cheapestRaw);
+      }
+
       const cheapest = priced.reduce((a, b) => (b.usd < a.usd ? b : a)).l;
       const sym = getPaymentTokenSymbol(cheapest.paymentToken);
       const v = parseFloat(formatEther(cheapest.price));
@@ -389,7 +423,7 @@ export default function MarketplaceClient() {
 
     // Avg discount across OPEN LISTINGS — what a buyer can actually get right now.
     const priced = active.filter((l) => l.discountBps !== null);
-    let avgDiscount = "—";
+    let avgDiscount = active.length === 0 ? "No listings" : "—";
     let listingCount = 0;
     if (priced.length > 0) {
       const avg = priced.reduce((s, l) => s + Number(l.discountBps ?? 0n), 0) / priced.length;
@@ -457,11 +491,12 @@ export default function MarketplaceClient() {
               transition={{ delay: 0.2, duration: 0.4 }}
               className="flex items-end gap-8 pb-1"
             >
-              <StatBar label="veBTC Floor" value={marketStats.veBTCFloor} color="#F7931A" />
-              <StatBar label="veMEZO Floor" value={marketStats.veMEZOFloor} color="#4A90E2" />
+              <StatBar label="veBTC Floor" value={marketStats.veBTCFloor} color="#F7931A" hint="The cheapest veBTC position listed right now, compared across payment currencies at live rates." />
+              <StatBar label="veMEZO Floor" value={marketStats.veMEZOFloor} color="#4A90E2" hint="The cheapest veMEZO position listed right now, compared across payment currencies at live rates." />
               <StatBar
                 label={marketStats.listingCount > 0 ? `Avg Discount (${marketStats.listingCount} listings)` : "Avg Discount"}
                 value={marketStats.avgDiscount}
+                hint="Average discount to intrinsic value across every open listing, grant positions included."
                 color="#10B981"
               />
             </motion.div>
