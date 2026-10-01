@@ -32,7 +32,7 @@ The frontend runs against the live deployed contracts out of the box, so you don
 
 `frontend/.env.local`:
 
-```env
+```dotenv
 NEXT_PUBLIC_WALLETCONNECT_ID=your_walletconnect_project_id
 
 # Testnet (live deployment, use as-is)
@@ -48,7 +48,7 @@ Mainnet equivalents (`*_MAINNET`) are in [Smart Contracts → Deployed addresses
 
 Root `.env`:
 
-```env
+```dotenv
 DEPLOYER_PRIVATE_KEY=0x...        # wallet with testnet BTC for gas
 FEE_RECIPIENT=0x...               # receives protocol fees
 ADMIN_ADDRESS=0x...               # receives all admin roles

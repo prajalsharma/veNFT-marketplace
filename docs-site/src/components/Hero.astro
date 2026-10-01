@@ -1,0 +1,66 @@
+---
+// Docs home hero: what these docs cover, the two ways in, and a real call
+// against the deployed marketplace (the same snippet as Contract
+// Integration), so the first thing a developer sees is the actual API.
+import { Code } from "@astrojs/starlight/components";
+
+const { data } = Astro.locals.starlightRoute.entry;
+const { title = data.title, tagline } = data.hero || {};
+
+const snippet = `// VeNFTMarketplace on Mezo mainnet
+const MARKETPLACE = "0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570";
+
+const result = await client.readContract({
+  address: MARKETPLACE,
+  abi: marketplaceAbi,
+  functionName: "getListingWithValue",
+  args: [42n],
+});
+// also returns lockEnd and votingPower
+const [listing, intrinsicValue, , , discountBps] = result;
+
+// discountBps = 310: listed 3.1% below what it holds`;
+---
+
+<section class="vz-hero">
+  <div class="vz-hero-copy">
+    <p class="vz-kicker">Vezo Docs</p>
+    <h1 id="_top" set:html={title} />
+    {tagline && <p class="vz-tag" set:html={tagline} />}
+    <div class="vz-actions">
+      <a class="vz-btn vz-btn-primary" href="/guides/getting-started/">Get started</a>
+      <a class="vz-btn" href="/concepts/marketplace-mechanics/">Explore the protocol</a>
+    </div>
+  </div>
+  <div class="vz-hero-code">
+    <Code code={snippet} lang="ts" title="Read a listing with viem" />
+  </div>
+</section>
+
+<style>
+  .vz-hero {
+    display: grid; gap: 2.5rem; align-items: center;
+    padding-block: clamp(1.5rem, 4vw, 3.5rem) clamp(2.5rem, 5vw, 4.5rem);
+    border-bottom: 1px solid var(--vz-hairline);
+  }
+  .vz-kicker { font-size: 0.9rem; font-weight: 600; color: var(--sl-color-gray-2); margin: 0 0 1rem; }
+  h1 {
+    font-size: clamp(2.2rem, 1.6rem + 2vw, 3.15rem); font-weight: 800; letter-spacing: -0.04em;
+    line-height: 1.05; color: var(--sl-color-white); margin: 0; max-width: 18ch;
+  }
+  .vz-tag { margin-top: 1.25rem; font-size: 1.15rem; line-height: 1.6; color: var(--sl-color-gray-2); max-width: 46ch; }
+  .vz-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 2rem; }
+  .vz-btn {
+    display: inline-flex; align-items: center; height: 2.75rem; padding: 0 1.15rem; border-radius: 10px;
+    font-weight: 600; font-size: 0.95rem; text-decoration: none; color: var(--sl-color-white);
+    border: 1px solid var(--vz-hairline-strong); transition: background-color 150ms ease, transform 150ms ease;
+  }
+  .vz-btn:hover { background: var(--vz-hover); }
+  .vz-btn:active { transform: scale(0.98); }
+  .vz-btn-primary { background: var(--sl-color-white); color: var(--sl-color-black); border-color: transparent; }
+  .vz-btn-primary:hover { background: var(--sl-color-gray-1); }
+  .vz-btn:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
+  .vz-hero-code { min-width: 0; }
+  .vz-hero-code :global(.expressive-code) { margin: 0; }
+  @media (min-width: 64rem) { .vz-hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 3.5rem; } }
+</style>

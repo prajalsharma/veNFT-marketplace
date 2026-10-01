@@ -1,0 +1,12 @@
+---
+import Brand from "./Brand.astro";
+import { LINKS } from "../sections";
+---
+<a class="vz-icon" href={LINKS.x} target="_blank" rel="noopener noreferrer" aria-label="Vezo on X" title="Vezo on X"><Brand name="x" size={14} /></a>
+<a class="vz-icon" href={LINKS.github} target="_blank" rel="noopener noreferrer" aria-label="Vezo on GitHub" title="Source on GitHub"><Brand name="github" size={17} /></a>
+
+<style>
+  .vz-icon { display: inline-flex; align-items: center; justify-content: center; width: 2.1rem; height: 2.1rem; border-radius: 8px; color: var(--sl-color-gray-2); transition: color 150ms ease, background-color 150ms ease; }
+  .vz-icon:hover { color: var(--sl-color-white); background: var(--vz-hover); }
+  .vz-icon:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
+</style>

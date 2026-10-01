@@ -1,10 +1,89 @@
 ---
-// Starlight's footer, plus the Ask Vezo assistant. Overriding Footer is the
-// cheapest way to mount a site-wide widget: it renders on every docs page
-// (including the splash home) and the default is re-rendered untouched.
-import Default from "@astrojs/starlight/components/Footer.astro";
+// End of every page: edit link, previous/next, then a compact docs footer.
+// Ask Vezo is mounted here so it exists on every page, the home included.
 import AskVezo from "./AskVezo.astro";
+import Brand from "./Brand.astro";
+import { LINKS } from "../sections";
+
+const { pagination, editUrl, entry } = Astro.locals.starlightRoute;
+const { prev, next } = pagination;
+const isHome = entry.id === "index" || entry.id === "";
+const year = new Date().getFullYear();
 ---
 
-<Default><slot /></Default>
+<footer class="vz-pf print:hidden">
+  {!isHome && (
+    <>
+      {editUrl && (
+        <a class="vz-edit" href={editUrl.toString()} target="_blank" rel="noopener noreferrer">
+          <Brand name="github" size={14} /> Edit this page on GitHub
+        </a>
+      )}
+      {(prev || next) && (
+        <nav class="vz-pn" aria-label="Previous and next pages">
+          {prev ? (
+            <a href={prev.href} rel="prev" class="vz-pn-link">
+              <span class="vz-pn-k">← Previous</span>
+              <span class="vz-pn-t">{prev.label}</span>
+            </a>
+          ) : <span />}
+          {next && (
+            <a href={next.href} rel="next" class="vz-pn-link vz-pn-next">
+              <span class="vz-pn-k">Next →</span>
+              <span class="vz-pn-t">{next.label}</span>
+            </a>
+          )}
+        </nav>
+      )}
+    </>
+  )}
+
+  <div class="vz-df">
+    <div class="vz-df-brand">
+      <span class="vz-df-word">vezo</span>
+      <span>The veNFT market on Mezo.</span>
+    </div>
+    <ul class="vz-df-links">
+      <li><a href={LINKS.app} target="_blank" rel="noopener noreferrer">App</a></li>
+      <li><a href={LINKS.analytics} target="_blank" rel="noopener noreferrer">Analytics</a></li>
+      <li><a href="/resources/links/">Links &amp; addresses</a></li>
+      <li><a href={LINKS.x} target="_blank" rel="noopener noreferrer" class="vz-df-icon"><Brand name="x" size={12} /> X</a></li>
+      <li><a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="vz-df-icon"><Brand name="github" size={14} /> GitHub</a></li>
+    </ul>
+    <p class="vz-df-legal">© {year} Vezo · Built on <a href={LINKS.mezo} target="_blank" rel="noopener noreferrer">Mezo</a></p>
+  </div>
+</footer>
 <AskVezo />
+
+<style>
+  .vz-pf { margin-top: 4rem; display: grid; gap: 2rem; }
+  .vz-edit { display: inline-flex; align-items: center; gap: 0.5rem; width: fit-content; font-size: 0.875rem; color: var(--sl-color-gray-3); text-decoration: none; }
+  .vz-edit:hover { color: var(--sl-color-white); }
+  .vz-pn { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .vz-pn-link {
+    display: grid; gap: 0.3rem; padding: 1rem 1.15rem; border-radius: 10px; text-decoration: none;
+    border: 1px solid var(--vz-hairline); transition: border-color 150ms ease, background-color 150ms ease;
+  }
+  .vz-pn-link:hover { border-color: var(--vz-hairline-strong); background: var(--vz-subtle); }
+  .vz-pn-link:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
+  .vz-pn-next { text-align: end; grid-column: 2; }
+  .vz-pn-k { font-size: 0.8rem; font-weight: 500; color: var(--sl-color-gray-3); }
+  .vz-pn-t { font-size: 1rem; font-weight: 600; color: var(--sl-color-white); letter-spacing: -0.01em; }
+  .vz-df {
+    margin-top: 2rem; padding-top: 1.75rem; border-top: 1px solid var(--vz-hairline);
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem 2rem;
+    font-size: 0.85rem; color: var(--sl-color-gray-3);
+  }
+  .vz-df-brand { display: flex; align-items: baseline; gap: 0.6rem; }
+  .vz-df-word { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.05em; color: var(--sl-color-white); }
+  .vz-df-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; list-style: none; padding: 0; margin: 0; }
+  .vz-df-links li { margin: 0; }
+  .vz-df a { color: var(--sl-color-gray-2); text-decoration: none; }
+  .vz-df a:hover { color: var(--sl-color-white); }
+  .vz-df-icon { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .vz-df-legal { margin: 0; width: 100%; }
+  @media (max-width: 40rem) {
+    .vz-pn { grid-template-columns: 1fr; }
+    .vz-pn-next { grid-column: 1; }
+  }
+</style>

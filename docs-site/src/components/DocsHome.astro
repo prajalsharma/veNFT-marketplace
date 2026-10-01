@@ -1,0 +1,164 @@
+---
+// Docs home body. Paths into the manual by intent, then the reference a
+// developer comes back for (network + core contracts, copyable), then the
+// resources around the docs. All values mirror Links & Addresses.
+import { LINKS } from "../sections";
+
+const paths = [
+  {
+    title: "Use Vezo",
+    body: "Buy or sell a veBTC or veMEZO position.",
+    links: [
+      ["Getting started", "/guides/getting-started/", "Wallet, network and funds"],
+      ["Buying a veNFT", "/guides/buying/", "Evaluate a listing and buy it"],
+      ["Selling a veNFT", "/guides/selling/", "List, price, take offers, cancel"],
+    ],
+  },
+  {
+    title: "Understand the protocol",
+    body: "How listings, pricing and settlement work.",
+    links: [
+      ["Marketplace mechanics", "/concepts/marketplace-mechanics/", "Escrowless listings, atomic settlement"],
+      ["Pricing & discounts", "/concepts/pricing-and-discounts/", "Intrinsic value and voting power"],
+      ["Fees", "/concepts/fees/", "The protocol fee and its limits"],
+      ["Security", "/architecture/security/", "Audit status and guarantees"],
+    ],
+  },
+  {
+    title: "Build on Vezo",
+    body: "Read the market and trade from your own code.",
+    links: [
+      ["Contract integration", "/developers/integrate/", "Chain config, signatures, samples"],
+      ["Subgraph & data", "/developers/subgraph/", "Query listings, bids and activity"],
+      ["Smart contracts", "/architecture/contracts/", "Modules and deployed addresses"],
+      ["Run locally", "/developers/run-locally/", "Clone and run the stack"],
+    ],
+  },
+] as const;
+
+const contracts = [
+  ["VeNFTMarketplace", "0x293ba099c5Cf32af54013F00fEe8D2EA1cad8570"],
+  ["VeNFTBidding", "0xef35dc538b50549e95687a51e8aa542D485ea384"],
+  ["PaymentRouter", "0xA4098F23aA2883DA13A714982d89BFB403718fb9"],
+  ["MezoVeNFTAdapter", "0x8EC595099030aB282511c87cAF104E734418Eff5"],
+] as const;
+---
+
+<div class="vz-home not-content">
+  <section class="vz-paths" aria-label="Where to start">
+    {paths.map((p) => (
+      <div class="vz-path">
+        <h2>{p.title}</h2>
+        <p class="vz-path-body">{p.body}</p>
+        <ul>
+          {p.links.map(([label, href, hint]) => (
+            <li>
+              <a href={href}>
+                <span class="vz-l">{label}<span class="vz-arrow" aria-hidden="true">→</span></span>
+                <span class="vz-h">{hint}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+
+  <section class="vz-ref" aria-labelledby="vz-ref-h">
+    <div class="vz-ref-head">
+      <h2 id="vz-ref-h">Quick reference</h2>
+      <a href="/resources/links/">All links &amp; addresses →</a>
+    </div>
+    <div class="vz-ref-grid">
+      <div class="vz-table-wrap">
+        <table>
+          <thead><tr><th></th><th>Mainnet</th><th>Testnet</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Chain ID</th><td><code>31612</code></td><td><code>31611</code></td></tr>
+            <tr><th scope="row">RPC</th><td><code>mainnet.mezo.public.validationcloud.io</code></td><td><code>rpc.test.mezo.org</code></td></tr>
+            <tr><th scope="row">Explorer</th><td><a href="https://explorer.mezo.org" target="_blank" rel="noopener noreferrer">explorer.mezo.org</a></td><td><a href="https://explorer.test.mezo.org" target="_blank" rel="noopener noreferrer">explorer.test.mezo.org</a></td></tr>
+            <tr><th scope="row">Gas</th><td colspan="2">BTC (native)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="vz-addrs" aria-label="Core mainnet contracts">
+        {contracts.map(([name, addr]) => (
+          <li>
+            <span class="vz-addr-name">{name}</span>
+            <span class="vz-addr-row">
+              <a class="vz-addr" href={`https://explorer.mezo.org/address/${addr}`} target="_blank" rel="noopener noreferrer" title={addr}>{addr.slice(0, 10)}…{addr.slice(-8)}</a>
+              <button type="button" class="vz-copy" data-copy={addr} aria-label={`Copy ${name} address`}>Copy</button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="vz-res" aria-label="Resources">
+    <a href="/resources/faq/"><strong>FAQ</strong><span>Short answers to common questions</span></a>
+    <a href="/resources/ask-ai/"><strong>Ask Vezo</strong><span>Ask the docs a question in plain words</span></a>
+    <a href={LINKS.analytics} target="_blank" rel="noopener noreferrer"><strong>Analytics ↗</strong><span>Volume and trades on Dune</span></a>
+    <a href={LINKS.github} target="_blank" rel="noopener noreferrer"><strong>Source ↗</strong><span>Contracts, app and docs on GitHub</span></a>
+  </section>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".vz-copy").forEach((b) => {
+    b.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy ?? ""); b.textContent = "Copied"; }
+      catch { b.textContent = "Select"; }
+      setTimeout(() => (b.textContent = "Copy"), 1600);
+    });
+  });
+</script>
+
+<style>
+  .vz-home { display: grid; gap: clamp(3rem, 6vw, 5rem); padding-block: clamp(2.5rem, 5vw, 4rem) 1rem; }
+  h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; color: var(--sl-color-white); margin: 0; }
+  .vz-paths { display: grid; gap: 2.5rem; }
+  .vz-path-body { margin: 0.4rem 0 1rem; color: var(--sl-color-gray-3); font-size: 0.95rem; }
+  .vz-path ul { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--vz-hairline); }
+  .vz-path li { margin: 0; border-bottom: 1px solid var(--vz-hairline); }
+  .vz-path a { display: grid; gap: 0.15rem; padding: 0.8rem 0; text-decoration: none; }
+  .vz-l { display: flex; justify-content: space-between; font-weight: 600; color: var(--sl-color-white); }
+  .vz-h { font-size: 0.875rem; color: var(--sl-color-gray-3); }
+  .vz-arrow { color: var(--sl-color-gray-3); transition: transform 160ms ease, color 160ms ease; }
+  .vz-path a:hover .vz-arrow { transform: translateX(3px); color: var(--vz-red); }
+  .vz-path a:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; border-radius: 4px; }
+  @media (min-width: 50rem) { .vz-paths { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; } }
+
+  .vz-ref-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1.25rem; }
+  .vz-ref-head a { font-size: 0.9rem; font-weight: 600; color: var(--sl-color-gray-2); text-decoration: none; }
+  .vz-ref-head a:hover { color: var(--sl-color-white); }
+  .vz-ref-grid { display: grid; gap: 1.5rem; }
+  @media (min-width: 64rem) { .vz-ref-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+  .vz-table-wrap { overflow-x: auto; border: 1px solid var(--vz-hairline); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: start; padding: 0.7rem 1rem; border-bottom: 1px solid var(--vz-hairline); white-space: nowrap; }
+  thead th { font-size: 0.8rem; font-weight: 600; color: var(--sl-color-gray-3); background: var(--vz-subtle); }
+  tbody th { font-weight: 600; color: var(--sl-color-gray-2); }
+  tbody tr:last-child > * { border-bottom: 0; }
+  td { color: var(--sl-color-white); }
+  td a { color: var(--sl-color-white); }
+  td code { font-size: 0.85em; background: none; padding: 0; }
+  .vz-addrs { list-style: none; margin: 0; padding: 0; border: 1px solid var(--vz-hairline); border-radius: 12px; }
+  .vz-addrs li { display: grid; gap: 0.2rem; padding: 0.75rem 1rem; margin: 0; border-bottom: 1px solid var(--vz-hairline); }
+  .vz-addrs li:last-child { border-bottom: 0; }
+  .vz-addr-name { font-size: 0.8rem; font-weight: 600; color: var(--sl-color-gray-3); }
+  .vz-addr-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .vz-addr { font-family: var(--sl-font-mono); font-size: 0.85rem; color: var(--sl-color-white); text-decoration: none; }
+  .vz-addr:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .vz-copy {
+    font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--sl-color-gray-2); cursor: pointer;
+    background: none; border: 1px solid var(--vz-hairline-strong); border-radius: 6px; padding: 0.2rem 0.55rem; min-width: 4.2rem;
+  }
+  .vz-copy:hover { color: var(--sl-color-white); }
+  .vz-copy:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
+
+  .vz-res { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); border-top: 1px solid var(--vz-hairline); }
+  .vz-res a { display: grid; gap: 0.25rem; padding: 1.25rem 1.25rem 1.25rem 0; text-decoration: none; }
+  .vz-res strong { color: var(--sl-color-white); font-weight: 600; }
+  .vz-res span { font-size: 0.875rem; color: var(--sl-color-gray-3); }
+  .vz-res a:hover strong { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--vz-red); }
+</style>

@@ -1,0 +1,40 @@
+---
+// The current section's pages, preceded on narrower screens (where the
+// header has no room for section tabs) by a compact section switcher.
+import MobileMenuFooter from "virtual:starlight/components/MobileMenuFooter";
+import SidebarPersister from "@astrojs/starlight/components/SidebarPersister.astro";
+import SidebarSublist from "@astrojs/starlight/components/SidebarSublist.astro";
+import { SECTIONS } from "../sections";
+
+const { sidebar } = Astro.locals.starlightRoute;
+const current = Astro.locals.vezo?.section;
+---
+
+<nav class="vz-sections" aria-label="Documentation sections">
+  {SECTIONS.map((s) => (
+    <a href={s.href} aria-current={current === s.id ? "true" : undefined}>{s.label}</a>
+  ))}
+</nav>
+
+<SidebarPersister>
+  <SidebarSublist sublist={sidebar} />
+</SidebarPersister>
+
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>
+
+<style>
+  .vz-sections {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem;
+    padding: 0.25rem; margin-bottom: 1.5rem; border-radius: 10px; background: var(--vz-subtle);
+  }
+  .vz-sections a {
+    display: block; padding: 0.5rem 0.65rem; border-radius: 7px; text-decoration: none;
+    font-size: 0.875rem; font-weight: 500; color: var(--sl-color-gray-2);
+  }
+  .vz-sections a:last-child:nth-child(odd) { grid-column: span 2; }
+  .vz-sections a[aria-current="true"] { background: var(--vz-surface); color: var(--sl-color-white); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .vz-sections a:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 1px; }
+  @media (min-width: 72rem) { .vz-sections { display: none; } }
+</style>

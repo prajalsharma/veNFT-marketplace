@@ -1,0 +1,22 @@
+---
+import ThemeSelect from "virtual:starlight/components/ThemeSelect";
+import SocialLinks from "./SocialLinks.astro";
+import { LINKS } from "../sections";
+---
+<div class="vz-mm">
+  <a class="vz-mm-app" href={LINKS.app} target="_blank" rel="noopener noreferrer">Open the app</a>
+  <div class="vz-mm-row">
+    <div class="vz-mm-social"><SocialLinks /></div>
+    <ThemeSelect />
+  </div>
+</div>
+
+<style>
+  .vz-mm { border-top: 1px solid var(--vz-hairline); margin-top: 1.5rem; padding-top: 1.25rem; display: grid; gap: 1rem; }
+  .vz-mm-app {
+    display: flex; align-items: center; justify-content: center; height: 2.75rem; border-radius: 10px;
+    font-weight: 600; text-decoration: none; color: var(--sl-color-black); background: var(--sl-color-white);
+  }
+  .vz-mm-row { display: flex; align-items: center; justify-content: space-between; }
+  .vz-mm-social { display: flex; gap: 0.25rem; }
+</style>

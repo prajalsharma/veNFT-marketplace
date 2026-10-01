@@ -1,0 +1,19 @@
+---
+// Wordmark + "Docs" in plain type. The app's mark, no badge.
+import logo from "../assets/vezo-logo.svg";
+---
+<a href="/" class="vz-title" aria-label="Vezo Docs home">
+  <img src={logo.src} width="26" height="19" alt="" />
+  <span class="vz-word">vezo</span>
+  <span class="vz-sep" aria-hidden="true"></span>
+  <span class="vz-docs">Docs</span>
+</a>
+
+<style>
+  .vz-title { display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none; color: var(--sl-color-white); border-radius: 6px; }
+  .vz-title img { height: 19px; width: auto; }
+  .vz-word { font-weight: 800; font-size: 1.3rem; letter-spacing: -0.05em; line-height: 1; }
+  .vz-sep { width: 1px; height: 18px; background: var(--vz-hairline-strong); }
+  .vz-docs { font-weight: 600; font-size: 0.95rem; color: var(--sl-color-gray-2); letter-spacing: -0.01em; }
+  .vz-title:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 4px; }
+</style>

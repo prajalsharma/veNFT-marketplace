@@ -1,0 +1,63 @@
+---
+// Docs header: identity, the five sections, search, and the way back to
+// the product. Sections are real navigation (each opens its first page),
+// and the current one is marked with the only red in the bar.
+import Search from "virtual:starlight/components/Search";
+import SiteTitle from "virtual:starlight/components/SiteTitle";
+import ThemeSelect from "virtual:starlight/components/ThemeSelect";
+import SocialLinks from "./SocialLinks.astro";
+import { SECTIONS, LINKS } from "../sections";
+
+const current = Astro.locals.vezo?.section;
+---
+
+<div class="vz-header">
+  <div class="vz-left">
+    <SiteTitle />
+    <nav class="vz-tabs" aria-label="Documentation sections">
+      {SECTIONS.map((s) => (
+        <a href={s.href} aria-current={current === s.id ? "true" : undefined}>{s.label}</a>
+      ))}
+    </nav>
+  </div>
+  <div class="vz-search print:hidden"><Search /></div>
+  <div class="vz-right sl-hidden md:sl-flex print:hidden">
+    <a class="vz-app" href={LINKS.app} target="_blank" rel="noopener noreferrer">
+      Open app
+      <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <span class="vz-divider" aria-hidden="true"></span>
+    <SocialLinks />
+    <ThemeSelect />
+  </div>
+</div>
+
+<style>
+  .vz-header { display: flex; align-items: center; gap: 1.25rem; height: 100%; }
+  .vz-left { display: flex; align-items: center; gap: 2rem; min-width: 0; height: 100%; }
+  .vz-tabs { display: none; align-items: stretch; height: 100%; gap: 0.25rem; }
+  .vz-tabs a {
+    position: relative; display: inline-flex; align-items: center; padding: 0 0.7rem;
+    font-size: 0.9rem; font-weight: 500; letter-spacing: -0.01em; text-decoration: none;
+    color: var(--sl-color-gray-2); transition: color 150ms ease;
+  }
+  .vz-tabs a:hover { color: var(--sl-color-white); }
+  .vz-tabs a[aria-current="true"] { color: var(--sl-color-white); font-weight: 600; }
+  .vz-tabs a[aria-current="true"]::after {
+    content: ""; position: absolute; left: 0.7rem; right: 0.7rem; bottom: -1px; height: 2px;
+    background: var(--vz-red); border-radius: 2px 2px 0 0;
+  }
+  .vz-tabs a:focus-visible { outline: 2px solid var(--vz-red); outline-offset: -4px; border-radius: 6px; }
+  .vz-search { margin-inline-start: auto; }
+  .vz-right { align-items: center; gap: 0.35rem; }
+  .vz-app {
+    display: inline-flex; align-items: center; gap: 0.35rem; height: 2.1rem; padding: 0 0.85rem;
+    border-radius: 8px; font-size: 0.875rem; font-weight: 600; text-decoration: none;
+    color: var(--sl-color-white); border: 1px solid var(--vz-hairline-strong);
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+  .vz-app:hover { background: var(--vz-hover); border-color: var(--sl-color-gray-4); }
+  .vz-app:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
+  .vz-divider { width: 1px; height: 1.25rem; background: var(--vz-hairline-strong); margin: 0 0.4rem; }
+  @media (min-width: 72rem) { .vz-tabs { display: flex; } }
+</style>
