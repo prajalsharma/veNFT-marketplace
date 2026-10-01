@@ -36,6 +36,8 @@ export interface VeNFTCardProps {
   /** USD price of one unit of the payment token, for fiat context under the price. */
   unitUsd?: number | null;
   onBuy?: () => void;
+  /** Briefly highlighted when arriving from a landing-page link. */
+  focused?: boolean;
 }
 
 export function fmtAmount(wei: bigint): string {
@@ -82,6 +84,8 @@ export function VeNFTCard({
   isGrant = false,
   unitUsd = null,
   onBuy,
+  focused = false,
+  listingId,
 }: VeNFTCardProps) {
   const lockEndSec = Number(lockEnd);
   const isPermanent = lockEndSec === 0;
@@ -103,7 +107,8 @@ export function VeNFTCard({
       exit={{ opacity: 0, scale: 0.98 }}
       layout
       transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-      className={`position-card rounded-xl overflow-hidden ${disabled ? "nft-card--disabled" : ""}`}
+      data-listing-id={listingId}
+      className={`position-card rounded-xl overflow-hidden ${disabled ? "nft-card--disabled" : ""} ${focused ? "is-focused" : ""}`}
     >
       <div className="p-5">
         {/* Identity: what this is, and how locked it is */}

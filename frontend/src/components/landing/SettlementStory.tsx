@@ -98,7 +98,7 @@ export function SettlementStory({ listing }: { listing: Listing | null }) {
           if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.step));
         });
       },
-      { rootMargin: "-45% 0px -45% 0px" }
+      { rootMargin: "-42% 0px -42% 0px" }
     );
     refs.current.forEach((el) => el && io.observe(el));
     return () => io.disconnect();
@@ -117,7 +117,7 @@ export function SettlementStory({ listing }: { listing: Listing | null }) {
             key={s.title}
             ref={(el) => { refs.current[k] = el; }}
             data-step={k}
-            className="lg:min-h-[55vh] flex flex-col justify-center py-8 lg:py-0"
+            className="lg:min-h-[40vh] flex flex-col justify-center py-8 lg:py-0"
             style={{ borderTop: k ? "1px solid var(--hairline)" : undefined }}
           >
             <p className="text-[14px] font-semibold tabular-nums mb-3 transition-colors duration-300" style={{ color: active === k ? "var(--vezo-red)" : "var(--text-3)" }}>

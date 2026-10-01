@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Filter, X, CheckCircle2, SlidersHorizontal, Star, Clock, TrendingDown, Zap, Award, RefreshCw } from "lucide-react";
+import { Filter, X, SlidersHorizontal, Star, Clock, TrendingDown, Zap, Award } from "lucide-react";
 
 export interface FilterState {
   collectionFilter: "all" | "veBTC" | "veMEZO";
@@ -32,7 +32,7 @@ interface FilterSidebarProps extends FilterState {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-black uppercase tracking-[0.14em] mb-3 px-0.5" style={{ color: "var(--text-3)" }}>{children}</p>
+    <p className="text-[13px] font-semibold mb-3" style={{ color: "var(--text-2)" }}>{children}</p>
   );
 }
 
@@ -52,11 +52,12 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between px-3.5 py-3 rounded-xl border text-sm font-bold transition-all duration-150"
+      aria-pressed={active}
+      className="flex items-center justify-center h-10 px-3 rounded-xl border text-[13px] font-semibold transition-all duration-150"
       style={{
-        background: active ? `${accent || "#FF0040"}12` : "var(--bg-2)",
-        borderColor: active ? `${accent || "#FF0040"}45` : "var(--border)",
-        color: active ? (accent || "#FF0040") : "var(--text-2)",
+        background: active ? "var(--text-1)" : "transparent",
+        borderColor: active ? "var(--text-1)" : "var(--hairline)",
+        color: active ? "var(--bg-1)" : "var(--text-2)",
       }}
       onMouseEnter={(e) => {
         if (!active) {
@@ -66,7 +67,7 @@ function FilterChip({
       }}
       onMouseLeave={(e) => {
         if (!active) {
-          (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+          (e.currentTarget as HTMLElement).style.borderColor = "var(--hairline)";
           (e.currentTarget as HTMLElement).style.color = "var(--text-2)";
         }
       }}
@@ -75,7 +76,6 @@ function FilterChip({
         {Icon && <Icon className="w-3.5 h-3.5" />}
         {label}
       </span>
-      {active && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
     </button>
   );
 }
@@ -99,11 +99,11 @@ function PresetChip({
       onClick={onClick}
       aria-pressed={active}
       title={hint}
-      className="h-10 px-3 rounded-xl border text-[13px] font-bold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
+      className="h-10 px-3 rounded-xl border text-[13px] font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
       style={{
-        background: active ? "rgba(255,0,64,0.10)" : "var(--bg-2)",
-        borderColor: active ? "rgba(255,0,64,0.45)" : "var(--border)",
-        color: active ? "#FF0040" : "var(--text-2)",
+        background: active ? "var(--text-1)" : "transparent",
+        borderColor: active ? "var(--text-1)" : "var(--hairline)",
+        color: active ? "var(--bg-1)" : "var(--text-2)",
       }}
       onMouseEnter={(e) => {
         if (!active) {
@@ -113,7 +113,7 @@ function PresetChip({
       }}
       onMouseLeave={(e) => {
         if (!active) {
-          e.currentTarget.style.borderColor = "var(--border)";
+          e.currentTarget.style.borderColor = "var(--hairline)";
           e.currentTarget.style.color = "var(--text-2)";
         }
       }}
@@ -127,10 +127,12 @@ function PresetChip({
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
-      onClick={() => onChange(!checked)}
+      role="switch"
+      aria-checked={checked}
+      onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
       className="relative w-10 h-5.5 rounded-full transition-all duration-200 flex-shrink-0"
       style={{
-        background: checked ? "#FF0040" : "var(--bg-4)",
+        background: checked ? "var(--text-1)" : "var(--bg-4)",
         width: 40,
         height: 22,
       }}
@@ -138,8 +140,8 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
       <motion.div
         animate={{ x: checked ? 20 : 2 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        className="absolute top-[3px] w-4 h-4 rounded-full bg-white"
-        style={{ width: 16, height: 16 }}
+        className="absolute top-[3px] w-4 h-4 rounded-full"
+        style={{ width: 16, height: 16, background: "var(--bg-1)" }}
       />
     </button>
   );
@@ -218,6 +220,11 @@ export function FilterSidebar({
     commitEndingSoon(draft.showEndingSoon);
     onClose();
   };
+  // Phones get a bottom sheet (thumb reach); wider screens a right drawer.
+  // Read at render: the drawer only renders client-side (portal), and the
+  // enter animation must know its direction on the first frame.
+  const sheet = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+
   const resetDraft = () =>
     setDraft({ collectionFilter: "all", sortBy: "discount", minDiscount: 0, maxDiscount: 50, showGrantOnly: false, showAutoLockOnly: false, showEndingSoon: false });
 
@@ -248,29 +255,30 @@ export function FilterSidebar({
 
           {/* Panel */}
           <motion.aside
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 220 }}
-            className="fixed top-0 right-0 h-full w-full max-w-[340px] z-[95] flex flex-col overflow-hidden"
+            initial={sheet ? { y: "100%" } : { x: "100%" }}
+            animate={sheet ? { y: 0 } : { x: 0 }}
+            exit={sheet ? { y: "100%" } : { x: "100%" }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed z-[95] flex flex-col overflow-hidden inset-x-0 bottom-0 max-h-[88dvh] rounded-t-2xl sm:rounded-none sm:inset-x-auto sm:top-0 sm:right-0 sm:h-full sm:max-h-none sm:w-full sm:max-w-[360px]"
             role="dialog"
             aria-modal="true"
             aria-label="Filters"
             style={{
               background: "var(--bg-1)",
-              borderLeft: "1px solid var(--border)",
-              boxShadow: "var(--shadow-xl)",
+              borderLeft: "1px solid var(--hairline)",
+              boxShadow: "var(--shadow-2xl)",
             }}
           >
+            <div className="sm:hidden flex justify-center pt-2.5" aria-hidden>
+              <span className="w-10 h-1 rounded-full" style={{ background: "var(--border-strong)" }} />
+            </div>
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "var(--border)" }}>
-              <div className="flex items-center gap-2.5">
-                <SlidersHorizontal className="w-4 h-4 text-vezo-red" style={{ color: "#FF0040" }} />
-                <h3 className="text-base font-bold">Filters</h3>
+            <div className="flex items-center justify-between px-6 py-4 sm:py-5 border-b" style={{ borderColor: "var(--hairline)" }}>
+              <div className="flex items-baseline gap-2.5">
+                <h3 className="text-[19px] font-bold" style={{ letterSpacing: "-0.02em" }}>Filters</h3>
                 {activeFilterCount > 0 && (
-                  <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center text-white"
-                    style={{ background: "#FF0040" }}>
-                    {activeFilterCount}
+                  <span className="text-[13px] font-semibold tabular-nums" style={{ color: "var(--text-3)" }}>
+                    {activeFilterCount} on
                   </span>
                 )}
               </div>
@@ -291,10 +299,10 @@ export function FilterSidebar({
 
               {/* ── Asset Type ── */}
               <section>
-                <SectionLabel>Asset Type</SectionLabel>
-                <div className="space-y-2">
+                <SectionLabel>Collection</SectionLabel>
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "all", label: "All Collections" },
+                    { id: "all", label: "All" },
                     { id: "veBTC", label: "veBTC" },
                     { id: "veMEZO", label: "veMEZO" },
                   ].map((item) => (
@@ -311,8 +319,8 @@ export function FilterSidebar({
               {/* ── Discount Range ── */}
               <section>
                 <div className="flex justify-between items-center mb-3">
-                  <SectionLabel>Discount Range</SectionLabel>
-                  <span className="text-xs font-bold" style={{ color: "#FF0040" }}>
+                  <SectionLabel>Discount range</SectionLabel>
+                  <span className="text-[13px] font-semibold tabular-nums mb-3" style={{ color: "var(--text-1)" }}>
                     {minDiscount}% – {maxDiscount}%
                   </span>
                 </div>
@@ -369,7 +377,7 @@ export function FilterSidebar({
 
               {/* ── Discount presets — radio-style: click the active one to clear ── */}
               <section>
-                <SectionLabel>Minimum Discount</SectionLabel>
+                <SectionLabel>Minimum discount</SectionLabel>
                 <div className="grid grid-cols-3 gap-2">
                   <PresetChip
                     label="Any"
@@ -398,7 +406,7 @@ export function FilterSidebar({
 
               {/* ── Quick filters — real toggles ── */}
               <section>
-                <SectionLabel>Quick Filters</SectionLabel>
+                <SectionLabel>Quick filters</SectionLabel>
                 <div className="grid grid-cols-2 gap-2">
                   <PresetChip
                     label="Ending soon"
@@ -430,12 +438,12 @@ export function FilterSidebar({
                   ].map((toggle) => (
                     <div
                       key={toggle.label}
-                      className="flex items-center justify-between p-3 rounded-xl cursor-pointer"
-                      style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
+                      className="flex items-center justify-between gap-4 p-3.5 rounded-xl cursor-pointer"
+                      style={{ border: "1px solid var(--hairline)" }}
                       onClick={() => toggle.set(!toggle.val)}
                     >
                       <div>
-                        <p className="text-sm font-bold">{toggle.label}</p>
+                        <p className="text-[14px] font-semibold">{toggle.label}</p>
                         <p className="text-[12px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
                       </div>
                       <ToggleSwitch checked={toggle.val} onChange={toggle.set} />
@@ -446,23 +454,20 @@ export function FilterSidebar({
             </div>
 
             {/* Footer actions */}
-            <div className="px-5 py-5 border-t space-y-2" style={{ borderColor: "var(--border)", background: "var(--bg-1)" }}>
-              <button
-                onClick={applyDraft}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-150"
-                style={{ background: "linear-gradient(135deg, #FF0040, #CC0030)" }}
-              >
-                Apply Filters
-              </button>
+            <div className="px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t grid grid-cols-[auto_1fr] gap-2" style={{ borderColor: "var(--hairline)", background: "var(--bg-1)" }}>
               <button
                 onClick={resetDraft}
-                className="w-full py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
-                style={{ color: "var(--text-3)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+                className="h-12 px-5 rounded-xl text-[15px] font-semibold transition-colors"
+                style={{ background: "var(--bg-2)", color: "var(--text-1)" }}
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Reset All
+                Reset
+              </button>
+              <button
+                onClick={applyDraft}
+                className="h-12 rounded-xl text-[15px] font-semibold transition-transform active:scale-[0.98]"
+                style={{ background: "var(--text-1)", color: "var(--bg-1)" }}
+              >
+                Show results
               </button>
             </div>
           </motion.aside>

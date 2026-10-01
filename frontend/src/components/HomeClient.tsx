@@ -92,7 +92,7 @@ function HeroBand({ network }: { network: string }) {
             </motion.div>
           </div>
           <motion.div {...enter(0.2)}>
-            <DiscountDial listings={live.byDiscount} status={live.status} />
+            <DiscountDial listing={live.byDiscount[0] ?? null} status={live.status} />
           </motion.div>
         </div>
       </div>
@@ -230,15 +230,30 @@ function TradeTimeline() {
 
 function ListedNow() {
   const live = useLiveMarket();
-  const rows = live.byDiscount.slice(0, 5);
+  const ranked = live.byDiscount;
+  const total = ranked.length;
+  // With three or more listings, the top two are already featured above
+  // (hero dial, settlement story), so the list continues from rank three.
+  // A fixed cap keeps this section the same height whether the market holds
+  // 3 positions or 300; the rest live one click away in the marketplace.
+  const CAP = 5;
+  const start = total >= 3 ? 2 : 0;
+  const rows = ranked.slice(start, start + CAP);
+  const remaining = total - start - rows.length;
+
   return (
     <section className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <motion.div {...reveal}>
           <H2>Positions you can buy today</H2>
+          {total > 0 && (
+            <p className="text-[14px] mt-3 tabular-nums" style={{ color: "var(--text-3)" }}>
+              {total} listed{start ? `, continuing from #${start + 1} by discount` : ", best discount first"}
+            </p>
+          )}
         </motion.div>
         <Link href="/marketplace" className="text-[14px] font-semibold inline-flex items-center gap-1.5 hover:underline underline-offset-4" style={{ color: "var(--text-1)" }}>
-          Open the market <ArrowRight style={{ width: 15, height: 15 }} />
+          Open the market <ArrowRight className="cta-arrow" style={{ width: 15, height: 15 }} />
         </Link>
       </div>
 
@@ -251,21 +266,21 @@ function ListedNow() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl px-6 py-14 md:px-10 grid md:grid-cols-[1fr_auto] gap-6 items-center" style={{ border: "1px dashed var(--border-strong)" }}>
+        <div className="rounded-2xl px-6 py-12 md:px-10 grid md:grid-cols-[1fr_auto] gap-6 items-center" style={{ border: "1px dashed var(--border-strong)" }}>
           <div>
             <p className="text-[18px] font-bold mb-1.5" style={{ color: "var(--text-1)" }}>
-              {live.status === "error" ? "Listings could not be loaded" : "No positions are listed yet"}
+              {live.status === "error" ? "Listings could not be loaded" : "The market is waiting for its first listing"}
             </p>
             <p className="text-[15px]" style={{ color: "var(--text-2)", maxWidth: "56ch" }}>
               {live.status === "error"
-                ? "This is a connection problem on our side, not an empty market. Try again in a moment."
-                : "Listings appear here the moment they go live. If you hold a veBTC or veMEZO position, listing takes two transactions and your NFT never leaves your wallet."}
+                ? "A connection problem on our side, not an empty market. Try again in a moment."
+                : "A position listed now is the first one every buyer sees. Listing takes two transactions, and your veNFT stays in your wallet, voting and earning, until it sells."}
             </p>
           </div>
           {live.status === "error" ? (
             <button onClick={live.refetch} className="btn-quiet h-11 px-5 rounded-lg text-[14px] font-semibold">Try again</button>
           ) : (
-            <Link href="/my-listings" className="btn-buy h-11 px-5 rounded-lg text-[14px] font-semibold inline-flex items-center">List a position</Link>
+            <Link href="/my-listings" className="btn-brand h-11 px-5 rounded-lg text-[14px] font-semibold inline-flex items-center">List your veNFT</Link>
           )}
         </div>
       ) : (
@@ -279,7 +294,11 @@ function ListedNow() {
               transition={{ duration: 0.45, delay: k * 0.05, ease }}
               style={{ borderTop: k ? "1px solid var(--hairline)" : undefined }}
             >
-              <Link href="/marketplace" className="market-row grid grid-cols-[auto_minmax(0,1fr)_auto] md:grid-cols-[auto_1.2fr_1fr_1fr_auto] items-center gap-x-4 md:gap-x-5 px-4 md:px-6 py-4 md:py-5">
+              <Link
+                href={`/marketplace?focus=${l.listingId}`}
+                className="market-row listing-row grid grid-cols-[auto_auto_minmax(0,1fr)_auto] md:grid-cols-[28px_auto_1.2fr_1fr_1fr_auto_20px] items-center gap-x-3 md:gap-x-5 px-4 md:px-6 py-4 md:py-5"
+              >
+                <span className="text-[13px] font-semibold tabular-nums" style={{ color: "var(--text-3)" }}>{start + k + 1}</span>
                 <PositionGlyph collection={l.collection} lockEnd={l.lockEnd} size={40} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -295,14 +314,23 @@ function ListedNow() {
                   Holds {fmtAmount(l.intrinsicValue)} {l.collection === "veBTC" ? "BTC" : "MEZO"}
                 </div>
                 <div className="text-right">
-                  <div className="text-[16px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>
+                  <div className="text-[16px] font-bold tabular-nums whitespace-nowrap" style={{ color: "var(--text-1)" }}>
                     {fmtAmount(l.price)} <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>{getPaymentTokenSymbol(l.paymentToken)}</span>
                   </div>
                   <div className="text-[13px] font-semibold"><DiscountText discountBps={l.discountBps} /></div>
                 </div>
+                <ArrowRight className="row-arrow hidden md:block" style={{ width: 16, height: 16, color: "var(--text-3)" }} />
               </Link>
             </motion.li>
           ))}
+          {remaining > 0 && (
+            <li style={{ borderTop: "1px solid var(--hairline)" }}>
+              <Link href="/marketplace" className="market-row flex items-center justify-between px-4 md:px-6 py-4 text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>
+                <span className="tabular-nums">{remaining} more listed in the market</span>
+                <ArrowRight className="cta-arrow" style={{ width: 15, height: 15 }} />
+              </Link>
+            </li>
+          )}
         </ul>
       )}
     </section>
@@ -321,7 +349,10 @@ const RULES: [string, string][] = [
 export default function HomeClient() {
   const { network } = useNetwork();
   const live = useLiveMarket();
-  const liveForStory = live.byDiscount[0] ?? null;
+  // Spread the best listings across the page instead of repeating one: the
+  // hero dial takes the best, the settlement story the next, and the list
+  // continues from there. With fewer listings, each surface falls back.
+  const liveForStory = live.byDiscount[1] ?? live.byDiscount[0] ?? null;
 
   return (
     <div>

@@ -455,6 +455,28 @@ export default function MarketplaceClient() {
     filters.showEndingSoon,
   ].filter(Boolean).length;
 
+  // Deep link: /marketplace?focus=<listingId> scrolls to that listing and
+  // highlights it briefly (used by the landing page). It never opens checkout:
+  // buying is always the visitor's own click. The param is consumed afterwards.
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const deepLinkDone = useRef(false);
+  useEffect(() => {
+    if (deepLinkDone.current || listingsLoading) return;
+    deepLinkDone.current = true;
+    const id = new URLSearchParams(window.location.search).get("focus");
+    if (id === null) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("focus");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    if (!searchableListings.some((l) => String(l.listingId) === id && l.active)) return;
+    setFocusId(id);
+    requestAnimationFrame(() =>
+      document.querySelector(`[data-listing-id="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+    );
+    const t = setTimeout(() => setFocusId(null), 2600);
+    return () => clearTimeout(t);
+  }, [listingsLoading, searchableListings]);
+
   const dataLoaded = !listingsLoading && rawListings.length >= 0;
   const showSkeletons = listingsLoading;
 
@@ -639,6 +661,7 @@ export default function MarketplaceClient() {
                     {filteredListings.map((listing) => (
                       <VeNFTCard
                         key={`${listing.collection}-${listing.tokenId}`}
+                        focused={focusId === String(listing.listingId)}
                         listingId={listing.listingId}
                         collection={listing.collection}
                         nftContract={listing.nftContract}

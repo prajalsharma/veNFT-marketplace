@@ -69,8 +69,8 @@ export function SupportNudge() {
           className="fixed z-[60] left-3 right-3 mx-auto top-[102px] lg:top-[118px] max-w-[600px] rounded-2xl p-4 sm:p-5"
           style={{
             background: "var(--bg-1)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-lg)",
+            border: "1px solid var(--hairline)",
+            boxShadow: "var(--shadow-2xl)",
           }}
           role="complementary"
           aria-label="Support Vezo"
@@ -93,17 +93,15 @@ export function SupportNudge() {
             </p>
           </div>
           <p className="text-[13px] leading-relaxed mb-3.5 pr-2" style={{ color: "var(--text-2)" }}>
-            Vezo is independent and free to use. If it&apos;s been useful to you,
-            a contribution in BTC, MEZO, or MUSD helps fund the infrastructure,
-            audits, and new features that keep it running. Every supporter goes
-            on the public board.
+            Vezo is independent and free to use. If it&apos;s helped you, a
+            contribution in BTC, MEZO or MUSD keeps it running. Every supporter
+            goes on the public board.
           </p>
           <div className="flex items-center gap-4">
             <a
               href={SUPPORT_URL}
               onClick={dismiss}
-              className="inline-flex items-center px-4 py-2 rounded-xl text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
-              style={{ background: "#FF0040", color: "#fff" }}
+              className="buy-cta inline-flex items-center h-10 px-4 rounded-xl text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
             >
               Support Vezo
             </a>

@@ -15,8 +15,10 @@ import { useState, useEffect, useMemo } from "react";
 import { formatEther, maxUint256 } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, ArrowRight, Loader2, CheckCircle2, AlertCircle, Wallet, ArrowLeftRight, Info, Award } from "lucide-react";
+import { X, Loader2, AlertCircle, Wallet, ArrowLeftRight, Award } from "lucide-react";
 import { CountdownCompact } from "./CountdownTimer";
+import { PositionGlyph } from "./market/PositionVisuals";
+import { StepRow, SuccessCheck, type StepState } from "./market/TxSteps";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -119,44 +121,6 @@ function parseError(raw: string): string {
   return raw.length > 200 ? raw.slice(0, 200) + "…" : raw;
 }
 
-// ─── Step pill ─────────────────────────────────────────────────────────────────
-function StepPill({
-  label,
-  num,
-  state,
-}: {
-  label: string;
-  num: number;
-  state: "idle" | "active" | "done";
-}) {
-  const colors = {
-    idle: { bg: "var(--bg-2)", border: "var(--border)", color: "var(--text-3)" },
-    active: { bg: "rgba(255,0,64,0.1)", border: "rgba(255,0,64,0.24)", color: "#FF0040" },
-    done: { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.22)", color: "#10B981" },
-  }[state];
-
-  return (
-    <div
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold"
-      style={{ background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color }}
-    >
-      {state === "done" ? (
-        <CheckCircle2 style={{ width: 11, height: 11 }} />
-      ) : state === "active" ? (
-        <Loader2 style={{ width: 11, height: 11 }} className="animate-spin" />
-      ) : (
-        <span
-          className="w-3 h-3 rounded-full border flex items-center justify-center text-[10px] font-black"
-          style={{ borderColor: "currentColor" }}
-        >
-          {num}
-        </span>
-      )}
-      {label}
-    </div>
-  );
-}
-
 // ─── Alert block ───────────────────────────────────────────────────────────────
 function AlertBlock({
   icon: Icon,
@@ -194,17 +158,6 @@ function AlertBlock({
   );
 }
 
-// ─── Cross-currency context block ──────────────────────────────────────────────
-function SpecRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-      <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{label}</span>
-      <span className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-        {value}
-      </span>
-    </div>
-  );
-}
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps) {
@@ -546,7 +499,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={listing ? `Buy ${listing.collection} #${listing.tokenId.toString()}` : "Buy veNFT"}>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-label={listing ? `Buy ${listing.collection} #${listing.tokenId.toString()}` : "Buy veNFT"}>
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -557,131 +510,118 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
             onClick={step === "done" || step === "confirm" || step === "error" ? handleClose : undefined}
           />
 
-          {/* Panel */}
+          {/* Panel. Desktop: centred dialog. Phones: bottom sheet (the outer
+              flex is items-end below sm), so the action stays under the thumb. */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 20 }}
-            transition={{ type: "spring", stiffness: 240, damping: 26 }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl"
-            style={{
-              background: "color-mix(in srgb, var(--bg-1) 84%, transparent)",
-              backdropFilter: "blur(24px) saturate(160%)",
-              WebkitBackdropFilter: "blur(24px) saturate(160%)",
-              border: "1px solid var(--border)",
-              boxShadow: "var(--shadow-xl), inset 0 1px 0 rgba(255,255,255,0.06)",
-            }}
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98, transition: { duration: 0.14 } }}
+            transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full sm:max-w-[460px] max-h-[92dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+            style={{ background: "var(--surface)", border: "1px solid var(--hairline)", boxShadow: "var(--shadow-2xl)" }}
           >
+            <div className="sm:hidden flex justify-center pt-2.5" aria-hidden>
+              <span className="w-10 h-1 rounded-full" style={{ background: "var(--border-strong)" }} />
+            </div>
 
-            {/* Header */}
-            <div
-              className="flex items-start justify-between px-6 pt-5 pb-4"
-              style={{ borderBottom: "1px solid var(--border-subtle)" }}
-            >
-              <div>
-                <h2 className="text-lg font-semibold" style={{ letterSpacing: "-0.02em" }}>
-                  Buy {listing.collection}{" "}
-                  <span
-                    className="tabular-nums"
-                    style={{ fontVariantNumeric: "tabular-nums", color: "#FF0040" }}
-                  >
-                    #{listing.tokenId.toString()}
-                  </span>
+            {/* Header: identity, the way a buyer refers to the position */}
+            <div className="flex items-center gap-4 px-6 pt-5 pb-5">
+              <PositionGlyph collection={listing.collection} lockEnd={listing.lockEnd} size={52} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
+                  {step === "done" ? "Purchased" : "Buy position"}
+                </p>
+                <h2 className="text-[19px] font-bold truncate" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
+                  {listing.collection}{" "}
+                  <span className="tabular-nums" style={{ color: "var(--text-3)" }}>#{listing.tokenId.toString()}</span>
                 </h2>
+                <p className="text-[12px] mt-0.5 flex items-center gap-2" style={{ color: "var(--text-3)" }}>
+                  Seller <span className="font-mono" style={{ color: "var(--text-2)" }}>{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</span>
+                  {listing.isGrant && (
+                    <span className="font-semibold px-1.5 py-0.5 rounded" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>Grant</span>
+                  )}
+                </p>
               </div>
               <button
                 onClick={handleClose}
                 aria-label="Close"
-                className="p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                className="self-start p-1.5 -mr-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={{ color: "var(--text-3)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
               >
-                <X style={{ width: 17, height: 17 }} />
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Price summary */}
-              <div
-                className="p-5 rounded-xl"
-                style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
-              >
-                <p className="eyebrow mb-1.5" style={{ color: "var(--text-3)" }}>You pay</p>
-                <p
-                  className="tabular-nums font-bold"
-                  style={{ fontSize: 28, letterSpacing: "-0.03em", lineHeight: 1.1, fontVariantNumeric: "tabular-nums", color: "var(--text-1)" }}
-                >
-                  {formattedPrice}{" "}
-                  <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{paymentSymbol}</span>
-                </p>
-                {priceUsd !== null && (
-                  <p className="text-[13px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
-                    &#8776; ${priceUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+            <div className="px-6 pb-6 space-y-5">
+              {/* Hero: the price, and how far below value it sits */}
+              <div className="pt-1">
+                <div className="flex items-end justify-between gap-4">
+                  <p className="tabular-nums font-bold" style={{ fontSize: 38, letterSpacing: "-0.04em", lineHeight: 1, color: "var(--text-1)" }}>
+                    {formattedPrice}
+                    <span className="text-[15px] font-semibold ml-1.5" style={{ color: "var(--text-2)", letterSpacing: 0 }}>{paymentSymbol}</span>
                   </p>
-                )}
-                <div
-                  className="flex items-center gap-4 mt-3 pt-3 text-[13px]"
-                  style={{ borderTop: "1px solid var(--border-subtle)" }}
-                >
-                  <span style={{ color: "var(--text-3)" }}>
-                    Discount{" "}
-                    <span className="font-bold tabular-nums" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
-                      {listing.discountBps === null ? "—" : `${(Number(listing.discountBps) / 100).toFixed(1)}%`}
+                  {listing.discountBps !== null && Number(listing.discountBps) > 0 && (
+                    <span className="text-[13px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#fff", background: "var(--vezo-red)" }}>
+                      {(Number(listing.discountBps) / 100).toFixed(1)}% below value
                     </span>
-                  </span>
-                  <span style={{ color: "var(--text-3)" }}>
-                    Protocol fee <span className="font-semibold" style={{ color: "var(--text-2)" }}>1%</span>
-                  </span>
+                  )}
                 </div>
+                <p className="text-[13px] mt-2 tabular-nums" style={{ color: "var(--text-3)" }}>
+                  {priceUsd !== null ? <>&#8776; ${priceUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : <>&nbsp;</>}
+                </p>
               </div>
 
-              {/* What you are actually buying. This used to live in a separate
-                  details popup that most people never opened, which meant the
-                  purchase decision was made with less information than the app
-                  had. One popup, everything in it. */}
+              {/* What you get: three facts, one strip */}
               {step !== "done" && (
-                <div>
-                  <SpecRow label="Intrinsic value" value={`${formatAmount(listing.intrinsicValue)} ${lockedSym}`} />
-                  <SpecRow label="Voting power" value={parseFloat(formatEther(listing.votingPower)).toFixed(2)} />
-                  <SpecRow
-                    label="Lock ends"
-                    value={
-                      isPermanentLock ? "Permanent" : isExpiredLock ? "Expired" : <CountdownCompact lockEnd={listing.lockEnd} />
-                    }
-                  />
-                  <SpecRow
-                    label="Seller"
-                    value={<span className="font-mono">{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</span>}
-                  />
-                </div>
+                <dl className="grid grid-cols-3 rounded-xl overflow-hidden" style={{ border: "1px solid var(--hairline)" }}>
+                  {[
+                    ["Holds", `${formatAmount(listing.intrinsicValue)} ${lockedSym}`],
+                    ["Voting power", parseFloat(formatEther(listing.votingPower)).toLocaleString("en-US", { maximumFractionDigits: 0 })],
+                    ["Unlocks in", isPermanentLock ? "Permanent" : isExpiredLock ? "Expired" : <CountdownCompact key="c" lockEnd={listing.lockEnd} />],
+                  ].map(([k, v], i) => (
+                    <div key={k as string} className="px-3 sm:px-3.5 py-3 min-w-0" style={{ borderLeft: i ? "1px solid var(--hairline)" : undefined }}>
+                      <dt className="text-[12px]" style={{ color: "var(--text-3)" }}>{k}</dt>
+                      <dd className="text-[13px] sm:text-[14px] font-semibold tabular-nums mt-1 truncate" style={{ color: "var(--text-1)" }}>{v}</dd>
+                    </div>
+                  ))}
+                </dl>
               )}
 
-              {/* Grant positions carry a revocation risk, so the disclosure sits
-                  with the price, not a click away. */}
+              {/* Cost: itemised, so nothing is a surprise at the wallet */}
+              {step !== "done" && (
+                <dl className="text-[14px]">
+                  <div className="flex justify-between py-1.5">
+                    <dt style={{ color: "var(--text-3)" }}>Price</dt>
+                    <dd className="tabular-nums" style={{ color: "var(--text-2)" }}>{formattedPrice} {paymentSymbol}</dd>
+                  </div>
+                  <div className="flex justify-between py-1.5">
+                    <dt style={{ color: "var(--text-3)" }}>Protocol fee</dt>
+                    <dd style={{ color: "var(--text-2)" }}>Paid by seller</dd>
+                  </div>
+                  <div className="flex justify-between pt-3 mt-1.5" style={{ borderTop: "1px solid var(--hairline)" }}>
+                    <dt className="font-semibold" style={{ color: "var(--text-1)" }}>You pay</dt>
+                    <dd className="font-bold tabular-nums" style={{ color: "var(--text-1)" }}>{formattedPrice} {paymentSymbol}</dd>
+                  </div>
+                </dl>
+              )}
+
+              {/* Grant disclosure: one plain row, detail behind a link */}
               {step !== "done" && listing.isGrant && (
-                <div
-                  className="flex gap-2.5 p-3.5 rounded-xl"
-                  style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.22)" }}
-                >
-                  <Award style={{ width: 13, height: 13, color: "#F59E0B", flexShrink: 0, marginTop: 2 }} />
-                  <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-                    <span className="font-semibold" style={{ color: "#F59E0B" }}>Grant position.</span>{" "}
-                    Vests until{" "}
+                <div className="flex gap-3 text-[13px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
+                  <Award style={{ width: 15, height: 15, color: "#B45309", flexShrink: 0, marginTop: 2 }} />
+                  <p style={{ color: "var(--text-2)" }}>
+                    <span className="font-semibold" style={{ color: "var(--text-1)" }}>Grant position.</span>{" "}
+                    Unvested tokens can be revoked until{" "}
                     <span className="font-semibold" style={{ color: "var(--text-1)" }}>
                       {listing.vestingEnd > 0n
                         ? new Date(Number(listing.vestingEnd) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                         : "its vesting date"}
                     </span>
-                    . Until then the grant manager can revoke any tokens that have not vested yet.{" "}
-                    <a
-                      href="https://docs.vezo.exchange/architecture/what-we-built/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-                      style={{ color: "#F59E0B" }}
-                    >
-                      What this means
+                    .{" "}
+                    <a href="https://docs.vezo.exchange/architecture/what-we-built/" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2" style={{ color: "var(--text-1)" }}>
+                      Details
                     </a>
                   </p>
                 </div>
@@ -691,20 +631,17 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
               {listing && step === "confirm" && (
                 <>
                   {swapRoute && (
-                    <div
-                      className="p-4 rounded-xl"
-                      style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
-                    >
-                      <p className="eyebrow mb-2.5" style={{ color: "var(--text-3)" }}>Pay with</p>
-                      <div className="flex gap-2">
+                    <div>
+                      <p className="text-[13px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>Pay with</p>
+                      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "var(--bg-2)" }}>
                         <button
                           onClick={() => setPayWithSwap(false)}
                           disabled={isBusy}
-                          className="flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors"
+                          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
                           style={
                             !payWithSwap
-                              ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
-                              : { background: "var(--bg-1)", border: "1px solid var(--border)", color: "var(--text-2)" }
+                              ? { background: "var(--surface)", color: "var(--text-1)", boxShadow: "var(--shadow-sm)" }
+                              : { background: "transparent", color: "var(--text-3)" }
                           }
                         >
                           {paymentSymbol}
@@ -712,11 +649,11 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                         <button
                           onClick={() => setPayWithSwap(true)}
                           disabled={isBusy}
-                          className="flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors inline-flex items-center justify-center gap-1.5"
+                          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5"
                           style={
                             payWithSwap
-                              ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
-                              : { background: "var(--bg-1)", border: "1px solid var(--border)", color: "var(--text-2)" }
+                              ? { background: "var(--surface)", color: "var(--text-1)", boxShadow: "var(--shadow-sm)" }
+                              : { background: "transparent", color: "var(--text-3)" }
                           }
                         >
                           <ArrowLeftRight style={{ width: 11, height: 11 }} />
@@ -796,141 +733,134 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 )}
               </AnimatePresence>
 
-              {/* Step indicators for 2-step ERC-20 flow */}
-              {!isNative && !alreadyApproved && !payWithSwap && (
-                <div className="flex items-center gap-2">
-                  <StepPill
-                    label={`Approve ${paymentSymbol}`}
-                    num={1}
-                    state={
-                      step === "approving"
-                        ? "active"
-                        : step === "buying" || step === "done"
-                        ? "done"
-                        : "idle"
-                    }
-                  />
-                  <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-                  <StepPill
-                    label="Purchase NFT"
-                    num={2}
-                    state={
-                      step === "buying" ? "active" : step === "done" ? "done" : "idle"
-                    }
-                  />
-                </div>
-              )}
-
-              {/* One line of reassurance. The full explanation lives in the
-                  docs; a paragraph of protocol theory at the moment of payment
-                  is noise, not comfort. */}
-              <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-3)" }}>
-                The NFT and your payment move in a single transaction. If any part fails, nothing moves.
-              </p>
-
-              {/* Error */}
-              <AnimatePresence>
-                {step === "error" && errorMsg && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <AlertBlock
-                      icon={AlertCircle}
-                      variant="red"
-                      title="Transaction failed"
-                      body={errorMsg}
-                    />
-                  </motion.div>
-                )}
-
-                {step === "done" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <AlertBlock
-                      icon={CheckCircle2}
-                      variant="green"
-                      title="Purchase complete!"
-                      body={`${listing.collection} #${listing.tokenId.toString()} is now in your wallet.`}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* CTA. Disconnected visitors are asked to connect first: offering
-                  "Approve" to someone with no wallet is an action they cannot take. */}
-              {!buyerAddress && step === "confirm" ? (
-                <button
-                  onClick={() => openConnectModal?.()}
-                  className="btn-buy w-full h-12 rounded-xl text-[15px] font-semibold inline-flex items-center justify-center gap-2"
-                >
-                  <Wallet style={{ width: 16, height: 16 }} />
-                  Connect wallet to buy
-                </button>
-              ) : step === "done" ? (
-                <motion.button
-                  onClick={handleClose}
-                  whileTap={{ y: 1, scale: 0.985 }}
-                  transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                  className="w-full btn-primary py-3.5 rounded-xl font-bold"
-                >
-                  Close
-                </motion.button>
-              ) : step === "error" ? (
-                <motion.button
-                  onClick={() => { setStep("confirm"); setPhase("approve"); setErrorMsg(null); }}
-                  whileTap={{ y: 1, scale: 0.985 }}
-                  transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                  className="w-full py-3.5 rounded-xl font-bold transition-colors"
-                  style={{
-                    background: "var(--bg-2)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text-1)",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-3)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-2)")}
-                >
-                  Try Again
-                </motion.button>
-              ) : (
-                <motion.button
-                  onClick={handleBuy}
-                  disabled={isBusy || !hasEnoughBalance || !isNftApproved || (payWithSwap && !swapQuote)}
-                  whileTap={{ y: 1, scale: 0.985 }}
-                  transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                  className="w-full btn-primary py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  {isBusy ? (
-                    <>
-                      <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" />
-                      {isPending
-                        ? "Check wallet…"
-                        : isConfirming
-                        ? "Confirming…"
-                        : step === "approving"
-                        ? "Approving…"
-                        : "Purchasing…"}
-                    </>
-                  ) : !hasEnoughBalance ? (
-                    <>
-                      <Wallet style={{ width: 16, height: 16 }} />
-                      Insufficient {paymentSymbol}
-                    </>
-                  ) : (
-                    <>
-                      {payWithSwap ? "Swap & Buy" : isNative || alreadyApproved ? "Buy Now" : `Approve ${paymentSymbol}`}
-                      <ArrowRight
-                        style={{ width: 15, height: 15 }}
-                        className="group-hover:translate-x-1 transition-transform"
+              {/* Named wallet steps, shown once the buyer starts. Each says what
+                  the wallet will ask for, so the prompt is never a surprise. */}
+              {(isBusy || (step === "error" && phase === "buy" && !isNative && !alreadyApproved && !payWithSwap)) && (
+                <ol className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--hairline)" }}>
+                  {(!isNative && !alreadyApproved && !payWithSwap || payWithSwap
+                    ? [
+                        { key: "approve", label: payWithSwap ? "Approve BTC for the swap" : `Approve ${paymentSymbol}` },
+                        { key: "buy", label: payWithSwap ? "Swap and buy" : `Buy ${listing.collection} #${listing.tokenId.toString()}` },
+                      ]
+                    : [{ key: "buy", label: `Buy ${listing.collection} #${listing.tokenId.toString()}` }]
+                  ).map((st, i) => {
+                    const state: StepState =
+                      st.key === "approve"
+                        ? phase === "buy" ? "done" : step === "error" ? "failed" : "active"
+                        : phase !== "buy" ? "idle" : step === "error" ? "failed" : "active";
+                    return (
+                      <StepRow
+                        key={st.key}
+                        n={i + 1}
+                        label={st.label}
+                        state={state}
+                        detail={state === "active" ? (isPending ? "Confirm in your wallet" : isConfirming ? "Waiting for the block" : "Preparing") : undefined}
+                        href={state === "active" && sessionHash ? `${contracts.explorer}/tx/${sessionHash}` : undefined}
+                        first={i === 0}
                       />
-                    </>
-                  )}
-                </motion.button>
+                    );
+                  })}
+                </ol>
               )}
+
+              {step === "error" && errorMsg && (
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <AlertBlock
+                    icon={AlertCircle}
+                    variant="red"
+                    title={/reject|denied|cancel/i.test(errorMsg) ? "Rejected in wallet. Nothing was spent." : "The purchase didn't go through"}
+                    body={errorMsg}
+                  />
+                </motion.div>
+              )}
+
+              {/* Success: the position is theirs. Stays open so they can see it. */}
+              {step === "done" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="text-center py-2"
+                >
+                  <SuccessCheck />
+                  <p className="text-[20px] font-bold" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
+                    {listing.collection} #{listing.tokenId.toString()} is yours
+                  </p>
+                  <p className="text-[14px] mt-1.5" style={{ color: "var(--text-2)" }}>
+                    It&apos;s in your wallet, still locked and voting.
+                  </p>
+                  {sessionHash && (
+                    <a
+                      href={`${contracts.explorer}/tx/${sessionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 text-[13px] font-semibold underline underline-offset-2"
+                      style={{ color: "var(--text-2)" }}
+                    >
+                      View transaction
+                    </a>
+                  )}
+                </motion.div>
+              )}
+
+              {/* CTA. Solid, full width, and it names the amount: the button is
+                  the last thing read before the wallet opens. */}
+              <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-[max(0px,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:px-0 sm:pt-0" style={{ background: "var(--surface)" }}>
+                {!buyerAddress && step === "confirm" ? (
+                  <button
+                    onClick={() => openConnectModal?.()}
+                    className="buy-cta w-full h-12 rounded-xl text-[15px] font-semibold inline-flex items-center justify-center gap-2"
+                  >
+                    <Wallet style={{ width: 16, height: 16 }} />
+                    Connect wallet to buy
+                  </button>
+                ) : step === "done" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <a href="/my-listings" className="h-12 rounded-xl text-[15px] font-semibold inline-flex items-center justify-center" style={{ background: "var(--text-1)", color: "var(--bg-1)" }}>
+                      View position
+                    </a>
+                    <button onClick={handleClose} className="h-12 rounded-xl text-[15px] font-semibold" style={{ background: "var(--bg-2)", color: "var(--text-1)" }}>
+                      Close
+                    </button>
+                  </div>
+                ) : step === "error" ? (
+                  <button
+                    onClick={() => { setStep("confirm"); setPhase("approve"); setErrorMsg(null); }}
+                    className="buy-cta w-full h-12 rounded-xl text-[15px] font-semibold"
+                  >
+                    Try again
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleBuy}
+                    disabled={isBusy || !hasEnoughBalance || !isNftApproved || (payWithSwap && !swapQuote)}
+                    className="buy-cta w-full h-12 rounded-xl text-[15px] font-semibold inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+                  >
+                    {isBusy ? (
+                      <>
+                        <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" />
+                        {isPending ? "Continue in your wallet" : "Confirming on Mezo…"}
+                      </>
+                    ) : !isNftApproved ? (
+                      "Listing unavailable"
+                    ) : !hasEnoughBalance ? (
+                      `Not enough ${payWithSwap ? "BTC" : paymentSymbol}`
+                    ) : payWithSwap ? (
+                      `Swap BTC and buy`
+                    ) : (
+                      <span className="tabular-nums">Buy for {formattedPrice} {paymentSymbol}</span>
+                    )}
+                  </button>
+                )}
+                {step === "confirm" && buyerAddress && (
+                  <p className="text-[12px] text-center mt-2.5 leading-relaxed" style={{ color: "var(--text-3)" }}>
+                    {!isNative && !alreadyApproved && !payWithSwap || payWithSwap
+                      ? `2 wallet steps: approve ${payWithSwap ? "BTC" : paymentSymbol}, then buy. `
+                      : ""}
+                    The veNFT and your payment move together, or not at all.
+                  </p>
+                )}
+              </div>
             </div>
           </motion.div>
         </div>

@@ -6,11 +6,11 @@
 // the red arc after it is the discount. Inner ring: lock time remaining, as a
 // share of the collection's maximum. Centre: the discount itself.
 //
-// It cycles through live listings (best discount first) and pauses on hover.
-// With no listings it draws a labelled illustration, never a fake listing.
+// It shows the single best live listing and links to it in the marketplace
+// (never to checkout). With no listings it draws a labelled illustration that
+// invites a seller to take the spot.
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { Listing } from "@/hooks/useMarketplace";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
@@ -60,18 +60,9 @@ function Dial({ paid, lock, lockColor, animKey }: { paid: number; lock: number; 
   );
 }
 
-export function DiscountDial({ listings, status }: { listings: Listing[]; status: "loading" | "ready" | "empty" | "stale" | "error" }) {
+export function DiscountDial({ listing, status }: { listing: Listing | null; status: "loading" | "ready" | "empty" | "stale" | "error" }) {
   const reduce = useReducedMotion();
-  const pool = listings.filter((l) => l.discountBps !== null).slice(0, 5);
-  const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
-  useEffect(() => {
-    if (pool.length < 2 || paused || reduce) return;
-    const t = setInterval(() => setI((x) => (x + 1) % pool.length), 6000);
-    return () => clearInterval(t);
-  }, [pool.length, paused, reduce]);
-
-  const l = pool.length ? pool[i % pool.length]! : null;
+  const l = listing && listing.discountBps !== null ? listing : null;
   const illustrative = !l;
   const d = l ? Number(l.discountBps) / 10_000 : 0.15;
   const paid = Math.max(0, Math.min(1, 1 - Math.max(0, d)));
@@ -79,55 +70,79 @@ export function DiscountDial({ listings, status }: { listings: Listing[]; status
   const lockColor = l ? COLLECTION_COLOR[l.collection] : "var(--text-3)";
   const key = l ? `${l.collection}-${l.tokenId}` : "illustration";
 
-  return (
-    <div className="relative mx-auto w-full max-w-[460px]" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+  const centre = (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={key + status}
+        initial={reduce ? false : { opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduce ? undefined : { opacity: 0, y: -4 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {status === "loading" ? (
+          <div className="space-y-3 flex flex-col items-center" aria-busy="true">
+            <div className="h-14 w-36 skeleton rounded" />
+            <div className="h-3 w-24 skeleton rounded" />
+          </div>
+        ) : illustrative ? (
+          <>
+            <p className="text-[19px] font-bold mb-2" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
+              {status === "error" ? "Listings are unreachable" : "This spot is open"}
+            </p>
+            <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+              {status === "error"
+                ? "The market is still there; this view could not load it."
+                : "The best-priced listing sits here, the first thing every visitor sees. List yours and it could be the one."}
+            </p>
+            <Link href="/my-listings" className="btn-brand inline-flex items-center gap-1.5 mt-5 h-10 px-4 rounded-lg text-[13px] font-semibold">
+              List your veNFT
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="text-[12px] font-semibold mb-2 inline-flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
+              <span className="w-1.5 h-1.5 rounded-full live-pulse" style={{ background: "var(--vezo-red)" }} /> Best listing right now
+            </p>
+            <p className="tabular-nums font-bold" style={{ fontSize: "clamp(3rem, 7vw, 4.4rem)", lineHeight: 0.95, letterSpacing: "-0.05em", color: "var(--text-1)" }}>
+              {(d * 100).toFixed(1)}<span style={{ fontSize: "0.5em", letterSpacing: "-0.02em" }}>%</span>
+            </p>
+            <p className="text-[14px] font-semibold mt-2" style={{ color: "var(--vezo-red)" }}>below value</p>
+            <p className="text-[13px] mt-3 tabular-nums" style={{ color: "var(--text-2)" }}>
+              {l!.collection} #{l!.tokenId.toString()}
+            </p>
+            <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
+              {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
+            </p>
+            <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+              See it in the market <span aria-hidden className="cta-arrow">→</span>
+            </span>
+          </>
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+
+  const body = (
+    <>
       <Dial paid={paid} lock={lock} lockColor={lockColor} animKey={key} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-14 sm:px-16">{centre}</div>
+    </>
+  );
 
-      {/* Centre readout */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-16">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={key + status}
-            initial={reduce ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? undefined : { opacity: 0, y: -4 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {status === "loading" ? (
-              <div className="space-y-3 flex flex-col items-center" aria-busy="true">
-                <div className="h-14 w-36 skeleton rounded" />
-                <div className="h-3 w-24 skeleton rounded" />
-              </div>
-            ) : illustrative ? (
-              <>
-                <p className="text-[14px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>How a listing reads</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-3)" }}>
-                  {status === "error" ? "Live listings are unreachable right now." : "No position is listed right now."}
-                  <br />The ring shows price against value.
-                </p>
-                <Link href="/my-listings" className="inline-block mt-4 text-[13px] font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>
-                  List a position
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="tabular-nums font-bold" style={{ fontSize: "clamp(3rem, 7vw, 4.4rem)", lineHeight: 0.95, letterSpacing: "-0.05em", color: "var(--text-1)" }}>
-                  {(d * 100).toFixed(1)}<span style={{ fontSize: "0.5em", letterSpacing: "-0.02em" }}>%</span>
-                </p>
-                <p className="text-[14px] font-semibold mt-2" style={{ color: "var(--vezo-red)" }}>below value</p>
-                <p className="text-[13px] mt-4 tabular-nums" style={{ color: "var(--text-2)" }}>
-                  {l!.collection} #{l!.tokenId.toString()}
-                </p>
-                <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
-                  {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
-                </p>
-              </>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+  return (
+    <div className="mx-auto w-full max-w-[460px]">
+      {l ? (
+        <Link
+          href={`/marketplace?focus=${l.listingId}`}
+          className="dial-link relative block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-4"
+          aria-label={`See ${l.collection} #${l.tokenId.toString()}, ${(d * 100).toFixed(1)}% below value, in the market`}
+        >
+          {body}
+        </Link>
+      ) : (
+        <div className="relative">{body}</div>
+      )}
 
-      {/* Legend */}
       <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 -mt-6 text-[12px] font-semibold">
         <span className="flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
           <span className="w-3 h-[3px] rounded-full" style={{ background: "var(--text-1)" }} /> Price paid
@@ -140,22 +155,7 @@ export function DiscountDial({ listings, status }: { listings: Listing[]; status
         </span>
       </div>
       {illustrative && status !== "loading" && (
-        <p className="text-center text-[12px] mt-2" style={{ color: "var(--text-3)" }}>Illustration</p>
-      )}
-      {pool.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-4" role="tablist" aria-label="Live listings">
-          {pool.map((p, k) => (
-            <button
-              key={`${p.collection}-${p.tokenId}`}
-              role="tab"
-              aria-selected={k === i % pool.length}
-              aria-label={`${p.collection} #${p.tokenId.toString()}`}
-              onClick={() => setI(k)}
-              className="h-1 w-6 rounded-full transition-colors"
-              style={{ background: k === i % pool.length ? "var(--vezo-red)" : "var(--hairline)" }}
-            />
-          ))}
-        </div>
+        <p className="text-center text-[12px] mt-2" style={{ color: "var(--text-3)" }}>Illustration, not a listing</p>
       )}
     </div>
   );
