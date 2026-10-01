@@ -151,6 +151,20 @@ function SellerSection() {
 
 // ─── 3. The trade, drawn as a position over time ─────────────────────────────
 
+// The chart is a real listing, so it opens that listing in the market
+// (never checkout). With nothing listed it is a plain, labelled figure.
+function ChartFrame({ href, label, children }: { href: string | null; label: string; children: React.ReactNode }) {
+  const cls = "reveal-up block rounded-2xl p-5 md:p-8";
+  const style = { background: "var(--surface)", border: "1px solid var(--hairline)" };
+  return href ? (
+    <Link href={href} aria-label={label} className={`${cls} chart-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-4`} style={style}>
+      {children}
+    </Link>
+  ) : (
+    <figure className={cls} style={style}>{children}</figure>
+  );
+}
+
 function TradeTimeline() {
   const live = useLiveMarket();
   const best = live.byDiscount.find((l) => l.discountBps !== null && Number(l.discountBps) > 0) ?? null;
@@ -174,13 +188,18 @@ function TradeTimeline() {
             wait, and everything the position earns along the way.
           </p>
           <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
-            {illustrative
-              ? "Illustration. Shapes are representative; there is no live listing to draw from right now."
-              : <>Drawn from {best!.collection} #{best!.tokenId.toString()}, listed now at <DiscountText discountBps={best!.discountBps} />.</>}
+            {illustrative ? (
+              <>
+                Illustration: nothing is listed below value right now. A listed veNFT is drawn here with its real numbers.{" "}
+                <Link href="/my-listings" className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>List your veNFT</Link>
+              </>
+            ) : (
+              <>Drawn from {best!.collection} #{best!.tokenId.toString()}, listed now at <DiscountText discountBps={best!.discountBps} />.</>
+            )}
           </p>
         </motion.div>
 
-        <figure className="reveal-up rounded-2xl p-5 md:p-8" style={{ background: "var(--surface)", border: "1px solid var(--hairline)" }}>
+        <ChartFrame href={best ? `/marketplace?focus=${best.listingId}` : null} label={best ? `See ${best.collection} #${best.tokenId.toString()} in the market` : ""}>
           {/* Labels are HTML, not SVG text: the drawing stretches to any width
               while the type stays at a readable size on every screen. */}
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 mb-4">
@@ -216,11 +235,17 @@ function TradeTimeline() {
             </span>
           </div>
           <div className="flex justify-between gap-3 pt-3 mt-3 text-[12px] md:text-[13px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
-            <span>Buy</span>
+            {best ? (
+              <span className="font-semibold inline-flex items-center gap-1" style={{ color: "var(--text-1)" }}>
+                Buy it in the market <ArrowRight className="cta-arrow" style={{ width: 14, height: 14 }} />
+              </span>
+            ) : (
+              <span>Buy</span>
+            )}
             <span className="hidden sm:inline">Hold: vote and earn rewards</span>
             <span className="text-right">Unlock: withdraw in full</span>
           </div>
-        </figure>
+        </ChartFrame>
       </div>
     </section>
   );
