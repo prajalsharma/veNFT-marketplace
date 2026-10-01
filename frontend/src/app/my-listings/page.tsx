@@ -9,7 +9,7 @@ const MyListingsClient = dynamic(() => import("@/components/MyListingsClient"), 
 // Wallet-gated, per-user content — noindex so search engines don't index empty
 // personal pages, but still follow links out to the marketplace.
 export const metadata: Metadata = pageMetadata({
-  title: "My Listings",
+  title: "Portfolio",
   path: "/my-listings",
   noindex: true,
   description:

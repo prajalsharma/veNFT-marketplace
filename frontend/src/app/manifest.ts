@@ -26,7 +26,7 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       { name: "Marketplace", url: "/marketplace", description: "Browse veNFT listings" },
-      { name: "My Listings", url: "/my-listings", description: "Positions you have listed" },
+      { name: "Portfolio", url: "/my-listings", description: "Your veNFTs and listings" },
     ],
   };
 }

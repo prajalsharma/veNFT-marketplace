@@ -752,15 +752,43 @@ select option {
   color: var(--text-1);
 }
 
-/* ─── RainbowKit accent = Vezo Red ──────────────────────────────────────── */
+/* ─── RainbowKit: follow the app's theme ────────────────────────────────────
+   Every surface and text token maps to the app's own, so the connect modal
+   reads correctly in light and dark (it used to keep dark-theme white text on
+   a light background). Primary actions use the same inverse tone as the
+   header's Connect button; red stays reserved for focus. */
 [data-rk] {
-  --rk-colors-accentColor: #FF0040 !important;
-  --rk-colors-accentColorForeground: #ffffff !important;
+  --rk-colors-accentColor: var(--text-1) !important;
+  --rk-colors-accentColorForeground: var(--bg-1) !important;
   --rk-colors-connectButtonBackground: var(--bg-1) !important;
   --rk-colors-connectButtonText: var(--text-1) !important;
-  --rk-radii-connectButton: 11px !important;
   --rk-colors-modalBackground: var(--bg-1) !important;
   --rk-colors-modalBorder: var(--border) !important;
+  --rk-colors-modalText: var(--text-1) !important;
+  --rk-colors-modalTextDim: var(--text-3) !important;
+  --rk-colors-modalTextSecondary: var(--text-2) !important;
+  --rk-colors-modalBackdrop: rgba(0, 0, 0, 0.45) !important;
+  --rk-colors-actionButtonBorder: var(--border) !important;
+  --rk-colors-actionButtonBorderMobile: var(--border) !important;
+  --rk-colors-actionButtonSecondaryBackground: var(--bg-2) !important;
+  --rk-colors-closeButton: var(--text-2) !important;
+  --rk-colors-closeButtonBackground: var(--bg-2) !important;
+  --rk-colors-generalBorder: var(--border) !important;
+  --rk-colors-generalBorderDim: var(--hairline) !important;
+  --rk-colors-menuItemBackground: var(--bg-2) !important;
+  --rk-colors-profileAction: var(--bg-2) !important;
+  --rk-colors-profileActionHover: var(--bg-3) !important;
+  --rk-colors-profileForeground: var(--bg-1) !important;
+  --rk-colors-selectedOptionBorder: var(--border-strong) !important;
+  --rk-colors-standby: var(--text-2) !important;
+  --rk-colors-downloadBottomCardBackground: var(--bg-2) !important;
+  --rk-colors-downloadTopCardBackground: var(--bg-2) !important;
+  --rk-shadows-dialog: 0 20px 48px rgba(0, 0, 0, 0.22) !important;
+  --rk-radii-modal: 18px !important;
+  --rk-radii-modalMobile: 18px !important;
+  --rk-radii-connectButton: 10px !important;
+  --rk-radii-actionButton: 10px !important;
+  --rk-radii-menuButton: 10px !important;
   --rk-fonts-body: 'Outfit', sans-serif !important;
 }
 
@@ -1197,3 +1225,36 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
 .footer-ext { opacity: 0.5; transition: transform 160ms ease, opacity 160ms ease; }
 .footer-link:hover .footer-ext { opacity: 1; transform: translate(1px, -1px); }
 .footer-link--muted { color: var(--text-3); }
+
+/* ── Header + account surface ──────────────────────────────────────────────
+   Solid, hairline-ruled, no glow. Interactive pieces share three button
+   tones (ghost, outline, primary) and one popover surface. */
+:root { --header-solid: var(--bg); --header-h: 97px; }
+.hdr-nav { color: var(--text-2); letter-spacing: -0.01em; transition: color 140ms ease; }
+.hdr-nav:hover, .hdr-nav[data-active] { color: var(--text-1); }
+.hdr-nav[data-active] { font-weight: 600; }
+.hdr-nav:focus-visible { box-shadow: inset 0 0 0 2px var(--vezo-red); border-radius: 6px; }
+.hdr-ghost { color: var(--text-2); transition: color 140ms ease, background-color 140ms ease; }
+.hdr-ghost:hover { color: var(--text-1); background: var(--bg-2); }
+.hdr-outline { border: 1px solid var(--border); background: var(--bg-1); transition: border-color 140ms ease, background-color 140ms ease; }
+.hdr-outline:hover { border-color: var(--border-strong); }
+.hdr-warn { border: 1px solid rgba(217,119,6,0.45); background: rgba(217,119,6,0.08); color: #B45309; }
+.dark .hdr-warn { color: #F59E0B; }
+.hdr-primary { background: var(--text-1); color: var(--bg-1); transition: opacity 140ms ease, transform 120ms ease; }
+.hdr-primary:hover:not(:disabled) { opacity: 0.88; }
+.hdr-primary:active:not(:disabled) { transform: scale(0.98); }
+.hdr-primary:disabled { opacity: 0.6; cursor: default; }
+:is(.hdr-ghost, .hdr-outline, .hdr-warn, .hdr-primary, .hdr-item, .hdr-icon):focus-visible { outline: 2px solid var(--vezo-red); outline-offset: 2px; }
+.hdr-pop {
+  background: var(--bg-1); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.12);
+}
+.dark .hdr-pop { box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+.hdr-sheet { background: var(--bg-1); border-top: 1px solid var(--border); border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+.hdr-item { transition: background-color 120ms ease; }
+.hdr-item:hover { background: var(--bg-2); }
+.hdr-icon {
+  width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-2); transition: color 120ms ease, background-color 120ms ease;
+}
+.hdr-icon:hover { color: var(--text-1); background: var(--bg-2); }

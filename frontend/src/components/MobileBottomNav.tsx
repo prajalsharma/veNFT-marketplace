@@ -7,11 +7,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Store, Tag, Activity, BookOpen } from "lucide-react";
+import { Store, Briefcase, Activity, BookOpen } from "lucide-react";
 
 const TABS = [
   { href: "/marketplace", label: "Market",   icon: Store },
-  { href: "/my-listings", label: "Listings", icon: Tag },
+  { href: "/my-listings", label: "Portfolio", icon: Briefcase },
   { href: "/activity",    label: "Activity", icon: Activity },
   { href: "https://docs.vezo.exchange", label: "Docs", icon: BookOpen },
 ] as const;

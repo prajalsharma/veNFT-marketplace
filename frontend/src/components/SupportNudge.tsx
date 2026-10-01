@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Heart, X } from "lucide-react";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -32,8 +32,7 @@ export function SupportNudge() {
 
   // The wrong-network banner occupies the same top-center spot. A functional
   // warning always outranks an ask, so the nudge waits until it clears.
-  const { isConnected } = useAccount();
-  const chainId = useChainId();
+  const { isConnected, chainId } = useAccount();
   const { network } = useNetwork();
   const wrongNetwork =
     isConnected && chainId !== (network === "testnet" ? mezoTestnet.id : mezoMainnet.id);
@@ -66,8 +65,9 @@ export function SupportNudge() {
           animate={{ opacity: 1, y: 0 }}
           exit={reduced ? { opacity: 0 } : { opacity: 0, y: -16 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed z-[60] left-3 right-3 mx-auto top-[102px] lg:top-[118px] max-w-[600px] rounded-2xl p-4 sm:p-5"
+          className="fixed z-[60] left-3 right-3 mx-auto max-w-[600px] rounded-2xl p-4 sm:p-5"
           style={{
+            top: "calc(var(--header-h) + 12px)",
             background: "var(--bg-1)",
             border: "1px solid var(--hairline)",
             boxShadow: "var(--shadow-2xl)",

@@ -529,7 +529,7 @@ export default function MyListingsClient() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <h1 className="text-[32px] md:text-[36px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.035em" }}>
-              My listings
+              Portfolio
             </h1>
             <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
               Positions you have listed, and the ones in your wallet you could list.

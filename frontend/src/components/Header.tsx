@@ -1,14 +1,13 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useNetwork } from "@/hooks/useNetwork";
-import { useAddNetwork } from "@/hooks/useAddNetwork";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Github, BookOpen, FlaskConical, Globe, Sun, Moon, TrendingUp, TrendingDown } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Menu, X, Sun, Moon, ArrowUpRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { usePriceTicker, formatUSD } from "@/hooks/usePriceTicker";
+import { WalletMenu } from "@/components/header/WalletMenu";
+import { NetworkMenu } from "@/components/header/NetworkMenu";
 
 // ─── Official Vezo V-chevron mark ────────────────────────────────────────────
 export function VezoLogoMark({ size = 28, notchColor }: { size?: number; notchColor?: string }) {
@@ -68,122 +67,41 @@ function useTheme() {
   return { isDark, toggle };
 }
 
-// ─── Compact wallet button (replaces RainbowKit's large default) ─────────────
-function WalletButton() {
-  return (
-    <ConnectButton.Custom>
-      {({ account, chain, openAccountModal, openConnectModal, openChainModal, mounted }) => {
-        const ready = mounted;
-        const connected = ready && account && chain;
-        return (
-          <div {...(!ready && { "aria-hidden": true, style: { opacity: 0, pointerEvents: "none" as const } })}>
-            {!connected ? (
-              <button
-                type="button"
-                onClick={openConnectModal}
-                className="btn-primary text-[13px] sm:text-sm font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-              >
-                Connect<span className="hidden sm:inline"> Wallet</span>
-              </button>
-            ) : chain.unsupported ? (
-              <button
-                type="button"
-                onClick={openChainModal}
-                className="text-[13px] font-bold px-3.5 py-2 rounded-xl whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-                style={{ color: "#fff", background: "#EF4444" }}
-              >
-                Wrong network
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={openAccountModal}
-                className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-xl whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-                style={{ background: "var(--bg-2)", border: "1px solid var(--border)", color: "var(--text-1)" }}
-              >
-                <span className="w-5 h-5 rounded-full shrink-0" style={{ background: "linear-gradient(135deg,#FF0040,#ff6a8c)" }} />
-                <span className="text-[13px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>{account.displayName}</span>
-              </button>
-            )}
-          </div>
-        );
-      }}
-    </ConnectButton.Custom>
-  );
-}
-
-// ─── Price Ticker Bar ─────────────────────────────────────────────────────────
-// Mobile: an infinite marquee (auto-scrolls so it never looks "stuck").
-// Desktop (sm+): a static left-aligned row with the "Live Prices" label.
-function PriceTickerBar({ isDark }: { isDark: boolean }) {
+// ─── Price strip ─────────────────────────────────────────────────────────────
+// Static, not a marquee: a financial product states prices, it doesn't
+// animate them past you. Folds away once the page scrolls.
+function PriceStrip() {
   const prices = usePriceTicker();
-  const tickers = [
-    { label: "BTC",  value: formatUSD(prices.BTC),  change: prices.changes.BTC },
-    { label: "MEZO", value: formatUSD(prices.MEZO), change: prices.changes.MEZO },
-    { label: "MUSD", value: formatUSD(prices.MUSD), change: prices.changes.MUSD },
+  const rows = [
+    { label: "BTC", value: prices.BTC, change: prices.changes.BTC },
+    { label: "MEZO", value: prices.MEZO, change: prices.changes.MEZO },
+    { label: "MUSD", value: prices.MUSD, change: prices.changes.MUSD },
   ];
-
-  const Pill = ({ t }: { t: typeof tickers[number] }) => {
-    const pos = t.change !== null && t.change > 0.05;
-    const neg = t.change !== null && t.change < -0.05;
-    return (
-      <div className="flex items-center gap-2 px-6 shrink-0">
-        <span className="text-[13px] font-bold uppercase tracking-wide" style={{ color: "var(--text-2)" }}>{t.label}</span>
-        <span
-          className="text-[14px] font-bold tabular-nums"
-          style={{ color: t.value === "—" ? "var(--text-3)" : "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
-        >
-          {t.value}
-        </span>
-        {pos && (
-          <span className="flex items-center gap-0.5 text-[12px] font-bold tabular-nums" style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}>
-            <TrendingUp style={{ width: 12, height: 12 }} />
-            {Math.abs(t.change!).toFixed(2)}%
-          </span>
-        )}
-        {neg && (
-          <span className="flex items-center gap-0.5 text-[12px] font-bold tabular-nums" style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}>
-            <TrendingDown style={{ width: 12, height: 12 }} />
-            {Math.abs(t.change!).toFixed(2)}%
-          </span>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div
-      className="border-t h-[38px] sm:h-[42px] overflow-hidden flex items-center"
-      style={{ borderColor: "var(--header-border)", background: isDark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)" }}
-    >
-      {/* Fixed label */}
-      <div
-        className="hidden sm:flex items-center gap-1.5 shrink-0 pl-5 md:pl-10 lg:pl-16 pr-5 h-full"
-        style={{ color: "var(--text-3)" }}
-      >
-        <TrendingUp style={{ width: 12, height: 12 }} />
-        <span className="text-xs font-semibold">Live prices</span>
-        <div className="w-px h-3 ml-3" style={{ background: "var(--border)" }} />
-      </div>
-
-      {/* Infinite marquee — four copies form two identical halves for a seamless loop */}
-      <div
-        className="flex-1 h-full flex items-center overflow-hidden marquee-hover-pause"
-        aria-label="Live prices"
-        style={{
-          maskImage: "linear-gradient(90deg, transparent, black 28px, black calc(100% - 28px), transparent)",
-          WebkitMaskImage: "linear-gradient(90deg, transparent, black 28px, black calc(100% - 28px), transparent)",
-        }}
-      >
-        <div className="marquee-track marquee-slow items-center">
-          {[...tickers, ...tickers, ...tickers, ...tickers].map((t, i) => <Pill key={i} t={t} />)}
-        </div>
-      </div>
-
-      {/* Updated timestamp, pinned right */}
+    <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16 h-9 flex items-center gap-5 sm:gap-7 text-[12px] sm:text-[13px] overflow-x-auto no-scrollbar" aria-label="Live prices">
+      {rows.map((r) => {
+        const loaded = r.value !== null;
+        const up = r.change !== null && r.change > 0.05;
+        const down = r.change !== null && r.change < -0.05;
+        return (
+          <span key={r.label} className="inline-flex items-baseline gap-1.5 shrink-0 tabular-nums">
+            <span className="font-semibold" style={{ color: "var(--text-3)" }}>{r.label}</span>
+            {loaded ? (
+              <span className="font-semibold" style={{ color: "var(--text-1)" }}>{formatUSD(r.value)}</span>
+            ) : (
+              <span className="inline-block h-3 w-14 rounded skeleton self-center" aria-label={`Loading ${r.label} price`} />
+            )}
+            {loaded && r.change !== null && (
+              <span className="hidden sm:inline font-medium" style={{ color: up ? "var(--success)" : down ? "#DC2626" : "var(--text-3)" }}>
+                {up ? "+" : down ? "−" : ""}{Math.abs(r.change).toFixed(2)}%
+              </span>
+            )}
+          </span>
+        );
+      })}
       {prices.lastUpdated && (
-        <span className="hidden md:block text-[11px] shrink-0 pl-4 pr-5 md:pr-10 lg:pr-16" style={{ color: "var(--text-3)" }}>
-          Updated {new Date(prices.lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        <span className="hidden md:inline ml-auto shrink-0" style={{ color: "var(--text-3)" }}>
+          24h · updated {new Date(prices.lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </span>
       )}
     </div>
@@ -191,184 +109,130 @@ function PriceTickerBar({ isDark }: { isDark: boolean }) {
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
+// One solid bar: identity and product navigation on the left, state and
+// account on the right. Red appears once, under the current page. The price
+// strip sits beneath at the top of a page and folds away on scroll, so the
+// working header is a single 60px row.
+
+const NAV = [
+  { href: "/marketplace", label: "Marketplace" },
+  { href: "/my-listings", label: "Portfolio" },
+  { href: "/activity", label: "Activity" },
+  { href: "https://docs.vezo.exchange", label: "Docs", external: true },
+] as const;
+
 export function Header() {
-  const { isTestnet, toggleNetwork } = useNetwork();
-  const { addNetwork } = useAddNetwork();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { isDark, toggle: toggleTheme } = useTheme();
   const pathname = usePathname();
+  const ref = useRef<HTMLElement>(null);
 
-  const handleNetworkSwitch = async () => {
-    try {
-      await addNetwork(isTestnet ? "mainnet" : "testnet");
-      toggleNetwork();
-    } catch (err) {
-      console.error("Failed to switch network:", err);
-    }
-  };
+  useEffect(() => setMenuOpen(false), [pathname]);
 
-  const navLinks = [
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/my-listings", label: "My Listings" },
-    { href: "/activity", label: "Activity" },
-    { href: "https://docs.vezo.exchange", label: "Docs", icon: BookOpen },
-  ];
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Publish the header's live height so anything pinned beneath it (network
+  // notice, support nudge, sticky cards) lines up as it compacts.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--header-h", `${el.getBoundingClientRect().height}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <header
+      ref={ref}
       className="fixed top-0 left-0 right-0 z-50"
-      style={{
-        background: "var(--header-bg)",
-        borderBottom: "1px solid var(--header-border)",
-        boxShadow: isDark ? "0 1px 0 rgba(255,255,255,0.03), 0 4px 28px rgba(0,0,0,0.45)" : "0 1px 0 rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.06)",
-        backdropFilter: "blur(24px) saturate(180%)",
-        WebkitBackdropFilter: "blur(24px) saturate(180%)",
-        transition: "background 380ms var(--ease-spring), border-color 380ms var(--ease-spring)",
-      }}
+      style={{ background: "var(--header-solid)", borderBottom: "1px solid var(--hairline)" }}
     >
       <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16">
-        <div className="flex items-center h-[56px] lg:h-[68px] gap-2 sm:gap-3">
-
-          {/* ── Mobile hamburger — LEFT ── */}
-          <motion.button
-            className="lg:hidden p-2 rounded-xl cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-            style={{ color: "var(--text-2)", background: "var(--bg-2)", border: "1px solid var(--border)" }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              {mobileMenuOpen ? (
-                <motion.div key="x" initial={{ opacity: 0, rotate: -45 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 45 }} transition={{ duration: 0.15 }}>
-                  <X style={{ width: 18, height: 18 }} />
-                </motion.div>
-              ) : (
-                <motion.div key="menu" initial={{ opacity: 0, rotate: 45 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -45 }} transition={{ duration: 0.15 }}>
-                  <Menu style={{ width: 18, height: 18 }} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
-
-          {/* ── Logo ── */}
+        <div className="flex items-center h-[60px] gap-3">
           <Link href="/" className="flex items-center shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]" aria-label="Vezo home">
             <VezoLogotype />
           </Link>
 
-          {/* ── Desktop nav — center ── */}
-          <nav className="hidden lg:flex flex-1 justify-center items-center gap-0.5">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href || pathname?.startsWith(link.href + "/");
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="relative px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] cursor-pointer"
-                  style={{ color: isActive ? "var(--text-1)" : "var(--text-2)", letterSpacing: "-0.01em" }}
-                  onMouseEnter={(e) => { if (!isActive) (e.currentTarget.style.color = "var(--text-1)"); }}
-                  onMouseLeave={(e) => { if (!isActive) (e.currentTarget.style.color = "var(--text-2)"); }}
-                >
-                  {isActive && (
-                    <motion.div layoutId="nav-active" className="absolute inset-0 rounded-xl" style={{ background: "var(--vezo-red-12)", border: "1px solid var(--vezo-red-22)" }} transition={{ type: "spring", stiffness: 100, damping: 20 }} />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    {link.icon && <link.icon style={{ width: 13, height: 13 }} />}
-                    {link.label}
-                  </span>
-                </Link>
+          <nav className="hidden lg:flex items-stretch self-stretch ml-8 gap-1" aria-label="Primary">
+            {NAV.map((l) => {
+              const active = !("external" in l) && (pathname === l.href || pathname?.startsWith(l.href + "/"));
+              const cls = "hdr-nav relative inline-flex items-center gap-1 px-3 text-[14px] font-medium focus-visible:outline-none";
+              const inner = (
+                <>
+                  {l.label}
+                  {"external" in l && <ArrowUpRight style={{ width: 13, height: 13, opacity: 0.55 }} aria-hidden />}
+                  {active && <motion.span layoutId="hdr-active" className="absolute left-3 right-3 -bottom-px h-[2px] rounded-t" style={{ background: "var(--vezo-red)" }} transition={{ type: "spring", stiffness: 380, damping: 34 }} />}
+                </>
+              );
+              return "external" in l ? (
+                <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+              ) : (
+                <Link key={l.href} href={l.href} aria-current={active ? "page" : undefined} className={cls} data-active={active || undefined}>{inner}</Link>
               );
             })}
           </nav>
 
-          {/* ── Right actions ── */}
-          <div className="flex items-center gap-1.5 ml-auto">
-            {/* Network toggle — desktop only */}
-            <div className="hidden lg:flex items-center rounded-full p-0.5 relative" style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}>
-              <motion.div
-                className="absolute top-[3px] bottom-[3px] rounded-full z-0"
-                animate={{ left: isTestnet ? "3px" : "50%", right: isTestnet ? "50%" : "3px", backgroundColor: isTestnet ? "rgba(251,191,36,0.14)" : "rgba(34,197,94,0.14)" }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              />
-              <button onClick={isTestnet ? undefined : handleNetworkSwitch} className="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide cursor-pointer" style={{ color: isTestnet ? "#FBBF24" : "var(--text-3)", transition: "color 180ms ease" }}>
-                <FlaskConical style={{ width: 11, height: 11, flexShrink: 0 }} /> Testnet
-                {isTestnet && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse flex-shrink-0" />}
-              </button>
-              <button onClick={isTestnet ? handleNetworkSwitch : undefined} className="relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide cursor-pointer" style={{ color: !isTestnet ? "#22C55E" : "var(--text-3)", transition: "color 180ms ease" }}>
-                <Globe style={{ width: 11, height: 11, flexShrink: 0 }} /> Mainnet
-                {!isTestnet && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />}
-              </button>
-            </div>
-
-            {/* Theme toggle — hidden on the smallest screens (available in the drawer) */}
-            <motion.button
+          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto">
+            <div className="hidden lg:block"><NetworkMenu /></div>
+            <button
               onClick={toggleTheme}
-              className="hidden sm:flex p-2 rounded-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-              style={{ color: "var(--text-3)", background: "var(--bg-2)", border: "1px solid var(--border)", transition: "background 180ms ease, border-color 180ms ease" }}
-              whileTap={{ scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="hdr-ghost hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-lg"
               aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Light mode" : "Dark mode"}
             >
-              <AnimatePresence mode="wait" initial={false}>
-                {isDark ? (
-                  <motion.div key="sun" initial={{ opacity: 0, rotate: -90, scale: 0.6 }} animate={{ opacity: 1, rotate: 0, scale: 1 }} exit={{ opacity: 0, rotate: 90, scale: 0.6 }} transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}>
-                    <Sun style={{ width: 15, height: 15 }} />
-                  </motion.div>
-                ) : (
-                  <motion.div key="moon" initial={{ opacity: 0, rotate: 90, scale: 0.6 }} animate={{ opacity: 1, rotate: 0, scale: 1 }} exit={{ opacity: 0, rotate: -90, scale: 0.6 }} transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}>
-                    <Moon style={{ width: 15, height: 15 }} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-
-            {/* Wallet — compact */}
-            <WalletButton />
+              {isDark ? <Sun style={{ width: 16, height: 16 }} /> : <Moon style={{ width: 16, height: 16 }} />}
+            </button>
+            <span className="hidden lg:block w-px h-5 mx-1.5" style={{ background: "var(--hairline)" }} aria-hidden />
+            <WalletMenu />
+            <button
+              className="hdr-ghost lg:hidden h-9 w-9 inline-flex items-center justify-center rounded-lg"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X style={{ width: 18, height: 18 }} /> : <Menu style={{ width: 18, height: 18 }} />}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Price ticker bar ── */}
-      <PriceTickerBar isDark={isDark} />
+      {/* Price strip: present at the top of a page, folded away once reading */}
+      <div
+        className="overflow-hidden transition-[height,opacity] duration-300 ease-out"
+        style={{ height: scrolled ? 0 : 36, opacity: scrolled ? 0 : 1, borderTop: scrolled ? "0" : "1px solid var(--hairline)" }}
+        aria-hidden={scrolled}
+      >
+        <PriceStrip />
+      </div>
 
-      {/* ── Mobile drawer ── */}
+      {/* Mobile menu: settings only; routes live in the bottom tab bar */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ type: "spring", stiffness: 130, damping: 22 }}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             className="lg:hidden overflow-hidden"
-            style={{ borderTop: "1px solid var(--header-border)", background: "var(--header-bg)", backdropFilter: "blur(24px)" }}
+            style={{ borderTop: "1px solid var(--hairline)", background: "var(--header-solid)" }}
           >
-            {/* Primary routes live in the bottom tab bar; this drawer is settings. */}
-            <div className="px-4 py-5">
-              <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest px-1" style={{ color: "var(--text-3)" }}>Network</p>
-                <div className="flex items-center rounded-full p-0.5 relative" style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}>
-                  <motion.div className="absolute top-[3px] bottom-[3px] rounded-full z-0" animate={{ left: isTestnet ? "3px" : "50%", right: isTestnet ? "50%" : "3px", backgroundColor: isTestnet ? "rgba(251,191,36,0.14)" : "rgba(34,197,94,0.14)" }} transition={{ type: "spring", stiffness: 100, damping: 20 }} />
-                  <button onClick={isTestnet ? undefined : handleNetworkSwitch} className="relative z-10 flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold cursor-pointer" style={{ color: isTestnet ? "#FBBF24" : "var(--text-3)" }}>
-                    <FlaskConical style={{ width: 14, height: 14 }} /> Testnet
-                    {isTestnet && <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />}
-                  </button>
-                  <button onClick={isTestnet ? handleNetworkSwitch : undefined} className="relative z-10 flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full text-sm font-bold cursor-pointer" style={{ color: !isTestnet ? "#22C55E" : "var(--text-3)" }}>
-                    <Globe style={{ width: 14, height: 14 }} /> Mainnet
-                    {!isTestnet && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
-                  </button>
-                </div>
-
-                <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium cursor-pointer" style={{ color: "var(--text-2)", background: "var(--bg-2)", border: "1px solid var(--border)" }}>
-                  {isDark ? <Sun style={{ width: 15, height: 15 }} /> : <Moon style={{ width: 15, height: 15 }} />}
-                  {isDark ? "Light Mode" : "Dark Mode"}
-                </button>
-
-                <a href="https://github.com/prajalsharma/veNFT-marketplace" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-4 py-3.5 text-sm cursor-pointer" style={{ color: "var(--text-3)" }}>
-                  <Github style={{ width: 16, height: 16 }} /> View Repository
-                </a>
+            <div className="px-5 py-5 grid gap-5">
+              <div>
+                <p className="text-[13px] font-semibold mb-2 px-1" style={{ color: "var(--text-3)" }}>Network</p>
+                <NetworkMenu variant="list" />
               </div>
+              <button onClick={toggleTheme} className="flex items-center justify-between px-3.5 py-3 rounded-xl text-[15px] font-semibold" style={{ background: "var(--bg-2)", color: "var(--text-1)" }}>
+                {isDark ? "Light mode" : "Dark mode"}
+                {isDark ? <Sun style={{ width: 16, height: 16 }} /> : <Moon style={{ width: 16, height: 16 }} />}
+              </button>
             </div>
           </motion.div>
         )}
