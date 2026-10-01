@@ -1094,3 +1094,26 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
   .hero-wipe, .reveal-up, .hero-parallax, .step-line { animation: none !important; }
   .cta-arrow { transition: none; }
 }
+
+/* ── Dark hero band ───────────────────────────────────────────────────────────
+   The landing opens on the brand's dark ground in both themes: one deliberate,
+   atmospheric surface with the product object at its centre. Tokens are
+   re-scoped locally so every component inside renders in its dark variant. */
+.band-dark {
+  --bg: #080808; --bg-1: #0e0e0e; --bg-2: #161616; --bg-3: #1c1c1c;
+  --surface: #0e0e0e; --surface-hover: #131313;
+  --text-1: #f4f4f4; --text-2: #a8a8a8; --text-3: rgba(255,255,255,0.46);
+  --hairline: rgba(255,255,255,0.09); --border: rgba(255,255,255,0.1); --border-strong: rgba(255,255,255,0.2);
+  background: var(--bg);
+  color: var(--text-1);
+}
+.band-dark .btn-quiet { color: var(--text-1); }
+
+.backer { opacity: 0.6; transition: opacity 200ms var(--ease-out); }
+.backer:hover, .backer:focus-visible { opacity: 1; }
+
+.dial-draw { stroke-dasharray: 1; stroke-dashoffset: 0; animation: dial-draw 1100ms var(--ease-out) both; }
+.dial-draw--late { animation-delay: 350ms; }
+.dial-draw--lock { animation-delay: 200ms; animation-duration: 1300ms; }
+@keyframes dial-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .dial-draw { animation: none; } }

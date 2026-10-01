@@ -27,6 +27,7 @@ import { useLiveMarket } from "@/hooks/useMarketData";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { CountdownCompact } from "@/components/CountdownTimer";
 import { PositionGlyph, PriceValueBar } from "@/components/market/PositionVisuals";
+import { DiscountDial } from "@/components/market/DiscountDial";
 import { fmtAmount, DiscountText, GrantTag } from "@/components/VeNFTCard";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -46,183 +47,88 @@ const H2 = ({ children, className = "" }: { children: React.ReactNode; className
   </h2>
 );
 
-// ─── 1. Live position preview ────────────────────────────────────────────────
+// ─── 1. Hero band ────────────────────────────────────────────────────────────
 
-function PreviewFrame({ children, label }: { children: React.ReactNode; label: React.ReactNode }) {
-  return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{ background: "var(--surface)", border: "1px solid var(--hairline)", boxShadow: "var(--shadow-xl)" }}
-    >
-      <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--hairline)" }}>
-        {label}
-        <Link href="/marketplace" className="text-[13px] font-semibold inline-flex items-center gap-1 hover:underline underline-offset-4" style={{ color: "var(--text-2)" }}>
-          Market <ArrowRight style={{ width: 13, height: 13 }} />
-        </Link>
-      </div>
-      {children}
-    </div>
-  );
-}
+const BACKERS = [
+  { name: "Supernormal Foundation", href: "https://www.supernormal.foundation", src: "/partners/supernormal-foundation.png", ratio: 671 / 143 },
+  { name: "Mezo", href: "https://mezo.org", src: "/partners/mezo.svg", ratio: 4098 / 566 },
+];
 
-function PositionAnatomy({ l, usd }: { l: Listing; usd: number | null }) {
-  const lockedSym = l.collection === "veBTC" ? "BTC" : "MEZO";
-  const sym = getPaymentTokenSymbol(l.paymentToken);
-  const rows: [string, React.ReactNode][] = [
-    ["Holds", `${fmtAmount(l.intrinsicValue)} ${lockedSym}`],
-    ["Voting power", parseFloat(formatEther(l.votingPower)).toLocaleString("en-US", { maximumFractionDigits: 2 })],
-    ["Unlocks in", Number(l.lockEnd) === 0 ? "Permanent lock" : <CountdownCompact key="c" lockEnd={l.lockEnd} />],
-  ];
+function Backers() {
   return (
-    <div className="p-6">
-      <div className="flex items-center gap-4 mb-7">
-        <PositionGlyph collection={l.collection} lockEnd={l.lockEnd} size={56} />
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="text-[17px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
-              {l.collection} <span style={{ color: "var(--text-3)" }}>#{l.tokenId.toString()}</span>
-            </p>
-            {l.isGrant && <GrantTag />}
-          </div>
-          <p className="text-[13px]" style={{ color: "var(--text-3)" }}>Listed now on Vezo</p>
-        </div>
-      </div>
-      <div className="flex items-end justify-between gap-4 mb-1">
-        <p style={{ fontSize: "2.6rem", fontWeight: 700, lineHeight: 1, letterSpacing: "-0.04em", color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-          {fmtAmount(l.price)}<span className="text-[16px] font-semibold ml-2" style={{ color: "var(--text-2)", letterSpacing: 0 }}>{sym}</span>
-        </p>
-        <p className="text-[16px] font-bold pb-1"><DiscountText discountBps={l.discountBps} /></p>
-      </div>
-      <p className="text-[13px] mb-6 tabular-nums" style={{ color: "var(--text-3)" }}>
-        {usd !== null ? <>&#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : " "}
-      </p>
-      <PriceValueBar discountBps={l.discountBps} />
-      <p className="text-[12px] mt-2 mb-6" style={{ color: "var(--text-3)" }}>Filled: what you pay. Gap: the discount to what it holds.</p>
-      <dl>
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between py-3" style={{ borderTop: "1px solid var(--hairline)" }}>
-            <dt className="text-[14px]" style={{ color: "var(--text-3)" }}>{k}</dt>
-            <dd className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{v}</dd>
-          </div>
+    <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-10">
+      <p className="text-[13px] font-semibold shrink-0" style={{ color: "var(--text-3)" }}>Supported by</p>
+      <ul className="flex flex-wrap items-center gap-x-10 gap-y-5">
+        {BACKERS.map((b) => (
+          <li key={b.name}>
+            <a
+              href={b.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={b.name}
+              title={b.name}
+              className="backer block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-4"
+              style={{ height: b.name === "Mezo" ? 24 : 34, width: Math.round((b.name === "Mezo" ? 24 : 34) * b.ratio) }}
+            >
+              {/* Official marks, unaltered: Mezo's white full mark (its guidelines
+                  allow a monotone version) and Supernormal's white logo. Shown at
+                  reduced opacity until hovered, so the pair reads calmly. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={b.src} alt={b.name} className="block w-full h-full object-contain object-left" />
+            </a>
+          </li>
         ))}
-      </dl>
+      </ul>
     </div>
   );
 }
 
-function LivePreview() {
+function HeroBand({ network }: { network: string }) {
   const live = useLiveMarket();
-  const prices = usePriceTicker();
   const reduce = useReducedMotion();
-  const pool = live.byDiscount.slice(0, 5);
-  const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
-
-  useEffect(() => {
-    if (pool.length < 2 || paused || reduce) return;
-    const t = setInterval(() => setI((x) => (x + 1) % pool.length), 5000);
-    return () => clearInterval(t);
-  }, [pool.length, paused, reduce]);
-
-  const current = pool.length ? pool[i % pool.length]! : null;
-  const usd = current
-    ? (() => {
-        const unit = prices[getPaymentTokenSymbol(current.paymentToken) as "BTC" | "MEZO" | "MUSD"];
-        return unit ? unit * parseFloat(formatEther(current.price)) : null;
-      })()
-    : null;
-
-  const liveLabel = (
-    <p className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
-      {live.status === "ready" || live.status === "stale"
-        ? `Live listing${pool.length > 1 ? ` ${(i % pool.length) + 1} of ${pool.length}` : ""}`
-        : "The market"}
-    </p>
-  );
-
-  if (live.status === "loading") {
-    return (
-      <PreviewFrame label={liveLabel}>
-        <div className="p-6 space-y-5" aria-busy="true">
-          <div className="flex items-center gap-4"><div className="w-14 h-14 rounded-full skeleton" /><div className="space-y-2"><div className="h-4 w-36 skeleton rounded" /><div className="h-3 w-24 skeleton rounded" /></div></div>
-          <div className="h-10 w-48 skeleton rounded" />
-          <div className="h-1.5 w-full skeleton rounded-full" />
-          {[0, 1, 2].map((k) => <div key={k} className="h-4 w-full skeleton rounded" />)}
-        </div>
-      </PreviewFrame>
-    );
-  }
-
-  if (!current) {
-    // Zero state: no listing to show, so explain how to read one instead.
-    const empty = live.status === "empty";
-    return (
-      <PreviewFrame label={liveLabel}>
-        <div className="p-6">
-          <p className="text-[17px] font-bold mb-2" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
-            {empty ? "No positions are listed right now. Yours would be the first." : "Live listings are unavailable right now"}
-          </p>
-          <p className="text-[14px] leading-relaxed mb-6" style={{ color: "var(--text-2)" }}>
-            {empty
-              ? "A new listing leads the market. Here is what buyers would see on yours:"
-              : "The market is still there; this preview could not reach it. Every listing shows the same four things:"}
-          </p>
-          <ol className="space-y-3 mb-7">
-            {[
-              ["The lock ring", "how much lock time remains, against the maximum"],
-              ["The price", "in BTC, MEZO or MUSD, with a live USD equivalent"],
-              ["The value bar", "what you pay, against what the position holds"],
-              ["The unlock date", "when the full locked amount can be withdrawn"],
-            ].map(([a, b], k) => (
-              <li key={a} className="grid grid-cols-[20px_1fr] gap-x-3 text-[14px]">
-                <span className="tabular-nums font-semibold" style={{ color: "var(--text-3)" }}>{k + 1}</span>
-                <span style={{ color: "var(--text-2)" }}><span className="font-semibold" style={{ color: "var(--text-1)" }}>{a}</span>: {b}</span>
-              </li>
-            ))}
-          </ol>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/my-listings" className="btn-buy h-11 px-5 rounded-lg text-[14px] font-semibold inline-flex items-center">List a position</Link>
-            {!empty && (
-              <button onClick={live.refetch} className="btn-quiet h-11 px-5 rounded-lg text-[14px] font-semibold">Try again</button>
-            )}
-          </div>
-        </div>
-      </PreviewFrame>
-    );
-  }
-
+  const enter = (delay: number) => (reduce ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, delay, ease } });
   return (
-    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <PreviewFrame label={liveLabel}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={`${current.collection}-${current.tokenId}`}
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? undefined : { opacity: 0, y: -6 }}
-            transition={{ duration: 0.35, ease }}
-          >
-            <PositionAnatomy l={current} usd={usd} />
-          </motion.div>
-        </AnimatePresence>
-        {pool.length > 1 && (
-          <div className="flex gap-1.5 px-6 pb-5" role="tablist" aria-label="Live listings">
-            {pool.map((p, k) => (
-              <button
-                key={`${p.collection}-${p.tokenId}`}
-                role="tab"
-                aria-selected={k === i % pool.length}
-                aria-label={`${p.collection} #${p.tokenId.toString()}`}
-                onClick={() => setI(k)}
-                className="h-1 flex-1 rounded-full transition-colors"
-                style={{ background: k === i % pool.length ? "var(--vezo-red)" : "var(--hairline)" }}
-              />
-            ))}
+    <section className="band-dark relative overflow-hidden">
+      {/* One restrained light source behind the dial; the only atmosphere on the page */}
+      <div aria-hidden className="absolute pointer-events-none" style={{ right: "-10%", top: "-20%", width: 760, height: 760, background: "radial-gradient(closest-side, rgba(255,0,64,0.12), transparent)" }} />
+      <div className="relative max-w-[1320px] mx-auto px-5 md:px-10 lg:px-16 pt-32 md:pt-40 pb-14">
+        <div className="grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-14 lg:gap-10 items-center">
+          <div>
+            <motion.p {...enter(0)} className="text-[15px] font-semibold mb-6 flex items-center gap-2" style={{ color: "var(--text-2)" }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
+              The veNFT market on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
+            </motion.p>
+            <motion.h1
+              {...enter(0.06)}
+              className="font-bold mb-7"
+              style={{ fontSize: "clamp(2.75rem, 6vw, 5.25rem)", lineHeight: 0.98, letterSpacing: "-0.05em", textWrap: "balance" }}
+            >
+              <span style={{ color: "var(--text-1)" }}>Buy locked Bitcoin </span>
+              <span style={{ color: "var(--text-3)" }}>for less than it holds.</span>
+            </motion.h1>
+            <motion.p {...enter(0.12)} className="text-[18px] leading-[1.6] mb-10" style={{ color: "var(--text-2)", maxWidth: "48ch", textWrap: "pretty" }}>
+              Vezo is the secondary market for veBTC and veMEZO. Holders who need
+              liquidity sell their lock; buyers take the position, its voting power
+              and its rewards at a discount. One transaction settles both sides.
+            </motion.p>
+            <motion.div {...enter(0.18)} className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
+              <Link href="/marketplace" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+                Browse the market <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
+              </Link>
+              <Link href="/my-listings" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center">
+                Sell a position
+              </Link>
+            </motion.div>
           </div>
-        )}
-      </PreviewFrame>
-    </div>
+          <motion.div {...enter(0.2)}>
+            <DiscountDial listings={live.byDiscount} status={live.status} />
+          </motion.div>
+        </div>
+        <div className="mt-16 md:mt-20 pt-8" style={{ borderTop: "1px solid var(--hairline)" }}>
+          <Backers />
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -452,40 +358,11 @@ const RULES: [string, string][] = [
 
 export default function HomeClient() {
   const { network } = useNetwork();
-  const reduce = useReducedMotion();
-  const enter = (delay: number) => (reduce ? {} : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay, ease } });
 
   return (
-    <div className="px-5 md:px-10 lg:px-16">
-      {/* 1. Statement + live preview */}
-      <section className="max-w-[1320px] mx-auto pt-32 md:pt-40 pb-14 md:pb-20 grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-12 lg:gap-16 items-center">
-        <div>
-          <motion.p {...enter(0)} className="text-[15px] font-semibold mb-5" style={{ color: "var(--text-2)" }}>
-            The veNFT market on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
-          </motion.p>
-          <motion.h1
-            {...enter(0.05)}
-            className="hero-wipe font-bold mb-6"
-            style={{ fontSize: "clamp(2.6rem, 5.4vw, 4.5rem)", lineHeight: 1.0, letterSpacing: "-0.045em", color: "var(--text-1)", textWrap: "balance" }}
-          >
-            Buy locked Bitcoin positions for less than they hold.
-          </motion.h1>
-          <motion.p {...enter(0.1)} className="text-[18px] leading-[1.6] mb-9" style={{ color: "var(--text-2)", maxWidth: "50ch", textWrap: "pretty" }}>
-            Vezo is where veBTC and veMEZO holders who need liquidity sell their lock,
-            and where buyers pick up the position, its voting power and its rewards
-            at a discount. Each trade settles in one transaction.
-          </motion.p>
-          <motion.div {...enter(0.15)} className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-            <Link href="/marketplace" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
-              Browse the market <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
-            </Link>
-            <Link href="/my-listings" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center">
-              Sell a position
-            </Link>
-          </motion.div>
-        </div>
-        <motion.div {...enter(0.2)} className="hero-parallax"><LivePreview /></motion.div>
-      </section>
+    <div>
+      <HeroBand network={network} />
+      <div className="px-5 md:px-10 lg:px-16">
 
       {/* 2. Sellers: who fills the market, so present whatever the market holds */}
       <SellerSection />
@@ -550,6 +427,7 @@ export default function HomeClient() {
           </a>
         </div>
       </section>
+      </div>
     </div>
   );
 }
