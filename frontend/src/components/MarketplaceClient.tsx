@@ -485,6 +485,11 @@ export default function MarketplaceClient() {
                 Locked veBTC and veMEZO positions, sold below the value they hold.
               </p>
             </div>
+            <p className="flex items-center gap-2 text-[13px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
+              Right now
+              <span className="font-normal" style={{ color: "var(--text-3)" }}>· positions buyable at this moment</span>
+            </p>
             <MetricStrip
               metrics={[
                 {

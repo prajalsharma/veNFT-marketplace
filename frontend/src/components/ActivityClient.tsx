@@ -16,6 +16,7 @@ import React, { useMemo, useState } from "react";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useActivityFeed } from "@/hooks/useActivityFeed";
 import { MetricStrip } from "@/components/market/MarketParts";
+import { useMarketHistory, fmtCompact } from "@/hooks/useMarketData";
 import { useListingOutcomes, OUTCOME_LABEL, OUTCOME_HELP, type ListingOutcome } from "@/hooks/useListingOutcomes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -202,6 +203,7 @@ export default function ActivityClient() {
   }, [events]);
 
   const outcomes = useListingOutcomes(unresolvedIds);
+  const hist = useMarketHistory();
 
   // Event-type filter. Counts come from the full feed so the tabs describe it.
   const [kind, setKind] = useState<"all" | "sale" | "listed" | "cancelled">("all");
@@ -254,18 +256,33 @@ export default function ActivityClient() {
 
         {isDeployed && !isLoading && !error && events.length > 0 && (
           <div className="mb-6 space-y-4">
+            <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+              Since launch
+              <span className="font-normal" style={{ color: "var(--text-3)" }}> · every indexed event, not just this page</span>
+            </p>
             <MetricStrip
-              metrics={[
-                { label: "Sales", value: String(counts.sale), note: "settled on-chain" },
-                { label: "Listings", value: String(counts.listed), note: "positions listed" },
-                { label: "Cancellations", value: String(counts.cancelled), note: "withdrawn by sellers" },
-                { label: "Events shown", value: String(events.length), note: "most recent first" },
-              ]}
+              metrics={
+                hist.stats && (hist.status === "ready" || hist.status === "stale" || hist.status === "empty")
+                  ? [
+                      { label: "Sales", value: hist.stats.totalSales.toLocaleString("en-US"), note: `${hist.stats.totalListings.toLocaleString("en-US")} listings` },
+                      { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet" },
+                      { label: "MUSD traded", value: fmtCompact(parseFloat(hist.stats.volume.MUSD)), note: hist.stats.averageSale.MUSD ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MUSD))} per sale` : "no MUSD sales yet" },
+                      { label: "Participants", value: hist.stats.participants.toLocaleString("en-US"), note: `${hist.stats.buyers} buyers, ${hist.stats.sellers} sellers` },
+                    ]
+                  : hist.status === "loading"
+                    ? ["Sales", "MEZO traded", "MUSD traded", "Participants"].map((label) => ({ label, value: "…", note: "\u00a0" }))
+                    : [{ label: "Market history", value: "Unavailable", note: "index unreachable, try again shortly", tone: "muted" as const }]
+              }
             />
+            <div className="flex flex-wrap items-center gap-3 pt-2">
             <div className="segmented" role="group" aria-label="Event type">
-              {([["all","All"],["sale","Sales"],["listed","Listings"],["cancelled","Cancellations"]] as const).map(([k,label]) => (
-                <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>{label}</button>
+              {([["all","All",events.length],["sale","Sales",counts.sale],["listed","Listings",counts.listed],["cancelled","Cancellations",counts.cancelled]] as const).map(([k,label,n]) => (
+                <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>
+                  {label} <span className="tabular-nums" style={{ color: "var(--text-3)" }}>{n}</span>
+                </button>
               ))}
+            </div>
+            <p className="text-[12px]" style={{ color: "var(--text-3)" }}>Counts for the latest {events.length} events in this feed</p>
             </div>
           </div>
         )}

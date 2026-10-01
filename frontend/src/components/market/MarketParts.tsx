@@ -44,7 +44,7 @@ export function MetricStrip({ metrics }: { metrics: Metric[] }) {
         const empty = m.tone === "muted";
         return (
           <div key={m.label} className="metric-cell" title={m.hint}>
-            <dt className="text-[12px] font-semibold truncate self-center" style={{ color: "var(--text-3)" }}>
+            <dt className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
               {m.label}
             </dt>
             <dd
