@@ -518,7 +518,7 @@ export default function MyListingsClient() {
   if (!isConnected) return <ConnectPrompt />;
 
   return (
-    <div className="min-h-[100dvh] pt-28 md:pt-36 pb-20 px-5 md:px-10 lg:px-16">
+    <div className="min-h-[100dvh] pt-32 md:pt-40 pb-20 px-5 md:px-10 lg:px-16">
       <div className="max-w-[1320px] mx-auto">
 
         {/* ── Header ── */}

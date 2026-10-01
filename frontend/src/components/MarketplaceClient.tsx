@@ -494,7 +494,7 @@ export default function MarketplaceClient() {
         }}
       />
 
-      <div className="min-h-[100dvh] pt-28 md:pt-36 pb-20 px-5 md:px-10 lg:px-16">
+      <div className="min-h-[100dvh] pt-32 md:pt-40 pb-20 px-5 md:px-10 lg:px-16">
         <div className="max-w-[1320px] mx-auto">
 
           {/* ── Market header: what this is, then the state of the market ── */}

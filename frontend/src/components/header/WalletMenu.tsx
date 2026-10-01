@@ -99,13 +99,13 @@ export function WalletMenu() {
   // Before hydration, or while wagmi restores a previous session, render a
   // placeholder of the right size instead of flashing "Connect wallet".
   if (!mounted || status === "reconnecting") {
-    return <div className="h-9 w-[132px] rounded-lg skeleton" aria-hidden />;
+    return <div className="h-11 w-[150px] rounded-lg skeleton" aria-hidden />;
   }
 
   if (!connected) {
     const busy = status === "connecting" || connectModalOpen;
     return (
-      <button onClick={() => openConnectModal?.()} className="hdr-primary h-9 px-4 rounded-lg text-[14px] font-semibold inline-flex items-center gap-2 whitespace-nowrap" aria-busy={busy}>
+      <button onClick={() => openConnectModal?.()} className="hdr-primary h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2 whitespace-nowrap" aria-busy={busy}>
         {busy && <Loader2 className="animate-spin" style={{ width: 14, height: 14 }} />}
         {busy ? "Connecting…" : <>Connect<span className="hidden sm:inline">&nbsp;wallet</span></>}
       </button>
@@ -119,13 +119,13 @@ export function WalletMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`h-9 pl-1.5 pr-2.5 rounded-lg inline-flex items-center gap-2 whitespace-nowrap ${wrongNetwork ? "hdr-warn" : "hdr-outline"}`}
+        className={`h-11 pl-2 pr-3 rounded-lg inline-flex items-center gap-2.5 whitespace-nowrap ${wrongNetwork ? "hdr-warn" : "hdr-outline"}`}
       >
-        <WalletIcon icon={connector?.icon} />
+        <WalletIcon icon={connector?.icon} size={28} />
         {wrongNetwork ? (
-          <span className="text-[13px] font-semibold">Wrong network</span>
+          <span className="text-[15px] font-semibold">Wrong network</span>
         ) : (
-          <span className="text-[13px] font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{short(address)}</span>
+          <span className="text-[15px] font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{short(address)}</span>
         )}
         <ChevronDown style={{ width: 14, height: 14, color: "var(--text-3)", transform: open ? "rotate(180deg)" : undefined, transition: "transform 160ms ease" }} />
       </button>

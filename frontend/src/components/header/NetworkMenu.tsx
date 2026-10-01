@@ -77,10 +77,10 @@ export function NetworkMenu({ variant = "compact" }: { variant?: "compact" | "li
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="hdr-ghost h-9 px-2.5 rounded-lg inline-flex items-center gap-2 text-[13px] font-semibold"
+        className="hdr-ghost h-10 px-3 rounded-lg inline-flex items-center gap-2 text-[15px] font-semibold"
         title="Network Vezo reads from"
       >
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: tone }} aria-hidden />
+        <span className="w-2 h-2 rounded-full" style={{ background: tone }} aria-hidden />
         <span style={{ color: network === "testnet" ? "#B45309" : "var(--text-2)" }}>{network === "testnet" ? "Testnet" : "Mainnet"}</span>
         <ChevronDown style={{ width: 14, height: 14, color: "var(--text-3)" }} />
       </button>
