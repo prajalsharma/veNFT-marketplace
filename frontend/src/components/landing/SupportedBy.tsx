@@ -40,9 +40,9 @@ export function SupportedBy() {
               href={b.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="backer-cell group flex flex-col justify-between gap-10 h-full p-7 md:p-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF0040]"
+              className="backer-cell group relative flex flex-col items-center justify-center text-center gap-8 h-full p-7 md:p-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF0040]"
             >
-              <div className="flex items-start justify-between gap-6">
+              <div className="flex items-center justify-center w-full min-h-[48px]">
                 <span
                   role="img"
                   aria-label={b.name}
@@ -50,21 +50,21 @@ export function SupportedBy() {
                   style={{
                     height: b.height,
                     width: Math.round(b.height * b.ratio),
-                    maxWidth: "75%",
+                    maxWidth: "80%",
                     WebkitMaskImage: `url(${b.src})`,
                     maskImage: `url(${b.src})`,
                     WebkitMaskSize: "contain",
                     maskSize: "contain",
                     WebkitMaskRepeat: "no-repeat",
                     maskRepeat: "no-repeat",
-                    WebkitMaskPosition: "left center",
-                    maskPosition: "left center",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
                     background: "currentColor",
                   }}
                 />
-                <ArrowUpRight className="backer-arrow shrink-0" style={{ width: 20, height: 20 }} />
-              </div>
-              <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)" }}>{b.line}</p>
+                              </div>
+              <ArrowUpRight className="backer-arrow absolute top-6 right-6 md:top-7 md:right-7" style={{ width: 20, height: 20 }} />
+              <p className="text-[15px] leading-relaxed max-w-[46ch] [text-wrap:balance]" style={{ color: "var(--text-2)" }}>{b.line}</p>
             </a>
           </li>
         ))}
