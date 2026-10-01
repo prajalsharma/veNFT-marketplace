@@ -1188,3 +1188,20 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
 .chart-link:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-strong) !important; }
 .chart-link:hover .cta-arrow { transform: translateX(3px); }
 @media (prefers-reduced-motion: reduce) { .chart-link:hover { transform: none; } }
+
+/* ── Footer ────────────────────────────────────────────────────────────────
+   Quiet by default; links resolve to full contrast on hover. External links
+   carry a small arrow that nudges on hover so leaving the site is legible. */
+.footer-link { color: var(--text-2); transition: color 150ms ease; }
+.footer-link:hover { color: var(--text-1); }
+.footer-ext { opacity: 0.5; transition: transform 160ms ease, opacity 160ms ease; }
+.footer-link:hover .footer-ext { opacity: 1; transform: translate(1px, -1px); }
+.footer-link--muted { color: var(--text-3); }
+.social-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-2); border: 1px solid var(--hairline);
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+.social-btn:hover { color: var(--text-1); border-color: var(--border-strong); background: var(--bg-2); }
+.social-btn:focus-visible { outline: 2px solid var(--vezo-red); outline-offset: 2px; }

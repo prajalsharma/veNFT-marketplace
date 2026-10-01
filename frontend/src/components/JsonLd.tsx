@@ -49,7 +49,7 @@ export function OrganizationJsonLd() {
       "onchain governance",
     ],
     sameAs: [
-      "https://x.com/vezo_exchange",
+      "https://x.com/VezoExchange",
       "https://github.com/prajalsharma/veNFT-marketplace",
     ],
   };

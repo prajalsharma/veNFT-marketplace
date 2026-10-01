@@ -23,7 +23,7 @@ export const SITE_NAME = "Vezo";
 /** Used in <title> templates: "<page> | Vezo — veNFT Marketplace on Mezo". */
 export const TITLE_SUFFIX = "Vezo — veNFT Marketplace on Mezo";
 
-export const TWITTER_HANDLE = "@vezo_exchange";
+export const TWITTER_HANDLE = "@VezoExchange";
 
 /** Primary brand description (≈155 chars — optimal meta-description length). */
 export const DEFAULT_DESCRIPTION =
