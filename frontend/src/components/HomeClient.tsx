@@ -117,11 +117,11 @@ function SellerSection() {
       <div className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-12 lg:gap-20 items-start">
         <div className="reveal-up lg:sticky lg:top-32">
           <H2 className="mb-5">
-            {empty ? "The market is open for its next listing." : "Hold a veNFT? Sell the lock, not your patience."}
+            {empty ? "Your veNFT could lead the market." : "Hold a veNFT? Sell the lock, not your patience."}
           </H2>
           <p className="text-[16px] leading-[1.7] mb-8" style={{ color: "var(--text-2)", maxWidth: "48ch" }}>
             {empty
-              ? "Nothing is listed right now, which means a new listing leads the market: it is the first position every buyer sees, here and on the market page."
+              ? "Positions sell and new ones get listed. List yours now and it goes straight to the top, here and on the market page."
               : "If you need the capital locked in a veBTC or veMEZO position, list it here. Buyers see your price, your discount and your lock, and the trade settles in one transaction."}
           </p>
           <div className="flex flex-wrap gap-3">
@@ -190,7 +190,7 @@ function TradeTimeline() {
           <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
             {illustrative ? (
               <>
-                Illustration: nothing is listed below value right now. A listed veNFT is drawn here with its real numbers.{" "}
+                Illustration. When a position is listed below its value, it is drawn here with its real numbers.{" "}
                 <Link href="/my-listings" className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>List your veNFT</Link>
               </>
             ) : (
@@ -294,12 +294,12 @@ function ListedNow() {
         <div className="rounded-2xl px-6 py-12 md:px-10 grid md:grid-cols-[1fr_auto] gap-6 items-center" style={{ border: "1px dashed var(--border-strong)" }}>
           <div>
             <p className="text-[18px] font-bold mb-1.5" style={{ color: "var(--text-1)" }}>
-              {live.status === "error" ? "Listings could not be loaded" : "The market is waiting for its first listing"}
+              {live.status === "error" ? "Listings could not be loaded" : "The next listing goes straight to the top"}
             </p>
             <p className="text-[15px]" style={{ color: "var(--text-2)", maxWidth: "56ch" }}>
               {live.status === "error"
                 ? "A connection problem on our side, not an empty market. Try again in a moment."
-                : "A position listed now is the first one every buyer sees. Listing takes two transactions, and your veNFT stays in your wallet, voting and earning, until it sells."}
+                : "Positions sell and new ones get listed. List yours and buyers see it first. It takes two transactions, and your veNFT stays in your wallet, voting and earning, until it sells."}
             </p>
           </div>
           {live.status === "error" ? (

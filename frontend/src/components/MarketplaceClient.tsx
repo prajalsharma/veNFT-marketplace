@@ -83,8 +83,8 @@ function EmptyState({ variant }: { variant: EmptyVariant }) {
       body: "There are listings on-chain, but they're all expired, sold, or otherwise unavailable to purchase.",
     },
     empty: {
-      title: "No active listings yet",
-      body: "Be the first to list a veNFT and provide liquidity to the Mezo ecosystem.",
+      title: "Nothing listed at the moment",
+      body: "Positions sell and new ones get listed. List yours and it leads the market.",
     },
   };
   const { title, body } = copy[variant];

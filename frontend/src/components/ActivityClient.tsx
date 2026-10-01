@@ -309,7 +309,7 @@ export default function ActivityClient() {
           <StateBlock
             icon={TrendingUp}
             title="No contract deployed yet"
-            sub="This activity stream will appear here as soon as the first listings and trades go live on this network."
+            sub="Listings, offers and trades on this network show up here once the marketplace is live on it."
           />
         ) : isLoading ? (
           <div
@@ -343,8 +343,8 @@ export default function ActivityClient() {
         ) : events.length === 0 ? (
           <StateBlock
             icon={History}
-            title="No activity yet"
-            sub="Be the first to list a veNFT and provide liquidity to the Mezo ecosystem."
+            title="No activity on this network"
+            sub="Listings, offers and trades show up here as they happen."
           />
         ) : (
           <>

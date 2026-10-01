@@ -89,10 +89,10 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
             <p className="text-[19px] font-bold mb-2" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
               {status === "error" ? "Listings are unreachable" : "This spot is open"}
             </p>
-            <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+            <p className="text-[13px] leading-relaxed max-w-[26ch] mx-auto [text-wrap:balance]" style={{ color: "var(--text-2)" }}>
               {status === "error"
                 ? "The market is still there; this view could not load it."
-                : "The best-priced listing sits here, the first thing every visitor sees. List yours and it could be the one."}
+                : "The best-priced listing sits here. List yours and it could be the one."}
             </p>
             <Link href="/my-listings" className="btn-brand inline-flex items-center gap-1.5 mt-5 h-10 px-4 rounded-lg text-[13px] font-semibold">
               List your veNFT
