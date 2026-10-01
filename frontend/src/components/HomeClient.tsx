@@ -28,6 +28,9 @@ import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { CountdownCompact } from "@/components/CountdownTimer";
 import { PositionGlyph, PriceValueBar } from "@/components/market/PositionVisuals";
 import { DiscountDial } from "@/components/market/DiscountDial";
+import { SettlementStory } from "@/components/landing/SettlementStory";
+import { SupportedBy } from "@/components/landing/SupportedBy";
+import { Faq } from "@/components/landing/Faq";
 import { fmtAmount, DiscountText, GrantTag } from "@/components/VeNFTCard";
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -49,40 +52,6 @@ const H2 = ({ children, className = "" }: { children: React.ReactNode; className
 
 // ─── 1. Hero band ────────────────────────────────────────────────────────────
 
-const BACKERS = [
-  { name: "Supernormal Foundation", href: "https://www.supernormal.foundation", src: "/partners/supernormal-foundation.png", ratio: 671 / 143 },
-  { name: "Mezo", href: "https://mezo.org", src: "/partners/mezo.svg", ratio: 4098 / 566 },
-];
-
-function Backers() {
-  return (
-    <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-10">
-      <p className="text-[13px] font-semibold shrink-0" style={{ color: "var(--text-3)" }}>Supported by</p>
-      <ul className="flex flex-wrap items-center gap-x-10 gap-y-5">
-        {BACKERS.map((b) => (
-          <li key={b.name}>
-            <a
-              href={b.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={b.name}
-              title={b.name}
-              className="backer block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-4"
-              style={{ height: b.name === "Mezo" ? 24 : 34, width: Math.round((b.name === "Mezo" ? 24 : 34) * b.ratio) }}
-            >
-              {/* Official marks, unaltered: Mezo's white full mark (its guidelines
-                  allow a monotone version) and Supernormal's white logo. Shown at
-                  reduced opacity until hovered, so the pair reads calmly. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={b.src} alt={b.name} className="block w-full h-full object-contain object-left" />
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function HeroBand({ network }: { network: string }) {
   const live = useLiveMarket();
   const reduce = useReducedMotion();
@@ -90,22 +59,24 @@ function HeroBand({ network }: { network: string }) {
   return (
     <section className="band-dark relative overflow-hidden">
       {/* One restrained light source behind the dial; the only atmosphere on the page */}
-      <div aria-hidden className="absolute pointer-events-none" style={{ right: "-10%", top: "-20%", width: 760, height: 760, background: "radial-gradient(closest-side, rgba(255,0,64,0.12), transparent)" }} />
-      <div className="relative max-w-[1320px] mx-auto px-5 md:px-10 lg:px-16 pt-32 md:pt-40 pb-14">
+      <div className="relative max-w-[1320px] mx-auto px-5 md:px-10 lg:px-16 pt-32 md:pt-40 pb-20 md:pb-28">
         <div className="grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-14 lg:gap-10 items-center">
           <div>
             <motion.p {...enter(0)} className="text-[15px] font-semibold mb-6 flex items-center gap-2" style={{ color: "var(--text-2)" }}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
               The veNFT market on Mezo {network === "testnet" ? "Testnet" : "Mainnet"}
             </motion.p>
-            <motion.h1
-              {...enter(0.06)}
+            <h1
               className="font-bold mb-7"
               style={{ fontSize: "clamp(2.75rem, 6vw, 5.25rem)", lineHeight: 0.98, letterSpacing: "-0.05em", textWrap: "balance" }}
+              aria-label="Buy locked Bitcoin for less than it holds."
             >
-              <span style={{ color: "var(--text-1)" }}>Buy locked Bitcoin </span>
-              <span style={{ color: "var(--text-3)" }}>for less than it holds.</span>
-            </motion.h1>
+              {["Buy", "locked", "Bitcoin", "for", "less", "than", "it", "holds."].map((w, k) => (
+                <span key={k} aria-hidden className="word-rise" style={{ animationDelay: `${80 + k * 55}ms`, color: k < 3 ? "var(--text-1)" : "var(--text-3)" }}>
+                  {w}{k < 7 ? "\u00a0" : ""}
+                </span>
+              ))}
+            </h1>
             <motion.p {...enter(0.12)} className="text-[18px] leading-[1.6] mb-10" style={{ color: "var(--text-2)", maxWidth: "48ch", textWrap: "pretty" }}>
               Vezo is the secondary market for veBTC and veMEZO. Holders who need
               liquidity sell their lock; buyers take the position, its voting power
@@ -123,9 +94,6 @@ function HeroBand({ network }: { network: string }) {
           <motion.div {...enter(0.2)}>
             <DiscountDial listings={live.byDiscount} status={live.status} />
           </motion.div>
-        </div>
-        <div className="mt-16 md:mt-20 pt-8" style={{ borderTop: "1px solid var(--hairline)" }}>
-          <Backers />
         </div>
       </div>
     </section>
@@ -343,12 +311,6 @@ function ListedNow() {
 
 // ─── 5–6. Settlement and rules ───────────────────────────────────────────────
 
-const STEPS = [
-  ["The seller lists", "A price in BTC, MEZO or MUSD, and an approval for the marketplace. The veNFT stays in their wallet, still voting and earning, and they can cancel at any time."],
-  ["A buyer accepts", "Or makes an offer. Offers are approvals too, so the buyer's funds stay in their own wallet until the seller accepts."],
-  ["One transaction settles", "The contract checks ownership, approval and expiry, then moves the veNFT and the payment together. If any check fails, nothing moves."],
-] as const;
-
 const RULES: [string, string][] = [
   ["Protocol fee", "1% of the sale, deducted from the seller's proceeds. Buyers pay the listed price."],
   ["Fee limits", "Hard-capped at 5% in the contract. Any change waits behind a 48-hour on-chain timelock."],
@@ -358,44 +320,30 @@ const RULES: [string, string][] = [
 
 export default function HomeClient() {
   const { network } = useNetwork();
+  const live = useLiveMarket();
+  const liveForStory = live.byDiscount[0] ?? null;
 
   return (
     <div>
       <HeroBand network={network} />
       <div className="px-5 md:px-10 lg:px-16">
 
-      {/* 2. Sellers: who fills the market, so present whatever the market holds */}
-      <SellerSection />
-
-      {/* 3. The trade */}
-      <TradeTimeline />
-
-      {/* 4. Listed now */}
+      {/* 2. The product, straight after the promise */}
       <ListedNow />
 
-      {/* 5. Settlement: a real sequence, so it is numbered */}
+      {/* 3. Both sides of a trade: what a buyer gets, what a seller keeps */}
+      <TradeTimeline />
+      <SellerSection />
+
+      {/* 4. How a trade settles, as one listing moving through its states */}
       <section className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
-        <motion.div {...reveal} className="mb-12 md:mb-16">
+        <motion.div {...reveal} className="mb-10 md:mb-6">
           <H2>How a trade settles</H2>
         </motion.div>
-        <ol className="relative grid md:grid-cols-3 gap-10 md:gap-8">
-          {STEPS.map(([t, b], k) => (
-            <motion.li key={t} initial={{ y: 14 }} whileInView={{ y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.55, delay: k * 0.12, ease }}>
-              <div className="flex items-center gap-3 mb-5">
-                <span className="w-8 h-8 rounded-full inline-flex items-center justify-center text-[13px] font-bold tabular-nums shrink-0"
-                  style={k === 2 ? { background: "var(--vezo-red)", color: "#fff" } : { border: "1px solid var(--border-strong)", color: "var(--text-1)" }}>
-                  {k + 1}
-                </span>
-                <span className="step-line h-px flex-1" style={{ background: k === 2 ? "transparent" : "var(--border-strong)" }} />
-              </div>
-              <h3 className="text-[19px] font-bold mb-3" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>{t}</h3>
-              <p className="text-[15px] leading-[1.65]" style={{ color: "var(--text-2)" }}>{b}</p>
-            </motion.li>
-          ))}
-        </ol>
+        <SettlementStory listing={liveForStory} />
       </section>
 
-      {/* 6. Rules */}
+      {/* 5. Rules */}
       <section className="max-w-[1320px] mx-auto py-14 md:py-28 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-12 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
         <motion.div {...reveal}>
           <H2 className="mb-4">Short enough to read before your first trade</H2>
@@ -413,6 +361,17 @@ export default function HomeClient() {
             </div>
           ))}
         </dl>
+      </section>
+
+      {/* 6. Supported by: trust after the product has been explained */}
+      <section className="max-w-[1320px] mx-auto py-14 md:py-24" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <SupportedBy />
+      </section>
+
+      {/* 7. Questions */}
+      <section className="max-w-[1320px] mx-auto py-14 md:py-28 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <H2>Questions</H2>
+        <Faq />
       </section>
 
       {/* Close */}
