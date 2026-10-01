@@ -73,7 +73,8 @@ async function readHistorical(keys: string[]): Promise<void> {
 
 export async function GET(req: NextRequest) {
   const url = process.env.SUBGRAPH_URL || process.env.NEXT_PUBLIC_SUBGRAPH_URL;
-  const limit = Math.min(200, Math.max(1, Number(req.nextUrl.searchParams.get("limit") ?? 100)));
+  const raw = Number.parseInt(req.nextUrl.searchParams.get("limit") ?? "100", 10);
+  const limit = Number.isFinite(raw) ? Math.min(200, Math.max(1, raw)) : 100;
   if (!url) return NextResponse.json({ status: "unavailable", events: [] });
 
   try {

@@ -370,9 +370,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // x-real-ip is set by Vercel's edge; the first x-forwarded-for entry can be
+  // supplied by the client, which would let one caller rotate past the limit.
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
+    req.headers.get("x-forwarded-for")?.split(",").pop()?.trim() ||
     "unknown";
   if (rateLimited(ip)) {
     return NextResponse.json(

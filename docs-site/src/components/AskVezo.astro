@@ -113,8 +113,23 @@
       }
     });
 
+    // Escapes quotes too: values land inside attributes (href) as well as text.
     const esc = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+    // Model output is untrusted (a question can steer it, and answers are
+    // cached for others), so it may only link to Vezo's and Mezo's own sites.
+    const SAFE_HOSTS = ["vezo.exchange", "docs.vezo.exchange", "www.vezo.exchange", "mezo.org", "explorer.mezo.org", "dune.com"];
+    const safeLink = (label: string, raw: string) => {
+      try {
+        const u = new URL(raw.replace(/&amp;/g, "&"));
+        if (u.protocol === "https:" && SAFE_HOSTS.includes(u.hostname)) {
+          return `<a href="${esc(u.href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        }
+      } catch { /* not a URL */ }
+      return label;
+    };
 
     // Deliberately tiny markdown: bold, inline code, links, and bullets. The
     // model's output is escaped first, so nothing it emits can inject markup.
@@ -126,7 +141,7 @@
         const line = raw
           .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
           .replace(/`([^`]+)`/g, "<code>$1</code>")
-          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_m, label, url) => safeLink(label, url));
         const bullet = line.match(/^\s*[-*]\s+(.*)$/);
         if (bullet) {
           if (!inList) { html += "<ul>"; inList = true; }
