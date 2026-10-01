@@ -1197,11 +1197,3 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
 .footer-ext { opacity: 0.5; transition: transform 160ms ease, opacity 160ms ease; }
 .footer-link:hover .footer-ext { opacity: 1; transform: translate(1px, -1px); }
 .footer-link--muted { color: var(--text-3); }
-.social-btn {
-  width: 36px; height: 36px; border-radius: 10px;
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--text-2); border: 1px solid var(--hairline);
-  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
-}
-.social-btn:hover { color: var(--text-1); border-color: var(--border-strong); background: var(--bg-2); }
-.social-btn:focus-visible { outline: 2px solid var(--vezo-red); outline-offset: 2px; }

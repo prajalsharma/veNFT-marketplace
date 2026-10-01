@@ -10,7 +10,7 @@
 // are no legal pages or community channels to link yet, so none are listed.
 
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Heart } from "lucide-react";
 import { VezoLogoMark } from "@/components/Header";
 import { openOnboardingTour } from "@/components/OnboardingTour";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -19,7 +19,7 @@ const DOCS = "https://docs.vezo.exchange";
 const GITHUB = "https://github.com/prajalsharma/veNFT-marketplace";
 const X_URL = "https://x.com/VezoExchange";
 
-type Item = { label: string; href?: string; onClick?: () => void; external?: boolean };
+type Item = { label: string; href?: string; onClick?: () => void; external?: boolean; icon?: "x" | "github" | "heart" };
 
 const COLUMNS: { title: string; items: Item[] }[] = [
   {
@@ -48,7 +48,16 @@ const COLUMNS: { title: string; items: Item[] }[] = [
       { label: "Smart contracts", href: `${DOCS}/architecture/contracts/`, external: true },
       { label: "Security", href: `${DOCS}/architecture/security/`, external: true },
       { label: "Subgraph", href: `${DOCS}/developers/subgraph/`, external: true },
-      { label: "Source code", href: GITHUB, external: true },
+    ],
+  },
+  {
+    // Where the project lives, grouped the way people look for it, not
+    // left as bare icons in the legal row.
+    title: "Connect",
+    items: [
+      { label: "X", href: X_URL, external: true, icon: "x" },
+      { label: "GitHub", href: GITHUB, external: true, icon: "github" },
+      { label: "Support Vezo", href: "https://support.vezo.exchange", icon: "heart" },
     ],
   },
 ];
@@ -71,9 +80,14 @@ function XMark({ size = 16 }: { size?: number }) {
 
 function FooterLink({ item }: { item: Item }) {
   const cls =
-    "footer-link inline-flex items-center gap-1 text-[14px] py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]";
+    "footer-link inline-flex items-center gap-2 text-[15px] py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]";
   const body = (
     <>
+      {item.icon && (
+        <span className="w-[18px] inline-flex justify-center" aria-hidden>
+          {item.icon === "x" ? <XMark size={14} /> : item.icon === "github" ? <GitHubMark size={16} /> : <Heart style={{ width: 15, height: 15 }} />}
+        </span>
+      )}
       {item.label}
       {item.external && <ArrowUpRight aria-hidden className="footer-ext" style={{ width: 13, height: 13 }} />}
     </>
@@ -95,27 +109,27 @@ export function SiteFooter() {
     <footer className="relative mt-20" style={{ borderTop: "1px solid var(--hairline)" }}>
       <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16">
         {/* Brand + columns */}
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)] pt-14 md:pt-20 pb-12 md:pb-16">
-          <div className="max-w-[34ch]">
-            <Link href="/" aria-label="Vezo home" className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
-              <VezoLogoMark size={26} />
-              <span className="text-[22px]" style={{ fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: "var(--text-1)" }}>vezo</span>
+        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] pt-14 md:pt-20 pb-12 md:pb-16">
+          <div className="max-w-[40ch]">
+            <Link href="/" aria-label="Vezo home" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
+              <VezoLogoMark size={34} />
+              <span className="text-[30px]" style={{ fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: "var(--text-1)" }}>vezo</span>
             </Link>
-            <p className="text-[15px] leading-[1.65] mt-5" style={{ color: "var(--text-2)" }}>
+            <p className="text-[16px] leading-[1.7] mt-6" style={{ color: "var(--text-2)" }}>
               The secondary market for veBTC and veMEZO. Listings stay in the seller&apos;s wallet until one transaction settles both sides.
             </p>
-            <p className="text-[13px] mt-5" style={{ color: "var(--text-3)" }}>
+            <p className="text-[15px] leading-[1.6] mt-6" style={{ color: "var(--text-2)" }}>
               Independent and free to use.{" "}
-              <a href="https://support.vezo.exchange" className="footer-link footer-link--muted font-semibold underline underline-offset-4 decoration-[var(--hairline)] rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
-                Support the build
+              <a href="https://support.vezo.exchange" className="footer-link font-semibold inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]" style={{ color: "var(--text-1)" }}>
+                Support the build <span aria-hidden className="cta-arrow">→</span>
               </a>
             </p>
           </div>
 
-          <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-10">
+          <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-10">
             {COLUMNS.map((col) => (
               <div key={col.title}>
-                <h2 className="text-[13px] font-semibold mb-4" style={{ color: "var(--text-1)" }}>{col.title}</h2>
+                <h2 className="text-[14px] font-semibold mb-4" style={{ color: "var(--text-1)" }}>{col.title}</h2>
                 <ul className="space-y-1.5">
                   {col.items.map((item) => (
                     <li key={item.label}><FooterLink item={item} /></li>
@@ -127,7 +141,7 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom bar: provenance and presence */}
-        <div className="flex flex-col-reverse md:flex-row md:items-center justify-between gap-5 py-6 text-[13px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 py-6 text-[13px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span>© {new Date().getFullYear()} Vezo</span>
             <a href="https://mezo.org" target="_blank" rel="noopener noreferrer" className="footer-link footer-link--muted inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
@@ -148,14 +162,6 @@ export function SiteFooter() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="Vezo on X" title="Vezo on X" className="social-btn">
-              <XMark />
-            </a>
-            <a href={GITHUB} target="_blank" rel="noopener noreferrer" aria-label="Vezo on GitHub" title="Vezo on GitHub" className="social-btn">
-              <GitHubMark />
-            </a>
-          </div>
         </div>
       </div>
     </footer>
