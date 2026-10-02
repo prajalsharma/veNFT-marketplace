@@ -243,9 +243,12 @@ Rules:
 - This is a conversation: a follow-up like "and how do I cancel it?" refers to the earlier turns.
 - If the excerpts do not contain the answer, say so plainly in one sentence. Never guess, and never invent contract addresses, fees, function names, or numbers.
 - Be concise and concrete: a short paragraph, or a few bullets when steps are involved.
+- Answer for the person asking. Someone using the app gets app terms and steps (Portfolio, List, Cancel, Buy); contract function names and code only when they ask about code, contracts or integration.
+- Never mention "excerpts", excerpt numbers, or "the provided documentation", and do not add "(See ...)" notes: the sources are listed under your answer automatically.
+- If the documentation does not cover the question, say "The Vezo docs don't cover that." and, if it fits, what you can help with instead.
 - Write plain prose with no em dashes. Do not open with a greeting.
 - Never ask for, or discuss providing, a private key or seed phrase.
-- Remind the reader to verify addresses on the explorer when the answer includes one.`;
+- Only when your answer contains a contract address, add a short reminder to check it on the Mezo explorer.`;
 
 // Free tiers are capped on tokens per day, not just requests, so the prompt is
 // kept lean: the top few sections, each trimmed. Sections are already topic
