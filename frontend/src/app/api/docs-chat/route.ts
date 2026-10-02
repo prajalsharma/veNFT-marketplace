@@ -325,7 +325,13 @@ async function synthesize(question: string, chunks: Chunk[], history: Turn[] = [
     // plainly instead of failing on an unreadable header error.
     const groqKey = process.env.GROQ_API_KEY.trim();
     if (!/^[\x21-\x7e]+$/.test(groqKey)) {
-      throw new Error("GROQ_API_KEY is not a usable key (it contains hidden or masked characters such as •). Paste the full key from console.groq.com into Vercel and redeploy.");
+      // Shape only (length, prefix check, masked-character count): enough to
+      // tell a masked placeholder from a real key without revealing anything.
+      const masked = [...groqKey].filter((ch) => ch.charCodeAt(0) > 126).length;
+      throw new Error(
+        `GROQ_API_KEY is not a usable key: ${groqKey.length} characters, starts with gsk_: ${groqKey.startsWith("gsk_") ? "yes" : "no"}, masked characters: ${masked}. ` +
+          `Paste the full key from console.groq.com into the Production environment of the project serving www.vezo.exchange, then redeploy.`
+      );
     }
     const models = [process.env.DOCS_CHAT_MODEL, "openai/gpt-oss-120b", "openai/gpt-oss-20b"].filter(
       (m, i, all): m is string => !!m && all.indexOf(m) === i
