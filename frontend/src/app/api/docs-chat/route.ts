@@ -203,8 +203,12 @@ function rank(question: string, chunks: Chunk[]): Chunk[] {
   const totalIdf = present.reduce((sum, t) => sum + idfOf(t), 0);
 
   const scored = chunks.map((c) => {
-    const hay = (c.page + " " + c.section + " " + c.text).toLowerCase();
-    const head = (c.page + " " + c.section).toLowerCase();
+    // The docs' section ("architecture", "guides", "developers"...) lives in
+    // the URL, not the page text; without it "where is the architecture" found
+    // nothing, because those pages are titled "System Overview" and the like.
+    const area = c.url.replace(DOCS_ORIGIN, "").replace(/[/-]+/g, " ");
+    const hay = (c.page + " " + c.section + " " + area + " " + c.text).toLowerCase();
+    const head = (c.page + " " + c.section + " " + area).toLowerCase();
     let score = 0;
     let covered = 0;
     let matched = 0;
@@ -243,6 +247,7 @@ Rules:
 - This is a conversation: a follow-up like "and how do I cancel it?" refers to the earlier turns.
 - If the excerpts do not contain the answer, say so plainly in one sentence. Never guess, and never invent contract addresses, fees, function names, or numbers.
 - Be concise and concrete: a short paragraph, or a few bullets when steps are involved.
+- When asked where something is documented, name the page and link it as a markdown link, using the URL given with each excerpt.
 - Answer for the person asking. Someone using the app gets app terms and steps (Portfolio, List, Cancel, Buy); contract function names and code only when they ask about code, contracts or integration.
 - Never mention "excerpts", excerpt numbers, or "the provided documentation", and do not add "(See ...)" notes: the sources are listed under your answer automatically.
 - If the documentation does not cover the question, say "The Vezo docs don't cover that." and, if it fits, what you can help with instead.
@@ -262,7 +267,7 @@ function buildPrompt(question: string, chunks: Chunk[]): string {
     .slice(0, CONTEXT_CHUNKS)
     .map((c, i) => {
       const body = c.text.length > CONTEXT_CHARS ? c.text.slice(0, CONTEXT_CHARS).trimEnd() + "…" : c.text;
-      return `[${i + 1}] ${c.page}${c.section ? " > " + c.section : ""}\n${body}`;
+      return `[${i + 1}] ${c.page}${c.section ? " > " + c.section : ""} (${c.url})\n${body}`;
     })
     .join("\n\n---\n\n");
   return `Documentation excerpts:\n\n${context}\n\n---\n\nQuestion: ${question}`;
@@ -584,10 +589,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const sources = chunks.map((c) => ({
-    title: c.section ? `${c.page}: ${c.section}` : c.page,
-    url: c.url,
-  }));
+  // One chip per page, at most three: five near-duplicate "Page: Section"
+  // chips read as noise.
+  const sources = chunks
+    .filter((c, i, all) => all.findIndex((x) => x.url === c.url) === i)
+    .slice(0, 3)
+    .map((c) => ({ title: c.page, url: c.url }));
 
   if (chunks.length === 0) {
     return NextResponse.json(
