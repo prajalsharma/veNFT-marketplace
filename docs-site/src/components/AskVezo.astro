@@ -135,7 +135,9 @@
     const SAFE_HOSTS = ["vezo.exchange", "docs.vezo.exchange", "www.vezo.exchange", "mezo.org", "explorer.mezo.org", "dune.com"];
     const safeLink = (label: string, raw: string) => {
       try {
-        const u = new URL(raw.replace(/&amp;/g, "&"));
+        // Site-relative links ("/architecture/security/") are docs pages;
+        // resolve them against the docs origin, then apply the same allowlist.
+        const u = new URL(raw.replace(/&amp;/g, "&"), "https://docs.vezo.exchange");
         if (u.protocol === "https:" && SAFE_HOSTS.includes(u.hostname)) {
           return `<a href="${esc(u.href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
         }
@@ -153,7 +155,7 @@
         const line = raw
           .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
           .replace(/`([^`]+)`/g, "<code>$1</code>")
-          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_m, label, url) => safeLink(label, url));
+          .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/(?!\/)[^)\s]*)\)/g, (_m, label, url) => safeLink(label, url));
         const bullet = line.match(/^\s*[-*]\s+(.*)$/);
         if (bullet) {
           if (!inList) { html += "<ul>"; inList = true; }
