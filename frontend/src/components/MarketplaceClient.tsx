@@ -27,6 +27,7 @@ import {
 import { formatEther } from "viem";
 import { VeNFTCard, VeNFTCardSkeleton } from "@/components/VeNFTCard";
 import { MetricStrip, FilterRail, ViewToggle, ListingsTable, type MarketView } from "@/components/market/MarketParts";
+import { isBuyable, isLockExpired } from "@/lib/listings";
 import { FilterSidebar, FilterButton, FilterState } from "@/components/FilterSidebar";
 import { BuyModal } from "@/components/BuyModal";
 import { useActiveListings, Listing } from "@/hooks/useMarketplace";
@@ -72,7 +73,7 @@ function StatBar({
 //   "empty"       — the market is genuinely empty
 type EmptyVariant = "filtered" | "unavailable" | "empty";
 
-function EmptyState({ variant }: { variant: EmptyVariant }) {
+function EmptyState({ variant, expired = 0 }: { variant: EmptyVariant; expired?: number }) {
   const copy: Record<EmptyVariant, { title: string; body: string }> = {
     filtered: {
       title: "No listings match",
@@ -80,7 +81,9 @@ function EmptyState({ variant }: { variant: EmptyVariant }) {
     },
     unavailable: {
       title: "No buyable listings right now",
-      body: "There are listings on-chain, but they're all expired, sold, or otherwise unavailable to purchase.",
+      body: expired > 0
+        ? `${expired} ${expired === 1 ? "listing is" : "listings are"} still on-chain, but the lock${expired === 1 ? " has" : "s have"} expired, so the contract won't sell ${expired === 1 ? "it" : "them"}. A seller can withdraw an expired position and cancel the listing.`
+        : "There are listings on-chain, but none can be bought right now.",
     },
     empty: {
       title: "Nothing listed at the moment",
@@ -319,6 +322,10 @@ export default function MarketplaceClient() {
     () => rawListings.filter(l => !purchasedIds.has(Number(l.tokenId))),
     [rawListings, purchasedIds]
   );
+  // What can actually be bought now. Stats, counts and links use this, so
+  // they always agree with the grid (which hides expired locks).
+  const buyableListings = useMemo(() => searchableListings.filter((l) => isBuyable(l)), [searchableListings]);
+  const expiredCount = useMemo(() => searchableListings.filter((l) => l.active && isLockExpired(l)).length, [searchableListings]);
 
   const filteredListings = useMemo(() => {
     const { collectionFilter, activeOnly, minDiscount, maxDiscount, showGrantOnly, showAutoLockOnly, showEndingSoon, sortBy } = filters;
@@ -336,7 +343,7 @@ export default function MarketplaceClient() {
     const filtered = searchableListings.filter((l) => {
       if (collectionFilter !== "all" && l.collection !== collectionFilter) return false;
       if (activeOnly && !l.active) return false;
-      if (Number(l.lockEnd) !== 0 && Number(l.lockEnd) <= now) return false;
+      if (isLockExpired(l, now)) return false;
       // Only constrain by discount when the user narrows the band. Null discounts
       // (no oracle-safe comparison) are never hidden by this slider.
       if (discountFilterActive && l.discountBps !== null) {
@@ -376,7 +383,7 @@ export default function MarketplaceClient() {
   const marketStats = useMemo(() => {
     if (listingsLoading) return { veBTCFloor: "Loading…", veMEZOFloor: "Loading…", avgDiscount: "Loading…", listingCount: 0 };
 
-    const active = searchableListings.filter((l) => l.active);
+    const active = buyableListings;
     const veBTC = active.filter((l) => l.collection === "veBTC");
     const veMEZO = active.filter((l) => l.collection === "veMEZO");
 
@@ -444,7 +451,7 @@ export default function MarketplaceClient() {
     }
 
     return { veBTCFloor, veMEZOFloor, avgDiscount, listingCount };
-  }, [searchableListings, listingsLoading, prices]);
+  }, [buyableListings, listingsLoading, prices]);
 
   const activeFilterCount = [
     filters.collectionFilter !== "all",
@@ -468,14 +475,14 @@ export default function MarketplaceClient() {
     const url = new URL(window.location.href);
     url.searchParams.delete("focus");
     window.history.replaceState(null, "", url.pathname + url.search);
-    if (!searchableListings.some((l) => String(l.listingId) === id && l.active)) return;
+    if (!buyableListings.some((l) => String(l.listingId) === id)) return;
     setFocusId(id);
     requestAnimationFrame(() =>
       document.querySelector(`[data-listing-id="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" })
     );
     const t = setTimeout(() => setFocusId(null), 2600);
     return () => clearTimeout(t);
-  }, [listingsLoading, searchableListings]);
+  }, [listingsLoading, buyableListings]);
 
   const dataLoaded = !listingsLoading && rawListings.length >= 0;
   const showSkeletons = listingsLoading;
@@ -516,7 +523,7 @@ export default function MarketplaceClient() {
               metrics={[
                 {
                   label: "Listed",
-                  value: listingsLoading ? "…" : String(searchableListings.filter((l) => l.active).length),
+                  value: listingsLoading ? "…" : String(buyableListings.length),
                   note: "open positions",
                 },
                 {
@@ -553,9 +560,9 @@ export default function MarketplaceClient() {
                 onReset={resetFilters}
                 activeCount={activeFilterCount}
                 counts={{
-                  veBTC: searchableListings.filter((l) => l.collection === "veBTC").length,
-                  veMEZO: searchableListings.filter((l) => l.collection === "veMEZO").length,
-                  grant: searchableListings.filter((l) => l.isGrant).length,
+                  veBTC: buyableListings.filter((l) => l.collection === "veBTC").length,
+                  veMEZO: buyableListings.filter((l) => l.collection === "veMEZO").length,
+                  grant: buyableListings.filter((l) => l.isGrant).length,
                 }}
               />
             </div>
@@ -647,6 +654,7 @@ export default function MarketplaceClient() {
                           ? "unavailable"
                           : "empty"
                     }
+                    expired={expiredCount}
                   />
                 )
               ) : view === "table" ? (

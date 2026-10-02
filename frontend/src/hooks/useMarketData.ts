@@ -25,6 +25,7 @@ import { formatEther } from "viem";
 import { useActiveListings, type Listing } from "./useMarketplace";
 import { usePriceTicker } from "./usePriceTicker";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
+import { isBuyable } from "@/lib/listings";
 import type { MarketStats } from "@/app/api/market-stats/route";
 
 export type DataStatus = "loading" | "ready" | "empty" | "stale" | "error";
@@ -47,7 +48,9 @@ export function useLiveMarket(): LiveMarket {
   const prices = usePriceTicker();
 
   return useMemo(() => {
-    const open = listings.filter((l) => l.active);
+    // Buyable only: an active listing whose lock has expired can't be bought,
+    // so it must not lead the landing page or count toward its stats.
+    const open = listings.filter((l) => isBuyable(l));
     const byDiscount = [...open].sort((a, b) => {
       const da = a.discountBps === null ? -Infinity : Number(a.discountBps);
       const db = b.discountBps === null ? -Infinity : Number(b.discountBps);
