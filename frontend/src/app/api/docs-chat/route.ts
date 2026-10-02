@@ -321,6 +321,12 @@ async function synthesize(question: string, chunks: Chunk[], history: Turn[] = [
   // first, then current recommended models. A retired or unknown model
   // (400/404) moves on to the next; auth and quota errors stop immediately.
   if (process.env.GROQ_API_KEY) {
+    // A key copied from a page that masks it arrives as "••••". Say so
+    // plainly instead of failing on an unreadable header error.
+    const groqKey = process.env.GROQ_API_KEY.trim();
+    if (!/^[\x21-\x7e]+$/.test(groqKey)) {
+      throw new Error("GROQ_API_KEY is not a usable key (it contains hidden or masked characters such as •). Paste the full key from console.groq.com into Vercel and redeploy.");
+    }
     const models = [process.env.DOCS_CHAT_MODEL, "openai/gpt-oss-120b", "openai/gpt-oss-20b"].filter(
       (m, i, all): m is string => !!m && all.indexOf(m) === i
     );
@@ -329,7 +335,7 @@ async function synthesize(question: string, chunks: Chunk[], history: Turn[] = [
       const reasoning = model.startsWith("openai/gpt-oss");
       const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        headers: { "content-type": "application/json", authorization: `Bearer ${groqKey}` },
         body: JSON.stringify({
           model,
           temperature: 0.2,
