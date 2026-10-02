@@ -288,6 +288,25 @@ function cacheKey(question: string): string {
  * With none set the caller falls back to returning documentation excerpts,
  * which is a fully working (and free) mode, not an error path.
  */
+// The provider's own error text (e.g. "model_decommissioned", "invalid API
+// key"), trimmed. It never contains the key itself.
+async function providerError(r: Response): Promise<string> {
+  try {
+    const j = await r.json();
+    return String(j?.error?.message || j?.error?.code || j?.error || "").slice(0, 160);
+  } catch {
+    return "";
+  }
+}
+
+/** Which provider is configured, for diagnostics (names only, never values). */
+function configuredProvider(): string {
+  if (process.env.GROQ_API_KEY) return "groq";
+  if (process.env.GEMINI_API_KEY) return "gemini";
+  if (process.env.OPENROUTER_API_KEY) return "openrouter";
+  return "none";
+}
+
 async function synthesize(question: string, chunks: Chunk[], history: Turn[] = []): Promise<string | null> {
   const prompt = buildPrompt(question, chunks);
   // Earlier turns go in as real chat messages, so follow-ups resolve naturally.
@@ -296,25 +315,45 @@ async function synthesize(question: string, chunks: Chunk[], history: Turn[] = [
     { role: "assistant" as const, content: t.a },
   ]);
 
-  // Groq — free tier, OpenAI-compatible.
+  // Groq — free tier, OpenAI-compatible. Groq retires models on a schedule
+  // (llama-3.3-70b-versatile was shut down on 2026-08-16 and every request
+  // failed silently after that), so try a short list: an explicit override
+  // first, then current recommended models. A retired or unknown model
+  // (400/404) moves on to the next; auth and quota errors stop immediately.
   if (process.env.GROQ_API_KEY) {
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-      body: JSON.stringify({
-        model: process.env.DOCS_CHAT_MODEL || "llama-3.3-70b-versatile",
-        temperature: 0.2,
-        max_tokens: 450,
-        messages: [
-          { role: "system", content: SYSTEM },
-          ...past,
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!r.ok) throw new Error(`groq ${r.status}`);
-    const j = await r.json();
-    return j?.choices?.[0]?.message?.content?.trim() ?? null;
+    const models = [process.env.DOCS_CHAT_MODEL, "openai/gpt-oss-120b", "openai/gpt-oss-20b"].filter(
+      (m, i, all): m is string => !!m && all.indexOf(m) === i
+    );
+    let lastError = "";
+    for (const model of models) {
+      const reasoning = model.startsWith("openai/gpt-oss");
+      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          // Reasoning models spend part of the budget thinking before answering.
+          max_tokens: reasoning ? 1400 : 450,
+          ...(reasoning ? { reasoning_effort: "low" } : {}),
+          messages: [
+            { role: "system", content: SYSTEM },
+            ...past,
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const text = j?.choices?.[0]?.message?.content?.trim();
+        if (text) return text;
+        lastError = `groq ${model}: empty reply`;
+        continue;
+      }
+      lastError = `groq ${r.status} (${model}): ${await providerError(r)}`;
+      if (r.status !== 400 && r.status !== 404) break;
+    }
+    throw new Error(lastError || "groq: no model answered");
   }
 
   // Google Gemini — free tier.
@@ -335,7 +374,7 @@ async function synthesize(question: string, chunks: Chunk[], history: Turn[] = [
         }),
       }
     );
-    if (!r.ok) throw new Error(`gemini ${r.status}`);
+    if (!r.ok) throw new Error(`gemini ${r.status}: ${await providerError(r)}`);
     const j = await r.json();
     return j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join("").trim() ?? null;
   }
@@ -361,7 +400,7 @@ async function synthesize(question: string, chunks: Chunk[], history: Turn[] = [
         ],
       }),
     });
-    if (!r.ok) throw new Error(`openrouter ${r.status}`);
+    if (!r.ok) throw new Error(`openrouter ${r.status}: ${await providerError(r)}`);
     const j = await r.json();
     return j?.choices?.[0]?.message?.content?.trim() ?? null;
   }
@@ -553,6 +592,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ mode: "ai", answer: cached.answer, sources, cached: true }, { headers });
   }
 
+  // Why the reply is not model-written, surfaced in the response so a silent
+  // fallback can be diagnosed from outside (no secrets: provider name + its
+  // error text only).
+  let fallback = configuredProvider() === "none" ? "no model key configured" : "";
   try {
     const answer = await synthesize(question, chunks, history);
     if (answer) {
@@ -560,14 +603,15 @@ export async function POST(req: NextRequest) {
       if (key) answerCache.set(key, { answer, at: Date.now() });
       return NextResponse.json({ mode: "ai", answer, sources }, { headers });
     }
-  } catch {
-    // Provider hiccup or daily quota reached: fall through to excerpts. The
-    // widget keeps working, it just stops writing prose until the quota resets.
+  } catch (err) {
+    // Provider error or daily quota reached: fall back to quoting the docs.
+    fallback = err instanceof Error ? err.message : "provider error";
+    console.error("[docs-chat] model call failed:", fallback);
   }
 
   const extracted = extractAnswer(retrievalQuery, chunks, question);
   if (extracted) {
-    return NextResponse.json({ mode: "extract", answer: extracted, sources }, { headers });
+    return NextResponse.json({ mode: "extract", answer: extracted, sources, fallback }, { headers });
   }
   if (!DEV.test(question)) {
     return NextResponse.json(
@@ -575,6 +619,7 @@ export async function POST(req: NextRequest) {
         mode: "empty",
         answer: "The documentation doesn't answer that directly. Try asking it another way, or have a look at the closest pages below.",
         sources: sources.slice(0, 3),
+        fallback,
       },
       { headers }
     );
@@ -593,6 +638,7 @@ export async function POST(req: NextRequest) {
     {
       mode: "excerpts",
       answer: "",
+      fallback,
       excerpts: chunks.map((c) => ({
         title: c.section || c.page,
         page: c.page,
