@@ -7,7 +7,7 @@ Prerequisite: a connected wallet holding a veBTC or veMEZO NFT. See [Getting Sta
 
 ## List your position
 
-1. Go to **My Listings**. Vezo detects the veNFTs in your connected wallet automatically.
+1. Go to **Portfolio**. Vezo detects the veNFTs in your connected wallet automatically.
 2. Pick the position and choose **List**.
 3. Set your price and payment currency (BTC, MEZO, or MUSD).
 4. Approve the marketplace for this NFT (one wallet transaction), then confirm the listing (a second one).

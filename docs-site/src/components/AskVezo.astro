@@ -168,6 +168,9 @@
     };
 
     let busy = false;
+    // The conversation so far, so follow-ups ("and how do I cancel it?") work.
+    // Kept to the last few turns and sent as plain text.
+    const turns: { q: string; a: string }[] = [];
 
     const ask = async (question: string) => {
       if (busy || !question.trim()) return;
@@ -184,7 +187,7 @@
         const res = await fetch(API, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, history: turns.slice(-3) }),
         });
         const data = await res.json();
         thinking.remove();
@@ -206,15 +209,22 @@
           bubble("is-bot", `<p class="vz-ask-note">From the documentation</p>${parts}`);
           showExchange();
         } else {
+          if (data.answer) {
+            turns.push({ q: question, a: String(data.answer).slice(0, 800) });
+            if (turns.length > 6) turns.shift();
+          }
           const sources = (data.sources || [])
             .map(
               (s: { title: string; url: string }) =>
                 `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>`
             )
             .join("");
+          // "extract" answers quote the docs verbatim; say so, so nobody
+          // mistakes a quotation for a paraphrase.
+          const note = data.mode === "extract" ? `<p class="vz-ask-note">From the documentation</p>` : "";
           bubble(
             "is-bot",
-            render(data.answer || "") + (sources ? `<div class="vz-ask-src"><span>Sources</span>${sources}</div>` : "")
+            note + render(data.answer || "") + (sources ? `<div class="vz-ask-src"><span>Sources</span>${sources}</div>` : "")
           );
           showExchange();
         }

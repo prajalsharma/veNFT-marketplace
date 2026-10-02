@@ -73,17 +73,27 @@ function StatBar({
 //   "empty"       — the market is genuinely empty
 type EmptyVariant = "filtered" | "unavailable" | "empty";
 
-function EmptyState({ variant, expired = 0 }: { variant: EmptyVariant; expired?: number }) {
+function unavailableCopy({ expired, closed }: { expired: number; closed: number }): string {
+  const next = "New listings show up here the moment they're posted.";
+  if (expired > 0 && closed === 0) {
+    return expired === 1
+      ? `One listing is still up, but its lock has ended, so it can't be bought. ${next}`
+      : `${expired} listings are still up, but their locks have ended, so they can't be bought. ${next}`;
+  }
+  if (closed > 0 && expired === 0) return `The latest listings have sold or been taken down. ${next}`;
+  if (expired > 0 && closed > 0) return `The latest listings have sold, been taken down, or reached the end of their lock. ${next}`;
+  return `Nothing listed can be bought at the moment. ${next}`;
+}
+
+function EmptyState({ variant, unbuyable = { expired: 0, closed: 0 } }: { variant: EmptyVariant; unbuyable?: { expired: number; closed: number } }) {
   const copy: Record<EmptyVariant, { title: string; body: string }> = {
     filtered: {
       title: "No listings match",
       body: "Try adjusting or clearing your filters to see more results.",
     },
     unavailable: {
-      title: "No buyable listings right now",
-      body: expired > 0
-        ? `${expired} ${expired === 1 ? "listing is" : "listings are"} still on-chain, but the lock${expired === 1 ? " has" : "s have"} expired, so the contract won't sell ${expired === 1 ? "it" : "them"}. A seller can withdraw an expired position and cancel the listing.`
-        : "There are listings on-chain, but none can be bought right now.",
+      title: "Nothing to buy right now",
+      body: unavailableCopy(unbuyable),
     },
     empty: {
       title: "Nothing listed at the moment",
@@ -325,7 +335,12 @@ export default function MarketplaceClient() {
   // What can actually be bought now. Stats, counts and links use this, so
   // they always agree with the grid (which hides expired locks).
   const buyableListings = useMemo(() => searchableListings.filter((l) => isBuyable(l)), [searchableListings]);
-  const expiredCount = useMemo(() => searchableListings.filter((l) => l.active && isLockExpired(l)).length, [searchableListings]);
+  // Why nothing is buyable, from the data itself, so the empty state can say
+  // the true reason rather than a blanket one.
+  const unbuyable = useMemo(() => ({
+    expired: searchableListings.filter((l) => l.active && isLockExpired(l)).length,
+    closed: searchableListings.filter((l) => !l.active).length,
+  }), [searchableListings]);
 
   const filteredListings = useMemo(() => {
     const { collectionFilter, activeOnly, minDiscount, maxDiscount, showGrantOnly, showAutoLockOnly, showEndingSoon, sortBy } = filters;
@@ -654,7 +669,7 @@ export default function MarketplaceClient() {
                           ? "unavailable"
                           : "empty"
                     }
-                    expired={expiredCount}
+                    unbuyable={unbuyable}
                   />
                 )
               ) : view === "table" ? (

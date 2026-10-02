@@ -109,6 +109,7 @@ function chunkDocs(raw: string): Chunk[] {
   const chunks: Chunk[] = [];
   let page = "Vezo Documentation";
   let section = "";
+  let h2 = "";
   let buf: string[] = [];
 
   const flush = () => {
@@ -134,9 +135,16 @@ function chunkDocs(raw: string): Chunk[] {
       flush();
       page = line.slice(2).trim();
       section = "";
+      h2 = "";
     } else if (line.startsWith("## ")) {
       flush();
       section = line.slice(3).trim();
+      h2 = section;
+    } else if (line.startsWith("### ")) {
+      // FAQ entries and sub-topics are their own answers: give each its own
+      // chunk so a question retrieves the entry, not the first one on the page.
+      flush();
+      section = `${h2 ? h2 + ": " : ""}${line.slice(4).trim()}`;
     } else {
       buf.push(line);
       // Keep chunks small enough that several fit in a prompt comfortably.
@@ -230,8 +238,10 @@ function rank(question: string, chunks: Chunk[]): Chunk[] {
 const SYSTEM = `You are the Vezo documentation assistant. Vezo is an escrowless peer-to-peer marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo, Bitcoin's economic layer.
 
 Rules:
-- Answer ONLY from the documentation excerpts provided. They are the single source of truth.
-- If the excerpts do not contain the answer, say so plainly and point to the closest relevant page. Never guess, and never invent contract addresses, fees, function names, or numbers.
+- Answer the question directly, in your own words, using ONLY the documentation excerpts provided. They are the single source of truth.
+- Give the actual answer (the number, the steps, the yes or no and why). Do not tell the reader to go read a page instead of answering; source links are shown to them separately.
+- This is a conversation: a follow-up like "and how do I cancel it?" refers to the earlier turns.
+- If the excerpts do not contain the answer, say so plainly in one sentence. Never guess, and never invent contract addresses, fees, function names, or numbers.
 - Be concise and concrete: a short paragraph, or a few bullets when steps are involved.
 - Write plain prose with no em dashes. Do not open with a greeting.
 - Never ask for, or discuss providing, a private key or seed phrase.
@@ -260,6 +270,8 @@ function buildPrompt(question: string, chunks: Chunk[]): string {
 const answerCache = new Map<string, { answer: string; at: number }>();
 const ANSWER_TTL_MS = 6 * 60 * 60 * 1000;
 
+type Turn = { q: string; a: string };
+
 function cacheKey(question: string): string {
   return question.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
 }
@@ -276,8 +288,13 @@ function cacheKey(question: string): string {
  * With none set the caller falls back to returning documentation excerpts,
  * which is a fully working (and free) mode, not an error path.
  */
-async function synthesize(question: string, chunks: Chunk[]): Promise<string | null> {
+async function synthesize(question: string, chunks: Chunk[], history: Turn[] = []): Promise<string | null> {
   const prompt = buildPrompt(question, chunks);
+  // Earlier turns go in as real chat messages, so follow-ups resolve naturally.
+  const past = history.flatMap((t) => [
+    { role: "user" as const, content: t.q },
+    { role: "assistant" as const, content: t.a },
+  ]);
 
   // Groq — free tier, OpenAI-compatible.
   if (process.env.GROQ_API_KEY) {
@@ -290,6 +307,7 @@ async function synthesize(question: string, chunks: Chunk[]): Promise<string | n
         max_tokens: 450,
         messages: [
           { role: "system", content: SYSTEM },
+          ...past,
           { role: "user", content: prompt },
         ],
       }),
@@ -309,7 +327,10 @@ async function synthesize(question: string, chunks: Chunk[]): Promise<string | n
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          contents: [
+            ...past.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+            { role: "user", parts: [{ text: prompt }] },
+          ],
           generationConfig: { temperature: 0.2, maxOutputTokens: 600 },
         }),
       }
@@ -335,6 +356,7 @@ async function synthesize(question: string, chunks: Chunk[]): Promise<string | n
         max_tokens: 600,
         messages: [
           { role: "system", content: SYSTEM },
+          ...past,
           { role: "user", content: prompt },
         ],
       }),
@@ -347,15 +369,118 @@ async function synthesize(question: string, chunks: Chunk[]): Promise<string | n
   return null;
 }
 
+// Excerpt mode shows documentation prose directly. Markdown syntax is stripped
+// (it would render as literal asterisks and backticks) but line structure is
+// deliberately kept: tables and numbered steps flattened into one paragraph
+// are unreadable, which is exactly how this looked before.
+function plain(s: string): string {
+  return (
+    s
+      .replace(/```[\s\S]*?```/g, (block) => block.replace(/```\w*/g, "").trim())
+      .replace(/^\s*\|.*\|\s*\n(?=\s*\|[\s:|-]+\|\s*$)/gm, "") // table header row
+      .replace(/^\s*\|.*\|\s*$/gm, (row) =>
+        // Markdown table row → "label: value" on its own line.
+        row.split("|").map((cell) => cell.trim()).filter(Boolean).join(": ")
+      )
+      .replace(/^\s*[-:|\s]+$/gm, "") // table separator rows
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/(?<![*\w])\*([^*\n]+)\*(?!\w)/g, "$1") // single-asterisk emphasis
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/`/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/^>\s?/gm, "")
+      .replace(/[ \t]+$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
+}
+
+
+// ─── Answering without a model ───────────────────────────────────────────────
+// With no model key configured, the reply is still an answer. Each docs
+// section is written answer-first under its heading, so: pick the section
+// whose heading best matches the question, then quote its opening (whole
+// steps, whole table rows, never code). People asked for "answers from the
+// docs, not where to read"; this gives them the relevant lines directly.
+
+const stem = (t: string) => t.replace(/(ing|ed|es|s)$/, "");
+// Words on nearly every page say nothing about which section answers.
+const GENERIC = new Set(["venft", "vezo", "mezo", "use", "work", "get", "need", "want"]);
+const DEV = /\b(function|contract|abi|code|solidity|integrat|viem|ethers|subgraph|graphql|api|sdk|address|deploy)/i;
+
+function extractAnswer(query: string, chunks: Chunk[], latest: string = query): string | null {
+  const q = [...new Set(terms(query).map(stem))].filter((t) => t.length > 2 && !GENERIC.has(t));
+  // Section choice follows the latest question: in a follow-up ("who can
+  // change it?") that is what the reader is asking now.
+  const qNow = [...new Set(terms(latest).map(stem))].filter((t) => t.length > 2 && !GENERIC.has(t));
+  if (chunks.length === 0) return null;
+
+  // Developer pages answer "how do I cancel" with a function signature; only
+  // prefer them when the question is about code.
+  const pool = DEV.test(query) ? chunks.slice(0, 3) : chunks.slice(0, 3).filter((c) => !c.url.includes("/developers/"));
+  const candidates = pool.length ? pool : chunks.slice(0, 1);
+  const fit = (c: Chunk) => {
+    const h = (c.page + " " + c.section).toLowerCase();
+    const body = c.text.toLowerCase();
+    const head = qNow.filter((t) => h.includes(t)).length + 0.5 * q.filter((t) => h.includes(t)).length;
+    const inBody = qNow.filter((t) => body.includes(t)).length;
+    return 3 * head + inBody;
+  };
+  const best = candidates.reduce((top, c) => (fit(c) > fit(top) ? c : top), candidates[0]);
+
+  // Honest refusal: a section that mentions one word of a multi-word
+  // question ("capital" in "capital of France") is not an answer.
+  const all = (best.page + " " + best.section + " " + best.text).toLowerCase();
+  const covered = q.filter((t) => all.includes(t)).length;
+  if (q.length >= 2 && covered < 2) return null;
+
+  const lines = plain(best.text)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l && !/[{};]|^function |^import |^export |=>|^\/\/|[(,]$|^\)|\b(uint256|bytes32|returns|external|view)\b/.test(l) && !/^#+\s/.test(l));
+  if (lines.length === 0) return null;
+
+  const out: string[] = [];
+  let chars = 0;
+  let prose = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    const isStep = /^(\d+\.|[-•*])\s/.test(l);
+    const isRow = /^[^:]{2,40}:\s/.test(l) && l.length < 200;
+    if (isStep || isRow) {
+      out.push(isStep ? l.replace(/^[•*]\s/, "- ") : `- ${l}`);
+    } else {
+      if (prose >= 2 || chars > 420) break;
+      out.push(l);
+      prose++;
+    }
+    chars += l.length;
+    // Keep a list whole, but stop once it ends and we already have enough.
+    const next = lines[i + 1];
+    const nextIsList = next && (/^(\d+\.|[-•*])\s/.test(next) || /^[^:]{2,40}:\s/.test(next));
+    if (!nextIsList && chars > 380) break;
+    if (out.length >= 8) break;
+  }
+  return out.length ? out.join("\n") : null;
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const headers = corsHeaders(req.headers.get("origin"));
 
   let question = "";
+  let history: Turn[] = [];
   try {
-    const body = (await req.json()) as { question?: unknown };
+    const body = (await req.json()) as { question?: unknown; history?: unknown };
     question = typeof body.question === "string" ? body.question.trim() : "";
+    // Last few turns only, size-capped: enough for follow-ups, cheap on quota.
+    if (Array.isArray(body.history)) {
+      history = body.history
+        .filter((t): t is Turn => !!t && typeof (t as Turn).q === "string" && typeof (t as Turn).a === "string")
+        .slice(-3)
+        .map((t) => ({ q: t.q.slice(0, MAX_QUESTION_LEN), a: t.a.slice(0, 800) }));
+    }
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400, headers });
   }
@@ -384,8 +509,20 @@ export async function POST(req: NextRequest) {
   }
 
   let chunks: Chunk[];
+  let retrievalQuery = question;
   try {
-    chunks = rank(question, await getChunks());
+    const all = await getChunks();
+    chunks = rank(question, all);
+    // "And how do I cancel it?" carries little on its own: fold in the
+    // previous question so retrieval stays on topic.
+    const last = history[history.length - 1];
+    const followUp = /\b(it|that|this|they|them|those|its|there|then|also)\b/i.test(question) || question.split(/\s+/).length <= 4;
+    if (last && (chunks.length < 2 || followUp)) {
+      retrievalQuery = `${last.q} ${question}`;
+      const joined = rank(retrievalQuery, all);
+      const seen = new Set(joined.map((c) => c.url + c.section));
+      chunks = [...joined, ...chunks.filter((c) => !seen.has(c.url + c.section))].slice(0, TOP_K);
+    }
   } catch {
     return NextResponse.json(
       { error: "The documentation could not be loaded right now. Try again shortly." },
@@ -410,17 +547,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const key = cacheKey(question);
-  const cached = answerCache.get(key);
+  const key = history.length ? "" : cacheKey(question);
+  const cached = key ? answerCache.get(key) : undefined;
   if (cached && Date.now() - cached.at < ANSWER_TTL_MS) {
     return NextResponse.json({ mode: "ai", answer: cached.answer, sources, cached: true }, { headers });
   }
 
   try {
-    const answer = await synthesize(question, chunks);
+    const answer = await synthesize(question, chunks, history);
     if (answer) {
       if (answerCache.size > 200) answerCache.clear();
-      answerCache.set(key, { answer, at: Date.now() });
+      if (key) answerCache.set(key, { answer, at: Date.now() });
       return NextResponse.json({ mode: "ai", answer, sources }, { headers });
     }
   } catch {
@@ -428,27 +565,20 @@ export async function POST(req: NextRequest) {
     // widget keeps working, it just stops writing prose until the quota resets.
   }
 
-  // Excerpt mode shows documentation prose directly. Markdown syntax is stripped
-  // (it would render as literal asterisks and backticks) but line structure is
-  // deliberately kept: tables and numbered steps flattened into one paragraph
-  // are unreadable, which is exactly how this looked before.
-  const plain = (s: string) =>
-    s
-      .replace(/```[\s\S]*?```/g, (block) => block.replace(/```\w*/g, "").trim())
-      .replace(/^\s*\|.*\|\s*$/gm, (row) =>
-        // Markdown table row → "label: value" on its own line.
-        row.split("|").map((cell) => cell.trim()).filter(Boolean).join(": ")
-      )
-      .replace(/^\s*[-:|\s]+$/gm, "") // table separator rows
-      .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/(?<![*\w])\*([^*\n]+)\*(?!\w)/g, "$1") // single-asterisk emphasis
-      .replace(/`([^`]+)`/g, "$1")
-      .replace(/`/g, "")
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/^>\s?/gm, "")
-      .replace(/[ \t]+$/gm, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+  const extracted = extractAnswer(retrievalQuery, chunks, question);
+  if (extracted) {
+    return NextResponse.json({ mode: "extract", answer: extracted, sources }, { headers });
+  }
+  if (!DEV.test(question)) {
+    return NextResponse.json(
+      {
+        mode: "empty",
+        answer: "The documentation doesn't answer that directly. Try asking it another way, or have a look at the closest pages below.",
+        sources: sources.slice(0, 3),
+      },
+      { headers }
+    );
+  }
 
   // A short teaser that ends on a sentence, not mid-word. The excerpt exists to
   // show the reader they are in the right place; the page link carries the rest.

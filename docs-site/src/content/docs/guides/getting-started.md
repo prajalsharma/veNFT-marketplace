@@ -64,7 +64,7 @@ That's it. There's no sign-up and no deposit; your wallet is your account.
 | Page | What it's for |
 |---|---|
 | Marketplace | Browse all active listings with live pricing data |
-| My Listings | Manage your own listings and positions |
+| Portfolio | Manage your own listings and positions |
 | Activity | Recent sales, listings, and cancellations across the market |
 | Docs | You are here |
 
