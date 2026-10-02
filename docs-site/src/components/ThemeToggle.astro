@@ -22,7 +22,7 @@
     btn.addEventListener("click", () => {
       const current =
         document.documentElement.dataset.theme ??
-        (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        "light";
       apply(current === "dark" ? "light" : "dark");
     });
   });

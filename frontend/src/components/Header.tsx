@@ -161,7 +161,10 @@ export function Header() {
       className="fixed top-0 left-0 right-0 z-50"
       style={{ background: "var(--header-solid)", borderBottom: "1px solid var(--hairline)" }}
     >
-      <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16">
+      {/* The bar sits on its own layer above the carousel: the carousel's
+          fade mask creates a stacking context that otherwise paints over the
+          network and wallet dropdowns and swallows their clicks. */}
+      <div className="relative z-20 max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16">
         <div className="flex items-center h-[64px] lg:h-[76px] gap-3">
           <Link href="/" className="flex items-center shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]" aria-label="Vezo home">
             <VezoLogotype />
@@ -211,7 +214,7 @@ export function Header() {
       </div>
 
       {/* Live price carousel */}
-      <div style={{ borderTop: "1px solid var(--hairline)" }}>
+      <div className="relative z-0" style={{ borderTop: "1px solid var(--hairline)" }}>
         <PriceStrip />
       </div>
 

@@ -1,0 +1,15 @@
+---
+// Light by default, like the app. Starlight's own provider follows the OS
+// setting, which made the docs open black for anyone on a dark-mode system
+// while vezo.exchange opens light. An explicit choice (the header toggle)
+// is still remembered. Inlined in <head> so there is no flash.
+---
+
+<script is:inline>
+	window.StarlightThemeProvider = (() => {
+		const stored = typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme = stored === 'dark' ? 'dark' : 'light';
+		document.documentElement.dataset.theme = theme;
+		return { updatePickers() {} };
+	})();
+</script>

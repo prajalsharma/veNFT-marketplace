@@ -65,6 +65,7 @@ export default defineConfig({
         SiteTitle: "./src/components/SiteTitle.astro",
         SocialIcons: "./src/components/SocialLinks.astro",
         ThemeSelect: "./src/components/ThemeToggle.astro",
+        ThemeProvider: "./src/components/ThemeProvider.astro",
         Sidebar: "./src/components/Sidebar.astro",
         MobileMenuFooter: "./src/components/MobileMenuFooter.astro",
         PageTitle: "./src/components/PageTitle.astro",
