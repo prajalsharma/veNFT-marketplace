@@ -3,7 +3,6 @@
 import { Header } from "@/components/Header";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NetworkSwitcher } from "@/components/NetworkSwitcher";
-import { OnboardingTour } from "@/components/OnboardingTour";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SupportNudge } from "@/components/SupportNudge";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
@@ -35,9 +34,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* Makes the app installable from the browser */}
       <ServiceWorkerRegistrar />
-
-      {/* First-visit walkthrough (reopen via the "How it works" footer link) */}
-      <OnboardingTour />
     </>
   );
 }

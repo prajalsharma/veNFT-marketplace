@@ -12,7 +12,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Heart } from "lucide-react";
 import { VezoLogoMark } from "@/components/Header";
-import { openOnboardingTour } from "@/components/OnboardingTour";
 import { useNetwork } from "@/hooks/useNetwork";
 
 const DOCS = "https://docs.vezo.exchange";
@@ -34,7 +33,7 @@ const COLUMNS: { title: string; items: Item[] }[] = [
   {
     title: "Learn",
     items: [
-      { label: "How it works", onClick: openOnboardingTour },
+      { label: "How it works", href: "/#how-it-works" },
       { label: "Buying", href: `${DOCS}/guides/buying/`, external: true },
       { label: "Selling", href: `${DOCS}/guides/selling/`, external: true },
       { label: "Fees", href: `${DOCS}/concepts/fees/`, external: true },

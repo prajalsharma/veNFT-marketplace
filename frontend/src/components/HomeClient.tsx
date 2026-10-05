@@ -391,8 +391,9 @@ export default function HomeClient() {
       <TradeTimeline />
       <SellerSection />
 
-      {/* 4. How a trade settles, as one listing moving through its states */}
-      <section className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
+      {/* 4. How a trade settles, as one listing moving through its states.
+          This is the "How it works" explainer (the footer links here). */}
+      <section id="how-it-works" className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
         <motion.div {...reveal} className="mb-10 md:mb-6">
           <H2>How a trade settles</H2>
         </motion.div>
