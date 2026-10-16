@@ -34,12 +34,20 @@ import {
   Gavel,
   Loader2,
 } from "lucide-react";
-import { useMarketplace, useListing, useUserVeNFTs, computeVotingPower } from "@/hooks/useMarketplace";
+import { useMarketplace, useListing, useUserVeNFTs, useActiveListings, computeVotingPower } from "@/hooks/useMarketplace";
 import { useActiveTokenBids, useBidding } from "@/hooks/useBidding";
 import { useListingHealth } from "@/hooks/useListingHealth";
 import { parseBiddingError } from "@/lib/biddingErrors";
+import { useProtocolFee } from "@/hooks/useProtocolFee";
 import { ListingModal } from "@/components/ListingModal";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
+
+/** Readable token amount: 40,000 / 1,234.56 / 0.000581, never "40000.0000". */
+function fmtNum(wei: bigint): string {
+  const n = parseFloat(formatEther(wei));
+  const max = n >= 1000 ? 0 : n >= 1 ? 2 : 6;
+  return n.toLocaleString("en-US", { maximumFractionDigits: max });
+}
 
 // ─── User listing item ────────────────────────────────────────────────────────
 function UserListingItem({
@@ -113,7 +121,7 @@ function UserListingItem({
             <Zap style={{ width: 16, height: 16, color: accentColor }} />
           </div>
           <div>
-            <p className="text-sm font-semibold" style={{ letterSpacing: "-0.01em" }}>
+            <p className="text-[16px] font-semibold" style={{ letterSpacing: "-0.01em" }}>
               {listing.collection}{" "}
               <span
                 className="tabular-nums"
@@ -123,7 +131,7 @@ function UserListingItem({
               </span>
               {isDead && (
                 <span
-                  className="ml-2 align-middle text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  className="ml-2 align-middle text-[12px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
                   style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
                 >
                   {health.status === "burned" ? "Withdrawn" : health.status === "moved" ? "NFT moved" : "Not approved"}
@@ -131,10 +139,10 @@ function UserListingItem({
               )}
             </p>
             <p
-              className="text-[12px] font-bold tabular-nums mt-0.5"
+              className="text-[14px] font-bold tabular-nums mt-0.5"
               style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
             >
-              {Number(formatEther(listing.price)).toFixed(4)}{" "}
+              {fmtNum(listing.price)}{" "}
               {getPaymentTokenSymbol(listing.paymentToken)}
             </p>
           </div>
@@ -142,7 +150,7 @@ function UserListingItem({
 
         <div className="flex items-center gap-3">
           <div
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-widest"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-black uppercase tracking-widest"
             style={{
               background: "rgba(16,185,129,0.08)",
               border: "1px solid rgba(16,185,129,0.2)",
@@ -154,7 +162,7 @@ function UserListingItem({
           <button
             onClick={() => cancelListing(listingId)}
             disabled={isPending || isConfirming}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-bold transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[15px] font-bold transition-all disabled:opacity-50"
             style={{
               background: "rgba(239,68,68,0.08)",
               color: "#EF4444",
@@ -178,7 +186,7 @@ function UserListingItem({
 
       {isDead && (
         <div
-          className="px-6 py-3 text-[13px] leading-relaxed"
+          className="px-6 py-3 text-[15px] leading-relaxed"
           style={{ background: "rgba(245,158,11,0.06)", borderTop: "1px solid rgba(245,158,11,0.18)", color: "var(--text-2)" }}
         >
           <span className="font-semibold" style={{ color: "#F59E0B" }}>
@@ -250,7 +258,7 @@ function IncomingBidsForListing({
         style={{ borderBottom: "1px solid var(--border-subtle)", background: "rgba(74,144,226,0.04)" }}
       >
         <Gavel style={{ width: 12, height: 12, color: "#4A90E2" }} />
-        <span className="text-[12px] font-semibold" style={{ color: "#4A90E2" }}>
+        <span className="text-[14px] font-semibold" style={{ color: "#4A90E2" }}>
           {bids.length} incoming bid{bids.length !== 1 ? "s" : ""} on Listing #{listingId}
         </span>
       </div>
@@ -272,11 +280,11 @@ function IncomingBidsForListing({
           return (
             <div key={bid.id.toString()} className="flex items-center justify-between gap-3 px-4 py-2.5">
               <div>
-                <p className="text-[13px] font-mono" style={{ color: "var(--text-2)" }}>
+                <p className="text-[15px] font-mono" style={{ color: "var(--text-2)" }}>
                   {(bid.bidder as string).slice(0, 6)}…{(bid.bidder as string).slice(-4)}
                 </p>
                 <p
-                  className="text-[12px] tabular-nums mt-0.5"
+                  className="text-[14px] tabular-nums mt-0.5"
                   style={{ color: isExpired ? "#EF4444" : "#10B981", fontVariantNumeric: "tabular-nums" }}
                 >
                   {expiryLabel}
@@ -284,16 +292,16 @@ function IncomingBidsForListing({
               </div>
               <div className="flex items-center gap-3">
                 <p
-                  className="text-sm font-bold tabular-nums"
+                  className="text-[16px] font-bold tabular-nums"
                   style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
                 >
-                  {parseFloat(formatEther(bid.amount as bigint)).toFixed(4)}
+                  {fmtNum(bid.amount as bigint)}
                 </p>
                 {!isExpired && (
                   <button
                     onClick={() => handleAccept(bid.id as bigint)}
                     disabled={busyBidId !== null}
-                    className="px-3 py-1.5 rounded-lg text-[12px] font-bold inline-flex items-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981]"
+                    className="px-3 py-1.5 rounded-lg text-[14px] font-bold inline-flex items-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981]"
                     style={{
                       background: "rgba(16,185,129,0.12)",
                       border: "1px solid rgba(16,185,129,0.25)",
@@ -314,12 +322,12 @@ function IncomingBidsForListing({
       </div>
 
       {actionError && (
-        <p className="px-4 py-2.5 text-[12px] leading-relaxed" style={{ color: "#EF4444" }} role="alert">
+        <p className="px-4 py-2.5 text-[14px] leading-relaxed" style={{ color: "#EF4444" }} role="alert">
           {actionError}
         </p>
       )}
 
-      <p className="px-4 pb-3 text-[12px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+      <p className="px-4 pb-3 text-[14px] leading-relaxed" style={{ color: "var(--text-3)" }}>
         Accepting sends the veNFT and pulls payment in one transaction. The first
         accept also asks for a one-time approval of the bidding contract.
       </p>
@@ -344,9 +352,12 @@ function ListingBidsRow({ listingId }: { listingId: number }) {
 function WalletNFTCard({
   nft,
   onList,
+  listedFor,
 }: {
   nft: any;
   onList: (nft: any) => void;
+  /** "40,000 MEZO" when this veNFT already has an active listing. */
+  listedFor?: string;
 }) {
   const accentColor = nft.collection === "veBTC" ? "#F7931A" : "#4A90E2";
   const isVeBTC = nft.collection === "veBTC";
@@ -355,8 +366,8 @@ function WalletNFTCard({
   const lockEnd: bigint = nft.lockEnd ?? 0n;
   const votingPower: bigint = nft.votingPower ?? computeVotingPower(iv, lockEnd, isVeBTC);
 
-  const formattedIV = iv > 0n ? parseFloat(formatEther(iv)).toFixed(4) : "—";
-  const formattedVP = votingPower > 0n ? parseFloat(formatEther(votingPower)).toFixed(2) : "—";
+  const formattedIV = iv > 0n ? fmtNum(iv) : "—";
+  const formattedVP = votingPower > 0n ? parseFloat(formatEther(votingPower)).toLocaleString("en-US", { maximumFractionDigits: 0 }) : "—";
 
   const lockEndSec = Number(lockEnd);
   const isPermanent = lockEndSec === 0;
@@ -385,13 +396,13 @@ function WalletNFTCard({
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
-              <span className="eyebrow">{nft.collection}</span>
-              <span className="text-sm font-semibold" style={{ letterSpacing: "-0.02em" }}>
+              <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>{nft.collection}</span>
+              <span className="text-[16px] font-semibold" style={{ letterSpacing: "-0.02em" }}>
                 #{nft.tokenId.toString()}
               </span>
             </div>
-            <p className="text-[12px]" style={{ color: "var(--text-3)" }}>
-              Ready to list
+            <p className="text-[14px]" style={{ color: listedFor ? "#B45309" : "var(--text-3)" }}>
+              {listedFor ? `Listed for ${listedFor}` : "Ready to list"}
             </p>
           </div>
           {nft.isGrant && (
@@ -400,7 +411,7 @@ function WalletNFTCard({
               style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.22)" }}
             >
               <Award style={{ width: 10, height: 10, color: "#F59E0B" }} />
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+              <span className="text-[12px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
                 Grant
               </span>
             </div>
@@ -412,9 +423,9 @@ function WalletNFTCard({
           <div className="p-2.5 rounded-lg" style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-1 mb-1">
               <TrendingDown style={{ width: 10, height: 10, color: "var(--text-3)" }} />
-              <span className="eyebrow">Locked</span>
+              <span className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>Holds</span>
             </div>
-            <p className="text-[13px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[15px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formattedIV}{" "}
               <span style={{ color: "var(--text-3)", fontWeight: 400 }}>{isVeBTC ? "BTC" : "MEZO"}</span>
             </p>
@@ -422,26 +433,38 @@ function WalletNFTCard({
           <div className="p-2.5 rounded-lg" style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-1 mb-1">
               <Zap style={{ width: 10, height: 10, color: accentColor }} />
-              <span className="eyebrow">Vote Pwr</span>
+              <span className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>Voting power</span>
             </div>
-            <p className="text-[13px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[15px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formattedVP}
             </p>
           </div>
           <div className="col-span-2 p-2.5 rounded-lg" style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-1 mb-1">
               <Clock style={{ width: 10, height: 10, color: "var(--text-3)" }} />
-              <span className="eyebrow">Lock Ends</span>
+              <span className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>Lock ends</span>
             </div>
-            <p className="text-[13px] font-semibold">{lockLabel}</p>
+            <p className="text-[15px] font-semibold">{lockLabel}</p>
           </div>
         </div>
 
+        {listedFor ? (
+          // Already on the market: one listing per veNFT. Manage it above.
+          <button
+            type="button"
+            disabled
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[15px] font-semibold cursor-not-allowed"
+            style={{ background: "var(--bg-2)", color: "var(--text-3)", border: "1px solid var(--border-subtle)" }}
+            title="This veNFT is already listed. Cancel it under Your listings to relist at a new price."
+          >
+            Already listed
+          </button>
+        ) : (
         <motion.button
           onClick={() => onList(nft)}
           whileTap={{ y: 1, scale: 0.985 }}
           transition={{ type: "spring", stiffness: 100, damping: 20 }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-bold"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[15px] font-bold"
           style={{
             background: "var(--text-1)",
             color: "var(--bg)",
@@ -457,8 +480,9 @@ function WalletNFTCard({
           }}
         >
           <Plus style={{ width: 13, height: 13 }} />
-          List for Sale
+          List for sale
         </motion.button>
+        )}
       </div>
     </motion.div>
   );
@@ -497,6 +521,10 @@ function ConnectPrompt() {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function MyListingsClient() {
+  const { rateLabel: feeRate } = useProtocolFee();
+  // This wallet's live listings, keyed by veNFT, so the wallet section can
+  // show "Listed for …" instead of offering to list the same position again.
+  const { listings: liveListings } = useActiveListings();
   const { isConnected, address } = useAccount();
   const { userListingIds } = useMarketplace();
   const { veNFTs: walletVeNFTs, isLoading: veNFTsLoading } = useUserVeNFTs();
@@ -528,10 +556,10 @@ export default function MyListingsClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <h1 className="text-[32px] md:text-[36px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.035em" }}>
+            <h1 className="text-[36px] md:text-[44px] font-bold mb-2" style={{ color: "var(--text-1)", letterSpacing: "-0.035em" }}>
               Portfolio
             </h1>
-            <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
+            <p className="text-[16px]" style={{ color: "var(--text-2)" }}>
               Positions you have listed, and the ones in your wallet you could list.
             </p>
           </motion.div>
@@ -542,27 +570,27 @@ export default function MyListingsClient() {
             transition={{ delay: 0.2, duration: 0.4 }}
             className="pb-1"
           >
-            <Link href="/activity" className="btn-outline text-sm inline-flex items-center gap-2">
-              <History style={{ width: 14, height: 14 }} />
-              Trade History
+            <Link href="/activity" className="btn-outline text-[15px] inline-flex items-center gap-2">
+              <History style={{ width: 16, height: 16 }} />
+              Trade history
             </Link>
           </motion.div>
         </div>
 
         {/* ── Layout: 2/3 + 1/3 ── */}
-        <div className="grid lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_320px] gap-12">
+        <div className="grid lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_350px] gap-12">
 
           {/* ── Main ── */}
           <div className="space-y-12">
 
             {/* Active listings */}
             <section>
-              <div className="flex items-center gap-2 mb-5">
-                <Tag style={{ width: 13, height: 13, color: "#F7931A" }} />
-                <span className="eyebrow" style={{ color: "var(--text-2)" }}>Active Sell Orders</span>
+              <div className="flex items-center gap-2.5 mb-5">
+                <Tag style={{ width: 18, height: 18, color: "#F7931A" }} />
+                <h2 className="text-[20px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Your listings</h2>
                 {activeListingCount > 0 && (
                   <span
-                    className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                    className="text-[14px] font-bold tabular-nums px-2 py-0.5 rounded-md"
                     style={{ background: "rgba(247,147,26,0.1)", color: "#F7931A", fontVariantNumeric: "tabular-nums" }}
                   >
                     {activeListingCount}
@@ -591,16 +619,16 @@ export default function MyListingsClient() {
                   style={{ borderTop: "1px solid var(--border-subtle)" }}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
                   >
-                    <Tag style={{ width: 16, height: 16, color: "var(--text-3)" }} />
+                    <Tag style={{ width: 20, height: 20, color: "var(--text-3)" }} />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
+                    <h3 className="text-[18px] font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
                       No active listings
                     </h3>
-                    <p className="text-[13px]" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
+                    <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "46ch" }}>
                       List a veNFT from your wallet below to start selling.
                     </p>
                   </div>
@@ -612,9 +640,12 @@ export default function MyListingsClient() {
             {userListingIds && userListingIds.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-5">
-                  <Gavel style={{ width: 13, height: 13, color: "#4A90E2" }} />
-                  <span className="eyebrow" style={{ color: "var(--text-2)" }}>Incoming Bids</span>
+                  <Gavel style={{ width: 18, height: 18, color: "#4A90E2" }} />
+                  <h2 className="text-[20px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Offers on your listings</h2>
                 </div>
+                <p className="text-[15px] -mt-3 mb-4" style={{ color: "var(--text-2)" }}>
+                  Offers buyers make on your listings show up here, and you can accept one at any time.
+                </p>
                 <div className="space-y-3">
                   {userListingIds.map((id) => (
                     <ListingBidsRow key={id.toString()} listingId={Number(id)} />
@@ -626,11 +657,11 @@ export default function MyListingsClient() {
             {/* In wallet */}
             <section>
               <div className="flex items-center gap-2 mb-5">
-                <LayoutGrid style={{ width: 13, height: 13, color: "#4A90E2" }} />
-                <span className="eyebrow" style={{ color: "var(--text-2)" }}>In Your Wallet</span>
+                <LayoutGrid style={{ width: 18, height: 18, color: "#4A90E2" }} />
+                <h2 className="text-[20px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>In your wallet</h2>
                 {walletVeNFTs.length > 0 && (
                   <span
-                    className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                    className="text-[14px] font-bold tabular-nums px-2 py-0.5 rounded-md"
                     style={{ background: "rgba(74,144,226,0.1)", color: "#4A90E2", fontVariantNumeric: "tabular-nums" }}
                   >
                     {walletVeNFTs.length}
@@ -671,16 +702,16 @@ export default function MyListingsClient() {
                   style={{ borderTop: "1px solid var(--border-subtle)" }}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}
                   >
-                    <Wallet style={{ width: 16, height: 16, color: "var(--text-3)" }} />
+                    <Wallet style={{ width: 20, height: 20, color: "var(--text-3)" }} />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold mb-1" style={{ letterSpacing: "-0.02em" }}>
+                    <h3 className="text-[18px] font-semibold mb-1.5" style={{ letterSpacing: "-0.02em" }}>
                       No veNFTs found
                     </h3>
-                    <p className="text-[13px]" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
+                    <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)", maxWidth: "46ch" }}>
                       No veBTC or veMEZO positions detected in this wallet.
                     </p>
                   </div>
@@ -689,6 +720,13 @@ export default function MyListingsClient() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   {walletVeNFTs.map((nft) => (
                     <WalletNFTCard
+                      listedFor={(() => {
+                        const l = liveListings.find(
+                          (x) => x.active && x.seller.toLowerCase() === address?.toLowerCase() &&
+                            x.collection === nft.collection && x.tokenId.toString() === nft.tokenId.toString()
+                        );
+                        return l ? `${fmtNum(l.price)} ${getPaymentTokenSymbol(l.paymentToken)}` : undefined;
+                      })()}
                       key={`${nft.collection}-${nft.tokenId.toString()}`}
                       nft={nft}
                       onList={(n) => {
@@ -710,24 +748,25 @@ export default function MyListingsClient() {
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-xl p-5"
+              className="rounded-xl p-6"
               style={{
                 background: "var(--bg-1)",
                 border: "1px solid var(--border-subtle)",
                 boxShadow: "var(--shadow-sm)",
               }}
             >
-              <p className="eyebrow mb-4">Quick Stats</p>
+              <h3 className="text-[16px] font-semibold mb-4" style={{ color: "var(--text-1)" }}>At a glance</h3>
               <div className="space-y-3">
                 {[
-                  { label: "Active Listings", value: activeListingCount.toString(), color: "#F7931A" },
-                  { label: "In Wallet", value: walletVeNFTs.length.toString(), color: "#4A90E2" },
-                  { label: "Protocol Fee", value: "1.00%", color: "var(--text-2)" },
+                  { label: "Active listings", value: activeListingCount.toString(), color: "#F7931A" },
+                  { label: "In wallet", value: walletVeNFTs.length.toString(), color: "#4A90E2" },
+                  // Live from the PaymentRouter; the admin can change it.
+                  { label: "Protocol fee", value: feeRate ?? "—", color: "var(--text-2)" },
                 ].map((s) => (
                   <div key={s.label} className="flex items-center justify-between">
-                    <span className="text-[13px]" style={{ color: "var(--text-3)" }}>{s.label}</span>
+                    <span className="text-[15px]" style={{ color: "var(--text-2)" }}>{s.label}</span>
                     <span
-                      className="text-[13px] font-bold tabular-nums"
+                      className="text-[15px] font-bold tabular-nums"
                       style={{ color: s.color, fontVariantNumeric: "tabular-nums" }}
                     >
                       {s.value}
@@ -742,14 +781,14 @@ export default function MyListingsClient() {
               initial={{ opacity: 0, x: 12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.25, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-xl p-5"
+              className="rounded-xl p-6"
               style={{
                 background: "var(--bg-1)",
                 border: "1px solid var(--border-subtle)",
                 boxShadow: "var(--shadow-sm)",
               }}
             >
-              <p className="eyebrow mb-4">Seller notes</p>
+              <h3 className="text-[16px] font-semibold mb-4" style={{ color: "var(--text-1)" }}>Seller notes</h3>
               <ul className="space-y-3">
                 {[
                   "Your NFTs never leave your wallet during listing.",
@@ -758,9 +797,9 @@ export default function MyListingsClient() {
                 ].map((note, i) => (
                   <li key={i} className="flex gap-2.5">
                     <ShieldCheck
-                      style={{ width: 13, height: 13, color: "#10B981", flexShrink: 0, marginTop: 1 }}
+                      style={{ width: 16, height: 16, color: "#10B981", flexShrink: 0, marginTop: 3 }}
                     />
-                    <span className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                    <span className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                       {note}
                     </span>
                   </li>

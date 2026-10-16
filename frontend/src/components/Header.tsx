@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePriceTicker, formatUSD } from "@/hooks/usePriceTicker";
 import { WalletMenu } from "@/components/header/WalletMenu";
 import { NetworkMenu } from "@/components/header/NetworkMenu";
+import { useHomeHref } from "@/hooks/useHomeHref";
 
 // ─── Official Vezo V-chevron mark ────────────────────────────────────────────
 export function VezoLogoMark({ size = 28, notchColor }: { size?: number; notchColor?: string }) {
@@ -136,6 +137,7 @@ const NAV = [
 ] as const;
 
 export function Header() {
+  const homeHref = useHomeHref();
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDark, toggle: toggleTheme } = useTheme();
   const pathname = usePathname();
@@ -166,7 +168,7 @@ export function Header() {
           network and wallet dropdowns and swallows their clicks. */}
       <div className="relative z-20 max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16">
         <div className="flex items-center h-[64px] lg:h-[76px] gap-3">
-          <Link href="/" className="flex items-center shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]" aria-label="Vezo home">
+          <Link href={homeHref} className="flex items-center shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]" aria-label="Vezo home">
             <VezoLogotype />
           </Link>
 

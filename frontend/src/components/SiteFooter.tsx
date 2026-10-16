@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ArrowUpRight, Heart } from "lucide-react";
 import { VezoLogoMark } from "@/components/Header";
 import { useNetwork } from "@/hooks/useNetwork";
+import { useHomeHref } from "@/hooks/useHomeHref";
 
 const DOCS = "https://docs.vezo.exchange";
 const GITHUB = "https://github.com/prajalsharma/veNFT-marketplace";
@@ -100,6 +101,7 @@ function FooterLink({ item }: { item: Item }) {
 }
 
 export function SiteFooter() {
+  const homeHref = useHomeHref();
   const { network, contracts } = useNetwork();
   const market = contracts.marketplace;
   const hasMarket = !!market && !/^0x0{40}$/i.test(market);
@@ -110,7 +112,7 @@ export function SiteFooter() {
         {/* Brand + columns */}
         <div className="grid gap-12 lg:gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] pt-14 md:pt-20 pb-12 md:pb-16">
           <div className="max-w-[40ch]">
-            <Link href="/" aria-label="Vezo home" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
+            <Link href={homeHref} aria-label="Vezo home" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
               <VezoLogoMark size={34} />
               <span className="text-[30px]" style={{ fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: "var(--text-1)" }}>vezo</span>
             </Link>
