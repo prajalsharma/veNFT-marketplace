@@ -15,7 +15,11 @@ import { computeDiscountBpsNumber } from "@/lib/computeDiscount";
 // batches, once per event ever: past state is immutable, so results live in a
 // process-wide cache, and the whole response is edge-cached for 60s.
 
-export const revalidate = 60;
+// Rendered per request, cached at the edge for a minute. This used to be
+// ISR (revalidate = 60), which serves the stored copy and refreshes it in the
+// background, so on a quiet route the first visitor after a lull saw figures
+// from the last visit, days old. A short shared cache keeps it fresh and cheap.
+export const dynamic = "force-dynamic";
 
 const RPC = CONTRACTS.mainnet.rpcUrl;
 const ADAPTER = CONTRACTS.mainnet.adapter;
@@ -85,7 +89,7 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ query }),
-      next: { revalidate: 30 },
+      cache: "no-store",
     });
     if (!res.ok) throw new Error(`subgraph ${res.status}`);
     const json = (await res.json()) as { data?: { activityEvents: Ev[] }; errors?: unknown };
@@ -123,7 +127,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { status: "ok", events },
-      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60" } }
     );
   } catch {
     return NextResponse.json({ status: "unavailable", events: [] }, { headers: { "Cache-Control": "public, s-maxage=15" } });

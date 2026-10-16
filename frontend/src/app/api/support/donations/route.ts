@@ -14,7 +14,11 @@ import { SUPPORT_ADDRESS, decodeGraffiti } from "@/lib/support";
 // No database anywhere: names, amounts, and ranks are all reconstructable by
 // anyone from the explorer. Cached for 60s at the edge.
 
-export const revalidate = 60;
+// Rendered per request, cached at the edge for a minute. This used to be
+// ISR (revalidate = 60), which serves the stored copy and refreshes it in the
+// background, so on a quiet route the first visitor after a lull saw figures
+// from the last visit, days old. A short shared cache keeps it fresh and cheap.
+export const dynamic = "force-dynamic";
 
 const EXPLORER_API = "https://api.explorer.mezo.org/api/v2";
 const RPC = CONTRACTS.mainnet.rpcUrl;
@@ -38,7 +42,7 @@ async function fetchJson(url: string): Promise<Record<string, unknown> | null> {
   try {
     const res = await fetch(url, {
       headers: { accept: "application/json" },
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     // Blockscout 404s for addresses it has never seen — that's just "no donations yet".
     if (!res.ok) return null;
@@ -223,5 +227,5 @@ export async function GET() {
     totals: { BTC: totals.BTC.toString(), MEZO: totals.MEZO.toString(), MUSD: totals.MUSD.toString() },
     donationCount: all.length,
     updatedAt: Date.now(),
-  });
+  }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60" } });
 }

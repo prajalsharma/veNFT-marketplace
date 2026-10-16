@@ -17,7 +17,11 @@ import { CONTRACTS } from "@/lib/contracts";
 // Validated against the Dune dashboard (dune.com/vezo/vezo) at build time:
 // sales, MEZO and MUSD volume match exactly.
 
-export const revalidate = 60;
+// Rendered per request, cached at the edge for a minute. This used to be
+// ISR (revalidate = 60), which serves the stored copy and refreshes it in the
+// background, so on a quiet route the first visitor after a lull saw figures
+// from the last visit, days old. A short shared cache keeps it fresh and cheap.
+export const dynamic = "force-dynamic";
 
 const PAGE = 1000;
 const MAX_PAGES = 20; // 20k events: far beyond current volume, bounded on purpose
@@ -38,7 +42,7 @@ async function gql<T>(url: string, query: string): Promise<T> {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ query }),
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`subgraph ${res.status}`);
   const json = (await res.json()) as { data?: T; errors?: unknown };
@@ -158,7 +162,7 @@ export async function GET() {
       generatedAt: Date.now(),
     };
     return NextResponse.json(body, {
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60" },
     });
   } catch {
     // The index is a dependency, not the product: fail soft with an explicit

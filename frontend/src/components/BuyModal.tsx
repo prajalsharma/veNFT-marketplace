@@ -26,6 +26,7 @@ import { useReadContract, useWaitForTransactionReceipt, useAccount, useBalance, 
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { usePriceTicker, formatUSD } from "@/hooks/usePriceTicker";
 import { useSwapAndBuy } from "@/hooks/useSwapAndBuy";
+import { useProtocolFee } from "@/hooks/useProtocolFee";
 
 // ─── ABIs ─────────────────────────────────────────────────────────────────────
 
@@ -368,6 +369,8 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
     return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
   };
   const formattedPrice = listing ? formatAmount(listing.price) : "0";
+  // The fee on this exact price, as the PaymentRouter computes it at settlement.
+  const feeInfo = useProtocolFee(listing?.price);
   // The position itself, so the buyer sees what they are buying in the same
   // place they pay for it (there is no second "details" popup).
   const lockedSym = listing?.collection === "veBTC" ? "BTC" : "MEZO";
@@ -597,8 +600,19 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     <dd className="tabular-nums" style={{ color: "var(--text-2)" }}>{formattedPrice} {paymentSymbol}</dd>
                   </div>
                   <div className="flex justify-between py-1.5">
-                    <dt style={{ color: "var(--text-3)" }}>Protocol fee</dt>
-                    <dd style={{ color: "var(--text-2)" }}>Paid by seller</dd>
+                    <dt style={{ color: "var(--text-3)" }}>Protocol fee{feeInfo.rateLabel ? ` (${feeInfo.rateLabel})` : ""}</dt>
+                    <dd className="tabular-nums text-right" style={{ color: "var(--text-2)" }}>
+                      {feeInfo.fee !== null ? (
+                        <>
+                          {formatAmount(feeInfo.fee)} {paymentSymbol}
+                          <span className="block text-[12px]" style={{ color: "var(--text-3)" }}>deducted from the seller&apos;s proceeds</span>
+                        </>
+                      ) : feeInfo.isError ? (
+                        "Deducted from the seller"
+                      ) : (
+                        <span className="inline-block h-3.5 w-24 rounded skeleton align-middle" aria-label="Loading fee" />
+                      )}
+                    </dd>
                   </div>
                   <div className="flex justify-between pt-3 mt-1.5" style={{ borderTop: "1px solid var(--hairline)" }}>
                     <dt className="font-semibold" style={{ color: "var(--text-1)" }}>You pay</dt>

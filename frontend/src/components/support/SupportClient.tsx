@@ -26,6 +26,7 @@ import {
 import { CONTRACTS } from "@/lib/contracts";
 import { mezoMainnet } from "@/lib/wagmi";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
+import { useMarketHistory } from "@/hooks/useMarketData";
 import { useNetwork } from "@/hooks/useNetwork";
 import {
   SUPPORT_ADDRESS,
@@ -728,6 +729,57 @@ function SupportersBoard({
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
+// ─── Track record ─────────────────────────────────────────────────────────────
+
+function MainnetRecord() {
+  const hist = useMarketHistory();
+  const st = hist.stats;
+  const n = (v: number) => v.toLocaleString("en-US");
+  const vol = (v: string) => Math.round(parseFloat(v)).toLocaleString("en-US");
+  const items = st
+    ? [
+        { v: n(st.totalSales), l: st.totalSales === 1 ? "sale" : "sales" },
+        { v: n(st.totalListings), l: "veNFT listings" },
+        { v: n(st.participants), l: "users" },
+        { v: vol(st.volume.MEZO), l: "MEZO volume" },
+        { v: vol(st.volume.MUSD), l: "MUSD volume" },
+        ...(parseFloat(st.volume.BTC) > 0 ? [{ v: parseFloat(st.volume.BTC).toLocaleString("en-US", { maximumFractionDigits: 4 }), l: "BTC volume" }] : []),
+      ]
+    : null;
+  const asOf = st?.indexedAt ? new Date(st.indexedAt * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
+
+  return (
+    <>
+      <p className="text-[12px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
+        Since mainnet launch &middot; March 16, 2026{hist.status === "stale" && asOf ? ` \u2192 ${asOf}` : ""}
+      </p>
+      {hist.status === "error" ? (
+        <p className="text-[14px] mb-5" style={{ color: "var(--text-2)" }}>
+          The live figures can&apos;t be loaded right now. The dashboard below has them.
+        </p>
+      ) : (
+        <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 mb-5" aria-busy={!items}>
+          {(items ?? Array.from({ length: 5 }, (_, k) => ({ v: "", l: ["sales", "veNFT listings", "users", "MEZO volume", "MUSD volume"][k] }))).map((s) => (
+            <div key={s.l} className="text-center">
+              {s.v ? (
+                <p
+                  className="font-bold tabular-nums leading-none"
+                  style={{ fontSize: "clamp(1.45rem, 2.2vw, 1.7rem)", color: "var(--text-1)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {s.v}
+                </p>
+              ) : (
+                <span className="inline-block h-[1.6rem] w-16 rounded skeleton" aria-label={`Loading ${s.l}`} />
+              )}
+              <p className="text-[12px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function SupportClient() {
   const { address } = useAccount();
   const { data, loading, refetch } = useBoard();
@@ -821,10 +873,10 @@ export default function SupportClient() {
         >
           <p>
             Vezo is the first secondary marketplace for veNFTs on Mezo, built and run
-            by a small independent team. For the past six months we&apos;ve shipped the
-            marketplace, on-chain bidding, cross-token checkout, and full
+            by a small independent team. Since launching on mainnet in March we&apos;ve
+            shipped the marketplace, on-chain bidding, cross-token checkout, and full
             documentation, had the contracts audited by the Mezo team, and kept it all
-            running on mainnet since March.
+            running.
           </p>
           <p>
             The platform is free beyond a minimal protocol fee, and this is how it
@@ -833,44 +885,16 @@ export default function SupportClient() {
             directly into keeping it maintained, audited, and improving.
           </p>
         </div>
-        {/* Milestone receipts: a dated snapshot of the Dune numbers, hardcoded
-            on purpose. It is a statement about a fixed window (mainnet launch
-            to the as-of date), not a live feed; the Dune link below carries the
-            live, verifiable version. Update the figures and the as-of date
-            together. */}
-        {/* Centered on purpose: a milestone reads as ceremony, not data. Proof
-            sits directly between the story (reciprocity) and the ask (panel). */}
+        {/* Track record, live: all-time figures from the same on-chain index
+            the Activity page uses (/api/market-stats). This used to be a
+            hand-typed snapshot that went stale; it now updates itself, and
+            says "as of" when the index is behind. Centered on purpose: it
+            sits between the story (reciprocity) and the ask (panel). */}
         <div
           className="mt-6 rounded-2xl px-6 py-7 text-center"
           style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-xs)" }}
         >
-          <p className="text-[12px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
-            March 16 &rarr; September 16, 2026 &middot; six months on mainnet
-          </p>
-          <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 mb-5">
-            {[
-              { v: "56", l: "sales" },
-              { v: "206", l: "veNFT listings" },
-              { v: "61", l: "users" },
-              { v: "560,989", l: "MEZO volume" },
-              { v: "5,549", l: "MUSD volume" },
-            ].map((s) => (
-              <div key={s.l} className="text-center">
-                <p
-                  className="font-bold tabular-nums leading-none"
-                  style={{
-                    fontSize: "clamp(1.45rem, 2.2vw, 1.7rem)",
-                    color: "var(--text-1)",
-                    letterSpacing: "-0.03em",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {s.v}
-                </p>
-                <p className="text-[12px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
-              </div>
-            ))}
-          </div>
+          <MainnetRecord />
           <a
             href="https://dune.com/vezo/vezo"
             target="_blank"

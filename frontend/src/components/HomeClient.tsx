@@ -28,6 +28,7 @@ import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { CountdownCompact } from "@/components/CountdownTimer";
 import { PositionGlyph, PriceValueBar } from "@/components/market/PositionVisuals";
 import { DiscountDial } from "@/components/market/DiscountDial";
+import { useProtocolFee } from "@/hooks/useProtocolFee";
 import { SettlementStory } from "@/components/landing/SettlementStory";
 import { SupportedBy } from "@/components/landing/SupportedBy";
 import { Faq } from "@/components/landing/Faq";
@@ -364,8 +365,10 @@ function ListedNow() {
 
 // ─── 5–6. Settlement and rules ───────────────────────────────────────────────
 
+// The fee rule reads the live rate from the PaymentRouter (see useProtocolFee):
+// the admin can change it, so the page must not state a number of its own.
 const RULES: [string, string][] = [
-  ["Protocol fee", "1% of the sale, deducted from the seller's proceeds. Buyers pay the listed price."],
+  ["Protocol fee", "{rate} of the sale, deducted from the seller's proceeds. Buyers pay the listed price."],
   ["Fee limits", "Hard-capped at 5% in the contract. Any change waits behind a 48-hour on-chain timelock."],
   ["Custody", "None. Listings and bids are approvals; no contract ever holds a position between trades."],
   ["Audit", "The contracts were audited by the Mezo team before mainnet launch."],
@@ -373,6 +376,7 @@ const RULES: [string, string][] = [
 
 export default function HomeClient() {
   const { network } = useNetwork();
+  const { rateLabel: feeRate } = useProtocolFee();
   const live = useLiveMarket();
   // Spread the best listings across the page instead of repeating one: the
   // hero dial takes the best, the settlement story the next, and the list
@@ -411,12 +415,17 @@ export default function HomeClient() {
           </p>
         </motion.div>
         <dl>
-          {RULES.map(([k, v]) => (
+          {RULES.map(([k, raw]) => {
+            const v = raw.includes("{rate}")
+              ? (feeRate ? raw.replace("{rate}", feeRate) : raw.replace("{rate} of the sale", "A share of the sale"))
+              : raw;
+            return (
             <div key={k} className="grid sm:grid-cols-[160px_1fr] gap-x-8 gap-y-1 py-5" style={{ borderTop: "1px solid var(--hairline)" }}>
               <dt className="text-[15px] font-semibold" style={{ color: "var(--text-1)" }}>{k}</dt>
               <dd className="text-[15px] leading-[1.6]" style={{ color: "var(--text-2)" }}>{v}</dd>
             </div>
-          ))}
+            );
+          })}
         </dl>
       </section>
 
