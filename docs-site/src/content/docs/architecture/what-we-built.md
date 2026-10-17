@@ -118,9 +118,13 @@ grant manager can revoke the portion of the locked tokens that has not vested,
 and the position cannot be merged or split. A buyer who does not know this is
 buying a different asset than they think they are.
 
-Rather than hide the flag or block these listings, Vezo surfaces the state and
-the vesting end date so the market can price the risk. See the badge on any
-affected listing for the exact date.
+Rather than hide the flag or block these listings, Vezo surfaces the state so
+the market can price the risk. For every grant listing it reads the vesting
+start, cliff, end and earned rewards, works out how much the issuer could take
+back right now (mirroring the contract's revoke formula), and shows it next to
+the locked amount. The discount is measured against the part that can't be
+taken back, so a grant listed "10% below" its full amount is not shown as a
+10% deal when most of it is still revocable.
 
 ## The support page
 

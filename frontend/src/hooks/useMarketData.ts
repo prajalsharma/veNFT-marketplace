@@ -56,7 +56,8 @@ export function useLiveMarket(): LiveMarket {
       const db = b.discountBps === null ? -Infinity : Number(b.discountBps);
       return db - da;
     });
-    const priced = open.filter((l) => l.discountBps !== null);
+    // Exact discounts only: estimates (other-currency listings) would blur the average.
+    const priced = open.filter((l) => l.discountBps !== null && !l.discountEstimated);
     const avgDiscountPct = priced.length
       ? priced.reduce((s, l) => s + Number(l.discountBps), 0) / priced.length / 100
       : null;

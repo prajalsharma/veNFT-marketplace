@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { computeDiscountBps } from "@/lib/computeDiscount";
+import { listingDiscount } from "@/lib/listingDiscount";
+import { revocableAmount } from "@/lib/grantVesting";
 
 // Authoritative, fully-filtered active-listings endpoint.
 //
@@ -255,7 +256,6 @@ export async function GET(req: NextRequest) {
         const isVeBTC = l.collKey === "veBTC";
         const votingPower = computeVotingPower(intrinsicValue, lockEnd, isVeBTC, nowSec);
         const nftLockedToken = isVeBTC ? BTC_TOKEN : MEZO_TOKEN;
-        const discountBps = computeDiscountBps(intrinsicValue, nftLockedToken, l.price, l.paymentToken, lockEnd);
 
         let isGrant = false;
         let vestingEnd = 0n;
@@ -266,6 +266,37 @@ export async function GET(req: NextRequest) {
           // vestingEnd the manager can claw back the unvested tokens.
           isGrant = grantMgr !== ZERO_ADDR && vestingEnd !== 0n;
         }
+
+        // Grants: read the rest of the vesting terms and work out how much the
+        // grant manager could take back today. If any read fails we keep the
+        // old behaviour (revocable 0, discount against the full amount).
+        let revocable = 0n;
+        let cliffEnd = 0n;
+        if (isGrant) {
+          const [startRes, cliffRes, rebaseRes] = await Promise.all([
+            ethCall(rpc, collection, "0xa82f911f" + tokenArg).catch(() => "err" as const),
+            ethCall(rpc, collection, "0x233ee12c" + tokenArg).catch(() => "err" as const),
+            ethCall(rpc, collection, "0x3b7ab8f9" + tokenArg).catch(() => "err" as const),
+          ]);
+          const ok = (r: string) => r !== "revert" && r !== "err" && r.length >= 66;
+          if (ok(startRes) && ok(cliffRes) && ok(rebaseRes)) {
+            cliffEnd = toBig(cliffRes.slice(2, 66));
+            revocable = revocableAmount(intrinsicValue, {
+              vestingStart: toBig(startRes.slice(2, 66)),
+              vestingEnd,
+              cliffEnd,
+              rebaseAmount: toBig(rebaseRes.slice(2, 66)),
+            }, nowSec);
+          }
+        }
+
+        const { discountBps, fullDiscountBps } = listingDiscount({
+          intrinsicValue,
+          revocable,
+          lockedToken: nftLockedToken,
+          price: l.price,
+          paymentToken: l.paymentToken,
+        });
 
         return {
           listingId: l.slot,
@@ -281,8 +312,11 @@ export async function GET(req: NextRequest) {
           votingPower: votingPower.toString(),
           lockEnd: lockEnd.toString(),
           discountBps: discountBps === null ? null : discountBps.toString(),
+          fullDiscountBps: fullDiscountBps === null ? null : fullDiscountBps.toString(),
           isGrant,
           vestingEnd: vestingEnd.toString(),
+          cliffEnd: cliffEnd.toString(),
+          revocable: revocable.toString(),
         };
       })
     );

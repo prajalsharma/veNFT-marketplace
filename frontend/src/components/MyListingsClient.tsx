@@ -14,8 +14,9 @@
 */
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useAccount } from "wagmi";
-import { formatEther } from "viem";
+import { useAccount, usePublicClient } from "wagmi";
+import { formatEther, parseEther } from "viem";
+import { useQueryClient } from "@tanstack/react-query";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +42,11 @@ import { parseBiddingError } from "@/lib/biddingErrors";
 import { useProtocolFee } from "@/hooks/useProtocolFee";
 import { ListingModal } from "@/components/ListingModal";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
+import { DiscountText } from "@/components/VeNFTCard";
+import { useNetwork } from "@/hooks/useNetwork";
+import { usePriceTicker } from "@/hooks/usePriceTicker";
+import { listingDiscount } from "@/lib/listingDiscount";
+import type { Listing } from "@/hooks/useMarketplace";
 
 /** Readable token amount: 40,000 / 1,234.56 / 0.000581, never "40000.0000". */
 function fmtNum(wei: bigint): string {
@@ -50,6 +56,131 @@ function fmtNum(wei: bigint): string {
 }
 
 // ─── User listing item ────────────────────────────────────────────────────────
+/**
+ * Where the price stands for buyers, and a way to change it. A listing priced
+ * in another token than it holds drifts as prices move, and a grant's value
+ * shifts as it vests, so the seller sees today's number, not the one they set.
+ */
+function ListingPriceRow({ listing }: { listing: Listing }) {
+  const { updatePrice } = useMarketplace();
+  const { chainId } = useNetwork();
+  const publicClient = usePublicClient({ chainId });
+  const queryClient = useQueryClient();
+  const prices = usePriceTicker();
+  const sym = getPaymentTokenSymbol(listing.paymentToken);
+  const lockedSym = listing.collection === "veBTC" ? "BTC" : "MEZO";
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const draftNum = Number.parseFloat(draft);
+  const draftValid = Number.isFinite(draftNum) && draftNum > 0;
+  const draftWei = draftValid ? (() => { try { return parseEther(draft); } catch { return null; } })() : null;
+  const preview = draftWei
+    ? listingDiscount({
+        intrinsicValue: listing.intrinsicValue,
+        revocable: listing.revocable,
+        lockedToken: listing.collection === "veBTC" ? "0x7b7c000000000000000000000000000000000000" : "0x7b7c000000000000000000000000000000000001",
+        price: draftWei,
+        paymentToken: listing.paymentToken,
+        prices,
+      })
+    : null;
+
+  const save = async () => {
+    if (!draftWei || draftWei === listing.price) { setEditing(false); return; }
+    setErr(null);
+    setSaving(true);
+    try {
+      const hash = await updatePrice(listing.listingId, draftWei);
+      if (hash && publicClient) await publicClient.waitForTransactionReceipt({ hash });
+      await queryClient.invalidateQueries();
+      setEditing(false);
+    } catch (e) {
+      const m = (e as { shortMessage?: string; message?: string })?.shortMessage ?? (e as Error)?.message ?? "";
+      setErr(/reject|denied/i.test(m) ? "Cancelled in your wallet." : "Could not update the price. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const drifted = listing.discountEstimated && listing.discountBps !== null && listing.discountBps < 0n;
+
+  return (
+    <div className="px-6 py-3.5 text-[15px]" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      {!editing ? (
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <p style={{ color: "var(--text-2)" }}>
+            Buyers see{" "}
+            <span className="font-semibold"><DiscountText discountBps={listing.discountBps} estimated={listing.discountEstimated} /></span>
+            {listing.discountEstimated && <> · at today&apos;s {sym} and {lockedSym} prices</>}
+            {listing.revocable > 0n && (
+              <> · counted on the {fmtNum(listing.intrinsicValue - listing.revocable)} {lockedSym} that can&apos;t be taken back</>
+            )}
+          </p>
+          <button
+            onClick={() => { setDraft(formatEther(listing.price)); setErr(null); setEditing(true); }}
+            className="px-3.5 py-1.5 rounded-lg text-[14px] font-semibold transition-colors"
+            style={{ border: "1px solid var(--hairline)", color: "var(--text-1)" }}
+          >
+            Change price
+          </button>
+          {drifted && (
+            <p className="w-full text-[14px]" style={{ color: "#B45309" }}>
+              {sym} has moved against {lockedSym}: at today&apos;s prices this is above its value.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor={`price-${listing.listingId}`} className="sr-only">New price in {sym}</label>
+            <div className="flex items-baseline gap-2 px-3 py-2 rounded-lg flex-1 min-w-[160px]" style={{ background: "var(--bg-2)" }}>
+              <input
+                id={`price-${listing.listingId}`}
+                type="number"
+                inputMode="decimal"
+                min="0"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                disabled={saving}
+                autoFocus
+                className="min-w-0 flex-1 bg-transparent font-semibold tabular-nums focus:outline-none"
+                style={{ color: "var(--text-1)" }}
+              />
+              <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>{sym}</span>
+            </div>
+            <button
+              onClick={save}
+              disabled={saving || !draftValid}
+              className="btn-brand px-4 py-2 rounded-lg text-[14px] font-semibold disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              disabled={saving}
+              className="px-3 py-2 rounded-lg text-[14px] font-semibold"
+              style={{ color: "var(--text-2)" }}
+            >
+              Keep price
+            </button>
+          </div>
+          <p className="mt-2 text-[14px]" style={{ color: err ? "#EF4444" : "var(--text-3)" }}>
+            {err ?? (preview && preview.discountBps !== null ? (
+              <>New price: <span className="font-semibold"><DiscountText discountBps={preview.discountBps} estimated={preview.estimated} /></span>. The currency stays {sym}.</>
+            ) : (
+              <>The currency stays {sym}. To switch currency, cancel and list again.</>
+            ))}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UserListingItem({
   listingId,
   onActiveChange,
@@ -183,6 +314,8 @@ function UserListingItem({
           </button>
         </div>
       </div>
+
+      {!isDead && <ListingPriceRow listing={listing} />}
 
       {isDead && (
         <div

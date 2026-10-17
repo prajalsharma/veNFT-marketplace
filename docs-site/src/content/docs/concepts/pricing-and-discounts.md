@@ -41,8 +41,19 @@ Examples with a veMEZO position holding 12,902 MEZO:
 | 13,500 MEZO | −4.6% (premium) | Buyer pays more than the contents, pricing in governance utility |
 
 :::note[Cross-currency listings]
-A discount is only computed when the price and intrinsic value are comparable. Where a listing is priced in a different token than the locked asset (say, a veMEZO priced in MUSD), the interface either converts through live prices or shows no discount figure rather than a misleading one.
+When a listing is priced in a different token than it holds (say, a veMEZO priced in BTC), there is no exact discount. Vezo converts both sides at today's USD prices and marks the result with **≈**. The price itself stays fixed in the seller's token, so the estimate moves as BTC, MEZO and MUSD move against each other. Estimates are left out of the average-discount stats.
 :::
+
+### Grant positions
+
+A grant veNFT holds tokens that the grant issuer can still take back until it fully vests. For these, Vezo counts only the part that is the holder's for sure:
+
+```
+safe value = locked amount − amount the issuer can take back today
+discount   = (safe value − price) / safe value × 100%
+```
+
+The amount that can be taken back follows the vote-escrow contract's own revoke rule: before the cliff, everything except earned rewards; after it, the unvested share of the grant, which shrinks every second until the vesting end. The buy popup shows both numbers, and the discount against the full locked amount for comparison.
 
 ### How to think about a discount
 

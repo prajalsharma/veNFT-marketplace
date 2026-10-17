@@ -30,6 +30,10 @@ export interface VeNFTCardProps {
   lockEnd: bigint;
   votingPower: bigint;
   discountBps: bigint | null;
+  /** Discount is an estimate from live prices (priced in another token). */
+  discountEstimated?: boolean;
+  /** Grant tokens the issuer could still take back (0 = none). */
+  revocable?: bigint;
   seller: string;
   active?: boolean;
   isGrant?: boolean;
@@ -52,20 +56,25 @@ export function GrantTag() {
     <span
       className="text-[12px] font-semibold px-1.5 py-0.5 rounded shrink-0 cursor-help"
       style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}
-      title="Grant-vested position: until vesting ends, the grant manager can revoke unvested tokens, and merge/split are disabled."
+      title="Grant: until it fully vests, the issuer can take back the unvested tokens. The discount counts only the part that's yours for sure."
     >
       Grant
     </span>
   );
 }
 
-export function DiscountText({ discountBps }: { discountBps: bigint | null }) {
+export function DiscountText({ discountBps, estimated = false }: { discountBps: bigint | null; estimated?: boolean }) {
   if (discountBps === null) return <span style={{ color: "var(--text-3)" }}>n/a</span>;
   const d = Number(discountBps) / 100;
-  if (d === 0) return <span style={{ color: "var(--text-2)" }}>At value</span>;
+  const approx = estimated ? "\u2248 " : "";
+  if (d === 0) return <span style={{ color: "var(--text-2)" }}>{approx}At value</span>;
   return (
-    <span className="tabular-nums" style={{ color: d > 0 ? "var(--success)" : "#EF4444", fontVariantNumeric: "tabular-nums" }}>
-      {d > 0 ? `${d.toFixed(1)}% off` : `${(-d).toFixed(1)}% over`}
+    <span
+      className="tabular-nums"
+      style={{ color: d > 0 ? "var(--success)" : "#EF4444", fontVariantNumeric: "tabular-nums" }}
+      title={estimated ? "Estimate: priced in a different token, converted at today's prices" : undefined}
+    >
+      {approx}{d > 0 ? `${d.toFixed(1)}% off` : `${(-d).toFixed(1)}% over`}
     </span>
   );
 }
@@ -79,6 +88,8 @@ export function VeNFTCard({
   intrinsicValue,
   lockEnd,
   discountBps,
+  discountEstimated = false,
+  revocable = 0n,
   seller,
   active = true,
   isGrant = false,
@@ -133,7 +144,7 @@ export function VeNFTCard({
             {fmtAmount(price)}
             <span className="text-[14px] font-semibold ml-1.5" style={{ color: "var(--text-2)", letterSpacing: 0 }}>{paySymbol}</span>
           </p>
-          <span className="text-[14px] font-semibold"><DiscountText discountBps={discountBps} /></span>
+          <span className="text-[14px] font-semibold"><DiscountText discountBps={discountBps} estimated={discountEstimated} /></span>
         </div>
         <p className="text-[13px] mt-1 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
           {usd !== null ? <>&#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : " "}
@@ -145,6 +156,11 @@ export function VeNFTCard({
           <p className="text-[12px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
             Holds <span className="font-semibold" style={{ color: "var(--text-2)" }}>{fmtAmount(intrinsicValue)} {lockedSym}</span>
           </p>
+          {revocable > 0n && (
+            <p className="text-[12px] mt-0.5 tabular-nums" style={{ color: "#B45309", fontVariantNumeric: "tabular-nums" }}>
+              {fmtAmount(revocable)} {lockedSym} can still be taken back
+            </p>
+          )}
         </div>
 
         {/* Actions */}

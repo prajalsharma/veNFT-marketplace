@@ -266,10 +266,13 @@ export function ListingsTable({
                   )}
                 </td>
                 <td className="px-4 py-3.5 text-right text-[14px] font-semibold whitespace-nowrap">
-                  <DiscountText discountBps={l.discountBps} />
+                  <DiscountText discountBps={l.discountBps} estimated={l.discountEstimated} />
                 </td>
                 <td className="px-4 py-3.5 text-right text-[14px] tabular-nums whitespace-nowrap" style={{ color: "var(--text-2)" }}>
                   {fmtAmount(l.intrinsicValue)} {lockedSym}
+                  {l.revocable > 0n && (
+                    <div className="text-[12px]" style={{ color: "#B45309" }}>{fmtAmount(l.revocable)} revocable</div>
+                  )}
                 </td>
                 <td className="px-4 py-3.5 text-right text-[14px] tabular-nums whitespace-nowrap" style={{ color: "var(--text-2)" }}>
                   {parseFloat(formatEther(l.votingPower)).toLocaleString("en-US", { maximumFractionDigits: 2 })}

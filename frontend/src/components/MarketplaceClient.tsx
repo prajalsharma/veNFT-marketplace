@@ -456,7 +456,8 @@ export default function MarketplaceClient() {
     const veMEZOFloor = floorLabel(veMEZO);
 
     // Avg discount across OPEN LISTINGS — what a buyer can actually get right now.
-    const priced = active.filter((l) => l.discountBps !== null);
+    // Exact discounts only: estimates (other-currency listings) would blur the average.
+    const priced = active.filter((l) => l.discountBps !== null && !l.discountEstimated);
     let avgDiscount = active.length === 0 ? "No listings" : "—";
     let listingCount = 0;
     if (priced.length > 0) {
@@ -695,6 +696,8 @@ export default function MarketplaceClient() {
                         lockEnd={listing.lockEnd}
                         votingPower={listing.votingPower}
                         discountBps={listing.discountBps}
+                        discountEstimated={listing.discountEstimated}
+                        revocable={listing.revocable}
                         unitUsd={prices[getPaymentTokenSymbol(listing.paymentToken) as "BTC" | "MEZO" | "MUSD"] ?? null}
                         seller={listing.seller}
                         active={listing.active}

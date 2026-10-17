@@ -62,7 +62,9 @@ function Dial({ paid, lock, lockColor, animKey }: { paid: number; lock: number; 
 
 export function DiscountDial({ listing, status }: { listing: Listing | null; status: "loading" | "ready" | "empty" | "stale" | "error" }) {
   const reduce = useReducedMotion();
-  const l = listing && listing.discountBps !== null ? listing : null;
+  // Only a real discount leads here: a listing priced at or above its value
+  // (e.g. a grant once revocable tokens are left out) leaves the spot open.
+  const l = listing && listing.discountBps !== null && listing.discountBps > 0n ? listing : null;
   const illustrative = !l;
   const d = l ? Number(l.discountBps) / 10_000 : 0.15;
   const paid = Math.max(0, Math.min(1, 1 - Math.max(0, d)));
@@ -104,6 +106,7 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
               <span className="w-1.5 h-1.5 rounded-full live-pulse" style={{ background: "var(--vezo-red)" }} /> Best listing right now
             </p>
             <p className="tabular-nums font-bold" style={{ fontSize: "clamp(3rem, 7vw, 4.4rem)", lineHeight: 0.95, letterSpacing: "-0.05em", color: "var(--text-1)" }}>
+              {l!.discountEstimated && <span style={{ fontSize: "0.5em", letterSpacing: 0 }}>&#8776;</span>}
               {(d * 100).toFixed(1)}<span style={{ fontSize: "0.5em", letterSpacing: "-0.02em" }}>%</span>
             </p>
             <p className="text-[14px] font-semibold mt-2" style={{ color: "var(--vezo-red)" }}>below value</p>
@@ -111,7 +114,8 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
               {l!.collection} #{l!.tokenId.toString()}
             </p>
             <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
-              {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
+              {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue - l!.revocable)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
+              {l!.revocable > 0n && " that can't be taken back"}
             </p>
             <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
               See it in the market <span aria-hidden className="cta-arrow">→</span>

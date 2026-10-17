@@ -195,7 +195,7 @@ function TradeTimeline() {
                 <Link href="/my-listings" className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>List your veNFT</Link>
               </>
             ) : (
-              <>Drawn from {best!.collection} #{best!.tokenId.toString()}, listed now at <DiscountText discountBps={best!.discountBps} />.</>
+              <>Drawn from {best!.collection} #{best!.tokenId.toString()}, listed now at <DiscountText discountBps={best!.discountBps} estimated={best!.discountEstimated} />.</>
             )}
           </p>
         </motion.div>
@@ -343,7 +343,7 @@ function ListedNow() {
                   <div className="text-[16px] font-bold tabular-nums whitespace-nowrap" style={{ color: "var(--text-1)" }}>
                     {fmtAmount(l.price)} <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>{getPaymentTokenSymbol(l.paymentToken)}</span>
                   </div>
-                  <div className="text-[13px] font-semibold"><DiscountText discountBps={l.discountBps} /></div>
+                  <div className="text-[13px] font-semibold"><DiscountText discountBps={l.discountBps} estimated={l.discountEstimated} /></div>
                 </div>
                 <ArrowRight className="row-arrow hidden md:block" style={{ width: 16, height: 16, color: "var(--text-3)" }} />
               </Link>

@@ -40,6 +40,8 @@ interface ListingModalProps {
     votingPower: bigint;
     lockEnd: bigint;
     isGrant?: boolean;
+    /** Grant tokens the issuer could still take back (0 = none). */
+    revocable?: bigint;
   } | null;
 }
 
@@ -126,6 +128,10 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
   const paymentTokenAddr = paymentToken === "BTC" ? contracts.BTC : paymentToken === "MEZO" ? contracts.MEZO : contracts.MUSD;
   const lockedSym = veNFT.collection === "veBTC" ? "BTC" : "MEZO";
   const holds = parseFloat(formatEther(veNFT.intrinsicValue));
+  // Grants: buyers see the discount against the part that can't be taken back,
+  // so the seller prices against that same number.
+  const revocable = veNFT.revocable ?? 0n;
+  const safe = parseFloat(formatEther(veNFT.intrinsicValue > revocable ? veNFT.intrinsicValue - revocable : 0n));
   const lockEndSec = Number(veNFT.lockEnd);
   const isPermanent = lockEndSec === 0;
   const isExpired = !isPermanent && lockEndSec <= Math.floor(Date.now() / 1000);
@@ -133,15 +139,17 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
   // Value of the position in the chosen currency: direct when it is the
   // locked token, otherwise through live USD prices (null when unavailable).
   const valueIn: number | null = (() => {
-    if (paymentToken === lockedSym) return holds;
+    if (safe <= 0) return null;
+    if (paymentToken === lockedSym) return safe;
     const a = prices[lockedSym];
     const b = prices[paymentToken];
-    return a && b ? (holds * a) / b : null;
+    return a && b ? (safe * a) / b : null;
   })();
 
   const priceNum = Number.parseFloat(price);
   const priceValid = Number.isFinite(priceNum) && priceNum > 0;
   const discount = priceValid && valueIn ? 1 - priceNum / valueIn : null;
+  const crossToken = paymentToken !== lockedSym;
   const receive = priceValid && feeRate !== null ? priceNum * (1 - feeRate) : null;
   const usd = priceValid && prices[paymentToken] ? priceNum * (prices[paymentToken] as number) : null;
 
@@ -294,9 +302,9 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                       <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
                         {discount !== null ? (
                           discount > 0.0005 ? (
-                            <><span className="font-semibold" style={{ color: "var(--vezo-red)" }}>{(discount * 100).toFixed(1)}% below</span> its value</>
+                            <><span className="font-semibold" style={{ color: "var(--vezo-red)" }}>{crossToken && "\u2248 "}{(discount * 100).toFixed(1)}% below</span> its value</>
                           ) : discount < -0.0005 ? (
-                            <><span className="font-semibold" style={{ color: "#B45309" }}>{(-discount * 100).toFixed(1)}% above</span> its value</>
+                            <><span className="font-semibold" style={{ color: "#B45309" }}>{crossToken && "\u2248 "}{(-discount * 100).toFixed(1)}% above</span> its value</>
                           ) : "At its value"
                         ) : valueIn ? (
                           <>Worth about {fmt(valueIn)} {paymentToken}</>
@@ -336,12 +344,26 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     </div>
                   </dl>
 
+                  {crossToken && (
+                    <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                      Your price stays fixed in {paymentToken}. If {paymentToken} moves against {lockedSym}, buyers see the discount change. You can update the price any time.
+                    </p>
+                  )}
+
                   {isGrant && (
                     <div className="flex gap-3 text-[13px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
                       <Award style={{ width: 15, height: 15, color: "#B45309", flexShrink: 0, marginTop: 2 }} />
                       <p style={{ color: "var(--text-2)" }}>
                         <span className="font-semibold" style={{ color: "var(--text-1)" }}>Grant position.</span>{" "}
-                        Buyers see that unvested tokens can still be revoked, and merge and split stay disabled until vesting ends.
+                        {revocable > 0n ? (
+                          <>
+                            The issuer can still take back <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{fmt(parseFloat(formatEther(revocable)))} {lockedSym}</span>.
+                            Buyers see your price against the <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{fmt(safe)} {lockedSym}</span> that&apos;s theirs for sure.
+                          </>
+                        ) : (
+                          <>Buyers see that unvested tokens can still be taken back.</>
+                        )}{" "}
+                        Merge and split stay off until it fully vests.
                       </p>
                     </div>
                   )}

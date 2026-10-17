@@ -1,9 +1,12 @@
 "use client";
 
 import { useReadContract, useReadContracts, useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNetwork } from "./useNetwork";
-import { computeDiscountBps } from "@/lib/computeDiscount";
+import { listingDiscount } from "@/lib/listingDiscount";
+import { revocableAmount } from "@/lib/grantVesting";
+import { usePriceTicker } from "./usePriceTicker";
 
 // ─── Discount logic ───────────────────────────────────────────────────────────
 // Discount percentages are only shown when the listing currency matches the
@@ -40,6 +43,16 @@ const MARKETPLACE_ABI = [
         { name: "active", type: "bool" },
       ],
     }],
+  },
+  {
+    name: "updatePrice",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "listingId", type: "uint256" },
+      { name: "newPrice", type: "uint256" },
+    ],
+    outputs: [],
   },
   {
     name: "listNFT",
@@ -269,7 +282,28 @@ const GRANT_NFT_ABI = [
     inputs: [{ name: "tokenId", type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  // Remaining vesting terms, used to work out how much is still revocable.
+  { name: "vestingStart", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { name: "cliffEnd", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }] },
+  { name: "grantRebaseAmount", type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }] },
 ] as const;
+
+const GRANT_FIELDS = ["grantManager", "vestingEnd", "vestingStart", "cliffEnd", "grantRebaseAmount"] as const;
+
+/** Decode the five grant reads for one token into isGrant + revocable amount. */
+function decodeGrant(results: ({ result?: unknown } | undefined)[], locked: bigint) {
+  const mgr = (results[0]?.result as string | undefined) ?? ZERO_ADDRESS;
+  const vestingEnd = (results[1]?.result as bigint | undefined) ?? 0n;
+  const vestingStart = results[2]?.result as bigint | undefined;
+  const cliffEnd = results[3]?.result as bigint | undefined;
+  const rebaseAmount = results[4]?.result as bigint | undefined;
+  const isGrant = mgr.toLowerCase() !== ZERO_ADDRESS && vestingEnd !== 0n;
+  const revocable =
+    isGrant && vestingStart !== undefined && cliffEnd !== undefined && rebaseAmount !== undefined
+      ? revocableAmount(locked, { vestingStart, vestingEnd, cliffEnd, rebaseAmount }, BigInt(Math.floor(Date.now() / 1000)))
+      : 0n;
+  return { isGrant, vestingEnd, cliffEnd: cliffEnd ?? 0n, revocable };
+}
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -322,6 +356,16 @@ export interface Listing {
   isGrant: boolean;
   /** Unix seconds when the grant's vesting schedule ends (0 = not a grant). */
   vestingEnd: bigint;
+  /** Unix seconds before which nothing vests (0 = unknown / not a grant). */
+  cliffEnd: bigint;
+  /** Locked tokens the grant manager could take back right now (0 = none). */
+  revocable: bigint;
+  /** Discount against the full locked amount. Equals discountBps unless this
+   *  is a grant with revocable tokens (discountBps then counts only the safe part). */
+  fullDiscountBps: bigint | null;
+  /** True when the discount is an estimate from live USD prices (listing priced
+   *  in a different token than it holds). */
+  discountEstimated: boolean;
 }
 
 interface ListingTuple {
@@ -343,6 +387,9 @@ export interface WalletVeNFT {
   lockEnd: bigint;
   /** True if this is a grant NFT — cannot be merged or split. */
   isGrant: boolean;
+  /** Locked tokens the grant manager could take back right now (0 = none). */
+  revocable: bigint;
+  vestingEnd: bigint;
 }
 
 // ─── useMarketplace ───────────────────────────────────────────────────────────
@@ -430,6 +477,17 @@ export function useMarketplace() {
     });
   };
 
+  // Seller-only on-chain; the currency stays the same, only the amount changes.
+  const updatePrice = async (listingId: number, newPrice: bigint) => {
+    if (!isMarketplaceReady) throw new Error("Marketplace not deployed");
+    return writeContractAsync({
+      address: marketplaceAddress,
+      abi: MARKETPLACE_ABI,
+      functionName: "updatePrice",
+      args: [BigInt(listingId), newPrice],
+    });
+  };
+
   const approveNFT = async (collection: string, tokenId: bigint) => {
     if (!isMarketplaceReady) throw new Error("Marketplace not deployed");
     return writeContractAsync({
@@ -473,6 +531,7 @@ export function useMarketplace() {
     approveTokenForBuy,
     executeBuy,
     cancelListing,
+    updatePrice,
     approveNFT,
     approveToken,
     refetchCount,
@@ -546,30 +605,22 @@ export function useListing(listingId: number) {
   // ── Grant NFT detection ────────────────────────────────────────────────────
   // A veNFT is a Grant NFT if grantManager[tokenId] != address(0) AND vestingEnd[tokenId] != 0.
   // Grant NFTs cannot be merged or split but CAN be listed and purchased.
-  const { data: grantManagerAddr } = useReadContract({
-    address: collection as `0x${string}`,
-    abi: GRANT_NFT_ABI,
-    functionName: "grantManager",
-    args: tokenId !== undefined ? [tokenId] : undefined,
-    chainId,
+  const { data: grantResults } = useReadContracts({
+    contracts: GRANT_FIELDS.map((functionName) => ({
+      address: collection as `0x${string}`,
+      abi: GRANT_NFT_ABI,
+      functionName,
+      args: [tokenId ?? 0n] as const,
+      chainId,
+    })),
     query: { enabled: !!collection && tokenId !== undefined },
   });
-
-  const { data: vestingEndVal } = useReadContract({
-    address: collection as `0x${string}`,
-    abi: GRANT_NFT_ABI,
-    functionName: "vestingEnd",
-    args: tokenId !== undefined ? [tokenId] : undefined,
-    chainId,
-    query: { enabled: !!collection && tokenId !== undefined },
-  });
+  const prices = usePriceTicker();
 
   const [intrinsicValue, lockEnd] = (adapterData as [bigint, bigint] | undefined) ?? [0n, 0n];
 
   // Derive Grant flag — defaults to false while data is loading (no UI flicker)
-  const grantMgr = (grantManagerAddr as string | undefined) ?? ZERO_ADDRESS;
-  const vestingEndTs = (vestingEndVal as bigint | undefined) ?? 0n;
-  const isGrant = grantMgr.toLowerCase() !== ZERO_ADDRESS && vestingEndTs !== 0n;
+  const grant = decodeGrant(grantResults ?? [], intrinsicValue ?? 0n);
 
   if (!listing) return { listing: null, isLoading };
 
@@ -582,15 +633,16 @@ export function useListing(listingId: number) {
   const MEZO_TOKEN_ADDR = "0x7b7c000000000000000000000000000000000001";
   const nftLockedTokenAddr = isVeBTC ? BTC_TOKEN_ADDR : MEZO_TOKEN_ADDR;
 
-  // Only same-token listings get a discount percentage. Cross-token listings
-  // intentionally render "unknown" instead of a guessed percentage.
-  const discountBps = computeDiscountBps(
-    iv,
-    nftLockedTokenAddr,
+  // Same-token listings get an exact discount; other currencies an estimate
+  // from live prices. Grants count only the part that can't be revoked.
+  const disc = listingDiscount({
+    intrinsicValue: iv,
+    revocable: grant.revocable,
+    lockedToken: nftLockedTokenAddr,
     price,
-    listing.paymentToken,
-    lockEnd,
-  );
+    paymentToken: listing.paymentToken,
+    prices,
+  });
 
   // Compute voting power from locked() data — avoids calling balanceOfNFT which
   // does not exist on the deployed Velodrome v2 veBTC/veMEZO contracts
@@ -626,9 +678,13 @@ export function useListing(listingId: number) {
     intrinsicValue: iv,
     votingPower,
     lockEnd,
-    discountBps,
-    isGrant,
-    vestingEnd: vestingEndTs,
+    discountBps: disc.discountBps,
+    fullDiscountBps: disc.fullDiscountBps,
+    discountEstimated: disc.estimated,
+    isGrant: grant.isGrant,
+    vestingEnd: grant.vestingEnd,
+    cliffEnd: grant.cliffEnd,
+    revocable: grant.revocable,
   };
 
   return { listing: fullListing, isLoading };
@@ -733,30 +789,19 @@ export function useUserVeNFTs() {
     query: { enabled: isAdapterDeployed && tokenPairs.length > 0 },
   });
 
-  // Step 4: Grant NFT detection — batch-read grantManager and vestingEnd for every token.
-  // If either call reverts (contract doesn't implement the function) the result is ignored
-  // and isGrant defaults to false — safe fallback with no UI impact.
-  const grantManagerCalls = tokenPairs.map((pair) => ({
-    address: pair.nftContract,
-    abi: GRANT_NFT_ABI,
-    functionName: "grantManager" as const,
-    args: [pair.tokenId] as const,
-    chainId,
-  }));
-  const vestingEndCalls = tokenPairs.map((pair) => ({
-    address: pair.nftContract,
-    abi: GRANT_NFT_ABI,
-    functionName: "vestingEnd" as const,
-    args: [pair.tokenId] as const,
-    chainId,
-  }));
-
-  const { data: grantManagerResults } = useReadContracts({
-    contracts: grantManagerCalls,
-    query: { enabled: tokenPairs.length > 0 },
-  });
-  const { data: vestingEndResults } = useReadContracts({
-    contracts: vestingEndCalls,
+  // Step 4: Grant NFT detection — batch-read the grant terms for every token
+  // (5 reads each). If a call reverts the result is ignored and isGrant
+  // defaults to false — safe fallback with no UI impact.
+  const { data: grantResults } = useReadContracts({
+    contracts: tokenPairs.flatMap((pair) =>
+      GRANT_FIELDS.map((functionName) => ({
+        address: pair.nftContract,
+        abi: GRANT_NFT_ABI,
+        functionName,
+        args: [pair.tokenId] as const,
+        chainId,
+      })),
+    ),
     query: { enabled: tokenPairs.length > 0 },
   });
 
@@ -768,9 +813,8 @@ export function useUserVeNFTs() {
     const isVeBTC = pair.collection === "veBTC";
     const votingPower = computeVotingPower(intrinsicValue, lockEnd, isVeBTC);
 
-    const grantMgr  = (grantManagerResults?.[i]?.result as string | undefined) ?? ZERO_ADDRESS;
-    const vestingTs = (vestingEndResults?.[i]?.result  as bigint | undefined) ?? 0n;
-    const isGrant   = grantMgr.toLowerCase() !== ZERO_ADDRESS && vestingTs !== 0n;
+    const n = GRANT_FIELDS.length;
+    const grant = decodeGrant(grantResults?.slice(i * n, i * n + n) ?? [], intrinsicValue);
 
     return {
       tokenId: pair.tokenId,
@@ -779,7 +823,9 @@ export function useUserVeNFTs() {
       intrinsicValue,
       votingPower,
       lockEnd,
-      isGrant,
+      isGrant: grant.isGrant,
+      revocable: grant.revocable,
+      vestingEnd: grant.vestingEnd,
     };
   });
 
@@ -817,8 +863,11 @@ interface RawListingDTO {
   votingPower: string;
   lockEnd: string;
   discountBps: string | null;
+  fullDiscountBps?: string | null;
   isGrant: boolean;
   vestingEnd?: string;
+  cliffEnd?: string;
+  revocable?: string;
 }
 
 export function useActiveListings() {
@@ -857,8 +906,12 @@ export function useActiveListings() {
         votingPower: BigInt(l.votingPower),
         lockEnd: BigInt(l.lockEnd),
         discountBps: l.discountBps === null ? null : BigInt(l.discountBps),
+        fullDiscountBps: l.fullDiscountBps == null ? (l.discountBps === null ? null : BigInt(l.discountBps)) : BigInt(l.fullDiscountBps),
+        discountEstimated: false,
         isGrant: l.isGrant,
         vestingEnd: BigInt(l.vestingEnd ?? "0"),
+        cliffEnd: BigInt(l.cliffEnd ?? "0"),
+        revocable: BigInt(l.revocable ?? "0"),
       }));
     },
     enabled: isMarketplaceReady,
@@ -876,8 +929,29 @@ export function useActiveListings() {
     retryDelay: (n) => Math.min(1000 * 2 ** n, 8000),
   });
 
+  // The server can't price one token in another, so listings priced in a
+  // different currency come back with no discount. Fill those in here with an
+  // estimate from live USD prices (flagged, so the UI can mark it "≈").
+  const prices = usePriceTicker();
+  const listings = useMemo(() => {
+    const rows = data ?? [];
+    if (!prices.lastUpdated) return rows;
+    return rows.map((l) => {
+      if (l.fullDiscountBps !== null) return l;
+      const d = listingDiscount({
+        intrinsicValue: l.intrinsicValue,
+        revocable: l.revocable,
+        lockedToken: l.collection === "veBTC" ? "0x7b7c000000000000000000000000000000000000" : "0x7b7c000000000000000000000000000000000001",
+        price: l.price,
+        paymentToken: l.paymentToken,
+        prices,
+      });
+      return d.estimated ? { ...l, discountBps: d.discountBps, fullDiscountBps: d.fullDiscountBps, discountEstimated: true } : l;
+    });
+  }, [data, prices]);
+
   return {
-    listings: data ?? [],
+    listings,
     // Only "loading" on the very first fetch (no data yet). After that, reloads
     // keep showing the prior list — no empty-state flicker.
     isLoading: isLoading && !data,

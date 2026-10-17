@@ -377,6 +377,11 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
   const lockEndSec = listing ? Number(listing.lockEnd) : 0;
   const isPermanentLock = lockEndSec === 0;
   const isExpiredLock = !isPermanentLock && lockEndSec <= Math.floor(Date.now() / 1000);
+  // Grant dates, for the disclosure under the cost breakdown.
+  const fmtDate = (sec: bigint) => new Date(Number(sec) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  const vestDate = listing && listing.vestingEnd > 0n ? fmtDate(listing.vestingEnd) : "it fully vests";
+  const cliffDate = listing && listing.cliffEnd > 0n ? fmtDate(listing.cliffEnd) : "";
+  const beforeCliff = !!listing && listing.cliffEnd > 0n && Number(listing.cliffEnd) > Math.floor(Date.now() / 1000);
 
   // USD equivalent of the asking price, from the same live feed as the ticker.
   const priceUsd: number | null = (() => {
@@ -567,13 +572,23 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   </p>
                   {listing.discountBps !== null && Number(listing.discountBps) > 0 && (
                     <span className="text-[13px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#fff", background: "var(--vezo-red)" }}>
-                      {(Number(listing.discountBps) / 100).toFixed(1)}% below value
+                      {listing.discountEstimated && "\u2248 "}{(Number(listing.discountBps) / 100).toFixed(1)}% below value
+                    </span>
+                  )}
+                  {listing.discountBps !== null && Number(listing.discountBps) < 0 && (
+                    <span className="text-[13px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>
+                      {listing.discountEstimated && "\u2248 "}{(-Number(listing.discountBps) / 100).toFixed(1)}% above value
                     </span>
                   )}
                 </div>
                 <p className="text-[13px] mt-2 tabular-nums" style={{ color: "var(--text-3)" }}>
                   {priceUsd !== null ? <>&#8776; ${priceUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : <>&nbsp;</>}
                 </p>
+                {listing.discountEstimated && (
+                  <p className="text-[13px] mt-1" style={{ color: "var(--text-3)" }}>
+                    Priced in {paymentSymbol}, not {lockedSym}. The discount is an estimate at today&apos;s prices and moves with them.
+                  </p>
+                )}
               </div>
 
               {/* What you get: three facts, one strip */}
@@ -621,23 +636,46 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 </dl>
               )}
 
-              {/* Grant disclosure: one plain row, detail behind a link */}
+              {/* Grant disclosure: what's yours for sure vs what the issuer can take back */}
               {step !== "done" && listing.isGrant && (
-                <div className="flex gap-3 text-[13px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
-                  <Award style={{ width: 15, height: 15, color: "#B45309", flexShrink: 0, marginTop: 2 }} />
-                  <p style={{ color: "var(--text-2)" }}>
-                    <span className="font-semibold" style={{ color: "var(--text-1)" }}>Grant position.</span>{" "}
-                    Unvested tokens can be revoked until{" "}
-                    <span className="font-semibold" style={{ color: "var(--text-1)" }}>
-                      {listing.vestingEnd > 0n
-                        ? new Date(Number(listing.vestingEnd) * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                        : "its vesting date"}
-                    </span>
-                    .{" "}
-                    <a href="https://docs.vezo.exchange/architecture/what-we-built/" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2" style={{ color: "var(--text-1)" }}>
-                      Details
-                    </a>
-                  </p>
+                <div className="text-[13px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
+                  <div className="flex gap-3">
+                    <Award style={{ width: 15, height: 15, color: "#B45309", flexShrink: 0, marginTop: 2 }} />
+                    <p style={{ color: "var(--text-2)" }}>
+                      <span className="font-semibold" style={{ color: "var(--text-1)" }}>Grant position.</span>{" "}
+                      Until{" "}
+                      <span className="font-semibold" style={{ color: "var(--text-1)" }}>{vestDate}</span>
+                      , the issuer can take back the tokens that haven&apos;t vested yet.{" "}
+                      <a href="https://docs.vezo.exchange/architecture/what-we-built/" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2" style={{ color: "var(--text-1)" }}>
+                        Details
+                      </a>
+                    </p>
+                  </div>
+                  {listing.revocable > 0n && (
+                    <>
+                      <dl className="mt-3 pl-[27px] space-y-1 tabular-nums">
+                        <div className="flex justify-between gap-3">
+                          <dt style={{ color: "var(--text-3)" }}>Yours for sure today</dt>
+                          <dd className="font-semibold" style={{ color: "var(--text-1)" }}>{formatAmount(listing.intrinsicValue - listing.revocable)} {lockedSym}</dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <dt style={{ color: "var(--text-3)" }}>Can still be taken back</dt>
+                          <dd className="font-semibold" style={{ color: "#B45309" }}>{formatAmount(listing.revocable)} {lockedSym}</dd>
+                        </div>
+                      </dl>
+                      <p className="mt-2 pl-[27px] text-[12px]" style={{ color: "var(--text-3)" }}>
+                        {beforeCliff && <>Nothing vests before {cliffDate}. </>}
+                        Value here counts only what&apos;s yours for sure
+                        {listing.fullDiscountBps !== null && (
+                          <>
+                            ; against all {formatAmount(listing.intrinsicValue)} {lockedSym} the price is {listing.discountEstimated ? "\u2248 " : ""}
+                            {(Math.abs(Number(listing.fullDiscountBps)) / 100).toFixed(1)}% {Number(listing.fullDiscountBps) >= 0 ? "below" : "above"}
+                          </>
+                        )}
+                        .
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
