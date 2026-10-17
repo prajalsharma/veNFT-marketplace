@@ -50,7 +50,10 @@ export function useLiveMarket(): LiveMarket {
   return useMemo(() => {
     // Buyable only: an active listing whose lock has expired can't be bought,
     // so it must not lead the landing page or count toward its stats.
-    const open = listings.filter((l) => isBuyable(l));
+    // The landing page shows every position the plain way: discount against
+    // what it holds. Grant detail (the revocable part) lives in the market and
+    // the buy popup, where the buyer is actually deciding.
+    const open = listings.filter((l) => isBuyable(l)).map((l) => ({ ...l, discountBps: l.fullDiscountBps }));
     const byDiscount = [...open].sort((a, b) => {
       const da = a.discountBps === null ? -Infinity : Number(a.discountBps);
       const db = b.discountBps === null ? -Infinity : Number(b.discountBps);

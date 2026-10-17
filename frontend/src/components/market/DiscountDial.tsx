@@ -63,7 +63,7 @@ function Dial({ paid, lock, lockColor, animKey }: { paid: number; lock: number; 
 export function DiscountDial({ listing, status }: { listing: Listing | null; status: "loading" | "ready" | "empty" | "stale" | "error" }) {
   const reduce = useReducedMotion();
   // Only a real discount leads here: a listing priced at or above its value
-  // (e.g. a grant once revocable tokens are left out) leaves the spot open.
+  // leaves the spot open.
   const l = listing && listing.discountBps !== null && listing.discountBps > 0n ? listing : null;
   const illustrative = !l;
   const d = l ? Number(l.discountBps) / 10_000 : 0.15;
@@ -114,8 +114,7 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
               {l!.collection} #{l!.tokenId.toString()}
             </p>
             <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
-              {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue - l!.revocable)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
-              {l!.revocable > 0n && " that can't be taken back"}
+              {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
             </p>
             <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
               See it in the market <span aria-hidden className="cta-arrow">→</span>
