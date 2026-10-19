@@ -53,7 +53,7 @@ function StatBar({
     <div className="flex flex-col gap-1" title={hint}>
       <span className="eyebrow" style={hint ? { cursor: "help" } : undefined}>{label}</span>
       <span
-        className={isNote ? "text-[13px] font-semibold leading-none" : "text-[20px] font-bold tabular-nums leading-none"}
+        className={isNote ? "text-[14px] font-semibold leading-none" : "text-[20px] font-bold tabular-nums leading-none"}
         style={{
           color: isNote ? "var(--text-3)" : color,
           fontVariantNumeric: "tabular-nums",
@@ -163,12 +163,12 @@ function LoadFailureState({
             : "The marketplace contract couldn't be read. This is a network/RPC error, so listings may exist but can't be fetched right now."}
         </p>
         {marketplaceAddress && (
-          <p className="text-[11px] mt-2 font-mono" style={{ color: "var(--text-3)" }}>
+          <p className="text-[12px] mt-2 font-mono" style={{ color: "var(--text-3)" }}>
             Querying: {marketplaceAddress}
           </p>
         )}
         {message && (
-          <p className="text-[11px] mt-1" style={{ color: "#EF4444", maxWidth: "52ch", wordBreak: "break-word" }}>
+          <p className="text-[12px] mt-1" style={{ color: "#EF4444", maxWidth: "52ch", wordBreak: "break-word" }}>
             {message}
           </p>
         )}
@@ -176,7 +176,7 @@ function LoadFailureState({
       {!notDeployed && (
         <button
           onClick={onRetry}
-          className="text-xs font-bold px-4 py-2 rounded-lg"
+          className="text-[13px] font-bold px-4 py-2 rounded-lg"
           style={{ background: "var(--bg-2)", border: "1px solid var(--border)", color: "var(--text-1)" }}
         >
           Retry
@@ -194,7 +194,7 @@ function ActiveFilterPill({ label, onRemove }: { label: string; onRemove: () => 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.88 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-bold"
+      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[14px] font-bold"
       style={{
         background: "rgba(255,0,64,0.08)",
         border: "1px solid rgba(255,0,64,0.22)",
@@ -246,7 +246,7 @@ function SortMenu({ value, onChange }: { value: string; onChange: (v: string) =>
       <button
         onClick={() => setOpen((o) => !o)}
         className="input-field cursor-pointer flex items-center gap-2 whitespace-nowrap"
-        style={{ fontSize: "0.8rem", fontWeight: 600, paddingLeft: 14, paddingRight: 12 }}
+        style={{ fontSize: "0.875rem", fontWeight: 600, paddingLeft: 14, paddingRight: 12 }}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -273,7 +273,7 @@ function SortMenu({ value, onChange }: { value: string; onChange: (v: string) =>
                 role="option"
                 aria-selected={v === value}
                 onClick={() => { onChange(v); setOpen(false); }}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-semibold text-left transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[14px] font-semibold text-left transition-colors"
                 style={{
                   color: v === value ? "#FF0040" : "var(--text-2)",
                   background: v === value ? "rgba(255,0,64,0.08)" : "transparent",
@@ -530,7 +530,7 @@ export default function MarketplaceClient() {
                 Locked veBTC and veMEZO positions, sold below the value they hold.
               </p>
             </div>
-            <p className="flex items-center gap-2 text-[13px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
+            <p className="flex items-center gap-2 text-[14px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
               Right now
               <span className="font-normal" style={{ color: "var(--text-3)" }}>· positions buyable at this moment</span>
@@ -623,7 +623,7 @@ export default function MarketplaceClient() {
 
               {/* Result line + active filter summary */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4 min-h-[28px]">
-                <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
+                <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
                   <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{filteredListings.length}</span>{" "}
                   {filteredListings.length === 1 ? "listing" : "listings"}
                 </p>
@@ -645,7 +645,7 @@ export default function MarketplaceClient() {
                   )}
                 </AnimatePresence>
                 {activeFilterCount > 0 && (
-                  <button onClick={resetFilters} className="text-[13px] font-semibold hover:underline underline-offset-2" style={{ color: "var(--text-2)" }}>
+                  <button onClick={resetFilters} className="text-[14px] font-semibold hover:underline underline-offset-2" style={{ color: "var(--text-2)" }}>
                     Clear all
                   </button>
                 )}

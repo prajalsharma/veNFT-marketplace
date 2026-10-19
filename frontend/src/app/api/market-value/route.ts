@@ -98,7 +98,14 @@ async function priceWindow(from: number, now: number): Promise<[number, number][
   if (hit && closed) return hit;
   const res = await fetch(
     `https://api.coingecko.com/api/v3/coins/mezo/market_chart/range?vs_currency=usd&from=${from}&to=${Math.min(to, now)}`,
-    { cache: "no-store", headers: { Accept: "application/json", "User-Agent": "Vezo-Exchange/1.0" } }
+    {
+      headers: { Accept: "application/json", "User-Agent": "Vezo-Exchange/1.0" },
+      // Closed windows never change: keep them in Next's shared data cache so
+      // every instance and deploy reuses them instead of spending CoinGecko's
+      // small free rate limit. Only 200 responses are cached. The open window
+      // refreshes hourly, matching the hourly points it returns.
+      ...(closed ? { cache: "force-cache" as const } : { next: { revalidate: 3600 } }),
+    }
   );
   if (!res.ok) {
     if (hit) return hit;

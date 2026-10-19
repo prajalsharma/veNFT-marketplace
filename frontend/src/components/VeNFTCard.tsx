@@ -54,7 +54,7 @@ export function fmtAmount(wei: bigint): string {
 export function GrantTag() {
   return (
     <span
-      className="text-[12px] font-semibold px-1.5 py-0.5 rounded shrink-0 cursor-help"
+      className="text-[13px] font-semibold px-1.5 py-0.5 rounded shrink-0 cursor-help"
       style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}
       title="Grant: until it fully vests, the issuer can take back the unvested tokens. The discount counts only the part that's yours for sure."
     >
@@ -132,7 +132,7 @@ export function VeNFTCard({
               </h3>
               {isGrant && <GrantTag />}
             </div>
-            <p className="text-[13px] mt-0.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[14px] mt-0.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
               {isPermanent ? "Permanent lock" : isExpired ? "Lock expired" : <>Unlocks in <CountdownCompact lockEnd={lockEnd} /></>}
             </p>
           </div>
@@ -146,18 +146,18 @@ export function VeNFTCard({
           </p>
           <span className="text-[14px] font-semibold"><DiscountText discountBps={discountBps} estimated={discountEstimated} /></span>
         </div>
-        <p className="text-[13px] mt-1 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+        <p className="text-[14px] mt-1 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
           {usd !== null ? <>&#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : " "}
         </p>
 
         {/* Price against what the position holds */}
         <div className="mt-4">
           <PriceValueBar discountBps={discountBps} legend />
-          <p className="text-[12px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+          <p className="text-[13px] mt-1.5 tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
             Holds <span className="font-semibold" style={{ color: "var(--text-2)" }}>{fmtAmount(intrinsicValue)} {lockedSym}</span>
           </p>
           {revocable > 0n && (
-            <p className="text-[12px] mt-0.5 tabular-nums" style={{ color: "#B45309", fontVariantNumeric: "tabular-nums" }}>
+            <p className="text-[13px] mt-0.5 tabular-nums" style={{ color: "#B45309", fontVariantNumeric: "tabular-nums" }}>
               {fmtAmount(revocable)} {lockedSym} can still be taken back
             </p>
           )}

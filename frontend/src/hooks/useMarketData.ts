@@ -151,6 +151,9 @@ export function useMarketValue(): MarketValue | null {
       return res.json();
     },
     staleTime: 10 * 60_000,
+    // Price history can be briefly unreachable (rate limits on a cold start):
+    // keep asking once a minute until it loads, then settle.
+    refetchInterval: (q) => (q.state.data?.status === "ok" ? false : 60_000),
     refetchOnWindowFocus: false,
     retry: 2,
   });

@@ -287,7 +287,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
               href={`${EXPLORER}/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              className="inline-flex items-center gap-1.5 text-[14px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
               style={{ color: "#10B981" }}
             >
               View transaction <ExternalLink style={{ width: 11, height: 11 }} />
@@ -295,7 +295,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
           )}
           <button
             onClick={() => { setStage("idle"); setTxHash(null); setError(null); }}
-            className="text-[13px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="text-[14px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ color: "var(--text-2)" }}
           >
             Send another
@@ -317,7 +317,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             Back the build
           </h2>
         </div>
-        <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+        <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-3)" }}>
           The Mezo-native way to buy us a coffee. Straight to the team wallet, in the open.
         </p>
       </div>
@@ -332,7 +332,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
               type="button"
               onClick={() => pickToken(t)}
               aria-pressed={active}
-              className="flex items-center justify-center gap-2 h-10 rounded-xl text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              className="flex items-center justify-center gap-2 h-10 rounded-xl text-[14px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
               style={
                 active
                   ? { background: "rgba(255,0,64,0.07)", border: "1px solid rgba(255,0,64,0.3)", color: "var(--text-1)" }
@@ -357,7 +357,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
                 type="button"
                 onClick={() => pickUsd(u)}
                 aria-pressed={active}
-                className="px-3.5 min-h-[40px] rounded-lg text-[13px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                className="px-3.5 min-h-[40px] rounded-lg text-[14px] font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={
                   active
                     ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
@@ -369,7 +369,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             );
           })}
           {!prices[token] && (
-            <span className="text-[12px]" style={{ color: "var(--text-4)" }}>
+            <span className="text-[13px]" style={{ color: "var(--text-4)" }}>
               waiting for live prices…
             </span>
           )}
@@ -393,14 +393,14 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             }}
           />
           <span
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[13px] font-bold pointer-events-none"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[14px] font-bold pointer-events-none"
             style={{ color: "var(--text-3)" }}
           >
             {token}
           </span>
         </div>
         {usd !== null && (
-          <p className="text-[12px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+          <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
             &#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })} USD
           </p>
         )}
@@ -426,7 +426,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             type="button"
             onClick={() => setAnon((a) => !a)}
             aria-pressed={anon}
-            className="shrink-0 px-3 py-2.5 rounded-xl text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="shrink-0 px-3 py-2.5 rounded-xl text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={
               anon
                 ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
@@ -436,7 +436,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             Stay anonymous
           </button>
         </div>
-        <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-4)" }}>
+        <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-4)" }}>
           The name travels inside your own transaction. The board is rebuilt from the
           chain, not from a database we could edit.
         </p>
@@ -448,7 +448,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-[13px]"
+            className="text-[14px]"
             style={{ color: "#EF4444" }}
             role="alert"
           >
@@ -522,16 +522,16 @@ function AddressBlock() {
       className="rounded-2xl p-5"
       style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}
     >
-      <p className="text-[13px] font-semibold mb-1" style={{ color: "var(--text-1)" }}>
+      <p className="text-[14px] font-semibold mb-1" style={{ color: "var(--text-1)" }}>
         Prefer your own wallet?
       </p>
-      <p className="text-[13px] leading-relaxed mb-3" style={{ color: "var(--text-3)" }}>
+      <p className="text-[14px] leading-relaxed mb-3" style={{ color: "var(--text-3)" }}>
         Send BTC, MEZO, or MUSD on the Mezo network directly. Anything that arrives
         here counts as support, because this wallet does nothing else.
       </p>
       <div className="flex items-center gap-2">
         <code
-          className="flex-1 min-w-0 truncate text-[12px] font-mono px-3 py-2.5 rounded-lg"
+          className="flex-1 min-w-0 truncate text-[13px] font-mono px-3 py-2.5 rounded-lg"
           style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-2)" }}
         >
           {SUPPORT_ADDRESS}
@@ -610,7 +610,7 @@ function SupportersBoard({
           <h2 className="text-[16px] font-bold mb-1" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
             Supporters
           </h2>
-          <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
+          <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
             {data && data.donors.length > 0
               ? `${data.donors.length} ${data.donors.length === 1 ? "supporter" : "supporters"} · ${data.donationCount} ${data.donationCount === 1 ? "contribution" : "contributions"}`
               : "Every contribution, straight from the chain."}
@@ -620,7 +620,7 @@ function SupportersBoard({
           href={`${EXPLORER}/address/${SUPPORT_ADDRESS}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-[12px] font-semibold shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
           style={{ color: "var(--text-3)" }}
         >
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#10B981" }} />
@@ -634,14 +634,14 @@ function SupportersBoard({
           className="mx-6 mb-4 px-4 py-3 rounded-xl flex items-baseline justify-between gap-3 flex-wrap"
           style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
         >
-          <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
+          <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
             Raised so far
           </span>
           <span className="text-right">
             <span className="text-[16px] font-bold tabular-nums mr-2" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
               &#8776; ${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="text-[12px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+            <span className="text-[13px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
               {tokenLine}
             </span>
           </span>
@@ -663,7 +663,7 @@ function SupportersBoard({
           <p className="text-[14px] font-semibold mb-1" style={{ color: "var(--text-2)" }}>
             No names on the board yet.
           </p>
-          <p className="text-[13px]" style={{ color: "var(--text-3)" }}>
+          <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
             The first one is the most fun to be.
           </p>
         </div>
@@ -682,7 +682,7 @@ function SupportersBoard({
                 style={{ borderTop: "1px solid var(--border-subtle)" }}
               >
                 <span
-                  className="w-6 shrink-0 text-[13px] font-bold tabular-nums"
+                  className="w-6 shrink-0 text-[14px] font-bold tabular-nums"
                   style={{ color: i === 0 ? "#FF0040" : i < 3 ? "var(--text-1)" : "var(--text-4)", fontVariantNumeric: "tabular-nums" }}
                 >
                   {i + 1}
@@ -690,21 +690,21 @@ function SupportersBoard({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`truncate text-[14px] font-semibold ${d.mono ? "font-mono text-[13px]" : ""}`}
+                      className={`truncate text-[14px] font-semibold ${d.mono ? "font-mono text-[14px]" : ""}`}
                       style={{ color: d.anon ? "var(--text-2)" : "var(--text-1)" }}
                     >
                       {d.display}
                     </span>
                     {you && (
                       <span
-                        className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0"
+                        className="text-[12px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0"
                         style={{ background: "rgba(255,0,64,0.1)", color: "#FF0040" }}
                       >
                         you
                       </span>
                     )}
                   </div>
-                  <p className="text-[12px] tabular-nums mt-0.5" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+                  <p className="text-[13px] tabular-nums mt-0.5" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
                     {(["BTC", "MEZO", "MUSD"] as const)
                       .filter((t) => BigInt(d[t]) > 0n)
                       .map((t) => `${fmtAmount(BigInt(d[t]))} ${t}`)
@@ -752,7 +752,7 @@ function MainnetRecord() {
 
   return (
     <>
-      <p className="text-[12px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
+      <p className="text-[13px] font-bold uppercase tracking-widest mb-5" style={{ color: "var(--text-3)" }}>
         Since mainnet launch &middot; March 16, 2026{hist.status === "stale" && asOf ? ` \u2192 ${asOf}` : ""}
       </p>
       {hist.status === "error" ? (
@@ -773,14 +773,14 @@ function MainnetRecord() {
               ) : (
                 <span className="inline-block h-[1.6rem] w-16 rounded skeleton" aria-label={`Loading ${s.l}`} />
               )}
-              <p className="text-[12px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
-              {s.s ? <p className="text-[12px] tabular-nums" style={{ color: "var(--text-2)" }}>{s.s}</p> : null}
+              <p className="text-[13px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
+              {s.s ? <p className="text-[17px] font-bold tabular-nums mt-1 leading-none" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>{s.s}</p> : null}
             </div>
           ))}
         </div>
       )}
       {value && hist.status !== "error" ? (
-        <p className="text-[12px] -mt-1 mb-5 text-center" style={{ color: "var(--text-3)" }}>
+        <p className="text-[13px] -mt-1 mb-5 text-center" style={{ color: "var(--text-3)" }}>
           Dollar values use MEZO&apos;s price at the time of each sale or listing.
         </p>
       ) : null}
@@ -907,7 +907,7 @@ export default function SupportClient() {
             href="https://dune.com/vezo/vezo"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 text-[13px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="inline-flex items-center justify-center gap-1.5 text-[14px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ color: "#FF0040" }}
           >
             <BarChart3 style={{ width: 13, height: 13, flexShrink: 0 }} />

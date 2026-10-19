@@ -142,7 +142,7 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom bar: provenance and presence */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 py-6 text-[13px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 py-6 text-[14px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span>© {new Date().getFullYear()} Vezo</span>
             <a href="https://mezo.org" target="_blank" rel="noopener noreferrer" className="footer-link footer-link--muted inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]">
@@ -158,7 +158,7 @@ export function SiteFooter() {
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: network === "testnet" ? "#B45309" : "var(--success)" }} aria-hidden />
                 <span>{network === "testnet" ? "Testnet" : "Mainnet"} contract</span>
-                <span className="font-mono text-[12px]">{market.slice(0, 6)}…{market.slice(-4)}</span>
+                <span className="font-mono text-[13px]">{market.slice(0, 6)}…{market.slice(-4)}</span>
               </a>
             )}
           </div>

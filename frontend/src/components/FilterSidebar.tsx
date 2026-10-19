@@ -32,7 +32,7 @@ interface FilterSidebarProps extends FilterState {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[13px] font-semibold mb-3" style={{ color: "var(--text-2)" }}>{children}</p>
+    <p className="text-[14px] font-semibold mb-3" style={{ color: "var(--text-2)" }}>{children}</p>
   );
 }
 
@@ -53,7 +53,7 @@ function FilterChip({
     <button
       onClick={onClick}
       aria-pressed={active}
-      className="flex items-center justify-center h-10 px-3 rounded-xl border text-[13px] font-semibold transition-all duration-150"
+      className="flex items-center justify-center h-10 px-3 rounded-xl border text-[14px] font-semibold transition-all duration-150"
       style={{
         background: active ? "var(--text-1)" : "transparent",
         borderColor: active ? "var(--text-1)" : "var(--hairline)",
@@ -99,7 +99,7 @@ function PresetChip({
       onClick={onClick}
       aria-pressed={active}
       title={hint}
-      className="h-10 px-3 rounded-xl border text-[13px] font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
+      className="h-10 px-3 rounded-xl border text-[14px] font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-150"
       style={{
         background: active ? "var(--text-1)" : "transparent",
         borderColor: active ? "var(--text-1)" : "var(--hairline)",
@@ -277,7 +277,7 @@ export function FilterSidebar({
               <div className="flex items-baseline gap-2.5">
                 <h3 className="text-[19px] font-bold" style={{ letterSpacing: "-0.02em" }}>Filters</h3>
                 {activeFilterCount > 0 && (
-                  <span className="text-[13px] font-semibold tabular-nums" style={{ color: "var(--text-3)" }}>
+                  <span className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-3)" }}>
                     {activeFilterCount} on
                   </span>
                 )}
@@ -320,13 +320,13 @@ export function FilterSidebar({
               <section>
                 <div className="flex justify-between items-center mb-3">
                   <SectionLabel>Discount range</SectionLabel>
-                  <span className="text-[13px] font-semibold tabular-nums mb-3" style={{ color: "var(--text-1)" }}>
+                  <span className="text-[14px] font-semibold tabular-nums mb-3" style={{ color: "var(--text-1)" }}>
                     {minDiscount}% – {maxDiscount}%
                   </span>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-[11px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
+                    <div className="flex justify-between text-[12px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
                       <span>Min discount</span>
                       <span className="font-bold" style={{ color: "var(--text-2)" }}>{minDiscount}%</span>
                     </div>
@@ -347,7 +347,7 @@ export function FilterSidebar({
                     />
                   </div>
                   <div>
-                    <div className="flex justify-between text-[11px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
+                    <div className="flex justify-between text-[12px] font-medium mb-2" style={{ color: "var(--text-3)" }}>
                       <span>Max discount</span>
                       <span className="font-bold" style={{ color: "var(--text-2)" }}>{maxDiscount}%</span>
                     </div>
@@ -367,7 +367,7 @@ export function FilterSidebar({
                       className="w-full"
                     />
                   </div>
-                  <div className="flex justify-between text-[11px] font-bold" style={{ color: "var(--text-4)" }}>
+                  <div className="flex justify-between text-[12px] font-bold" style={{ color: "var(--text-4)" }}>
                     <span>0%</span>
                     <span>25%</span>
                     <span>50%</span>
@@ -444,7 +444,7 @@ export function FilterSidebar({
                     >
                       <div>
                         <p className="text-[14px] font-semibold">{toggle.label}</p>
-                        <p className="text-[12px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
+                        <p className="text-[13px] mt-0.5" style={{ color: "var(--text-3)" }}>{toggle.sub}</p>
                       </div>
                       <ToggleSwitch checked={toggle.val} onChange={toggle.set} />
                     </div>
@@ -500,7 +500,7 @@ export function FilterButton({ onClick, activeFilters }: { onClick: () => void; 
       <Filter className="w-4 h-4" />
       Filters
       {activeFilters > 0 && (
-        <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center text-white"
+        <span className="w-5 h-5 rounded-full text-[12px] font-black flex items-center justify-center text-white"
           style={{ background: "#FF0040" }}>
           {activeFilters}
         </span>

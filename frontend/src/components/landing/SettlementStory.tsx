@@ -48,7 +48,7 @@ function StateCard({ step, listing, compact = false }: { step: number; listing: 
         {listing ? <PositionGlyph collection={listing.collection} lockEnd={listing.lockEnd} size={compact ? 34 : 44} /> : <span className={`${compact ? "w-[34px] h-[34px]" : "w-11 h-11"} rounded-full shrink-0`} style={{ border: "4px solid var(--hairline)" }} />}
         <div className="min-w-0 flex-1">
           <p className={`${compact ? "text-[14px]" : "text-[16px]"} font-bold truncate`} style={{ color: "var(--text-1)" }}>{name}</p>
-          <p className={`${compact ? "text-[12px]" : "text-[13px]"} tabular-nums`} style={{ color: "var(--text-3)" }}>{compact ? price : listing ? "A live listing" : "Example listing"}</p>
+          <p className={`${compact ? "text-[13px]" : "text-[14px]"} tabular-nums`} style={{ color: "var(--text-3)" }}>{compact ? price : listing ? "A live listing" : "Example listing"}</p>
         </div>
         {compact && <StatusLabel s={s} step={step} reduce={reduce} />}
       </div>
@@ -66,7 +66,7 @@ function StateCard({ step, listing, compact = false }: { step: number; listing: 
           <li key={st.label} className="h-1.5 rounded-full transition-colors duration-500" style={{ background: k <= step ? (k === 2 ? "var(--success)" : "var(--text-1)") : "var(--hairline)" }} />
         ))}
       </ol>
-      <div className={`flex justify-between ${compact ? "text-[12px]" : "text-[13px]"}`} style={{ color: "var(--text-3)" }}>
+      <div className={`flex justify-between ${compact ? "text-[13px]" : "text-[14px]"}`} style={{ color: "var(--text-3)" }}>
         <span>The veNFT</span>
         <AnimatePresence mode="wait" initial={false}>
           <motion.span key={s.owner} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduce ? undefined : { opacity: 0 }} transition={{ duration: 0.25 }} className="font-semibold" style={{ color: "var(--text-1)" }}>

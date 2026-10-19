@@ -165,11 +165,11 @@ function PlaceBidForm({
         className="p-3 rounded-xl space-y-2"
         style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}
       >
-        <div className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "#10B981" }}>
+        <div className="flex items-center gap-2 text-[14px] font-semibold" style={{ color: "#10B981" }}>
           <CheckCircle2 style={{ width: 13, height: 13, flexShrink: 0 }} />
           Bid is live on-chain.
         </div>
-        <p className="text-[12px]" style={{ color: "var(--text-2)" }}>
+        <p className="text-[13px]" style={{ color: "var(--text-2)" }}>
           The owner can accept it until it expires. You keep your funds until then.
         </p>
         <div className="flex items-center gap-3">
@@ -178,7 +178,7 @@ function PlaceBidForm({
               href={`${contracts.explorer}/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[12px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              className="inline-flex items-center gap-1 text-[13px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
               style={{ color: "#10B981" }}
             >
               View transaction
@@ -188,7 +188,7 @@ function PlaceBidForm({
           <button
             type="button"
             onClick={() => { setStage("idle"); setTxHash(null); setAmount(""); setError(null); }}
-            className="text-[12px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="text-[13px] font-semibold rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ color: "var(--text-2)" }}
           >
             Place another bid
@@ -200,13 +200,13 @@ function PlaceBidForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <p className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
+      <p className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
         Place a bid
       </p>
 
       {/* Payment token selector */}
       <div className="flex items-center gap-1.5">
-        <span className="text-[12px] font-semibold mr-1" style={{ color: "var(--text-3)" }}>
+        <span className="text-[13px] font-semibold mr-1" style={{ color: "var(--text-3)" }}>
           Currency
         </span>
         {PAYMENT_TOKENS.filter((t) => !t.isNative).map((t) => {
@@ -220,7 +220,7 @@ function PlaceBidForm({
               key={t.symbol}
               type="button"
               onClick={() => setPaymentToken(addr)}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
+              className="px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all"
               style={{
                 background: active ? "rgba(255,0,64,0.12)" : "var(--bg-2)",
                 border: `1px solid ${active ? "rgba(255,0,64,0.28)" : "var(--border-subtle)"}`,
@@ -254,21 +254,21 @@ function PlaceBidForm({
           required
         />
         <span
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-bold pointer-events-none"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] font-bold pointer-events-none"
           style={{ color: "var(--text-3)" }}
         >
           {symbolOf(paymentToken)}
         </span>
       </div>
       {bidUsd !== null && (
-        <p className="text-[12px] tabular-nums -mt-1" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
+        <p className="text-[13px] tabular-nums -mt-1" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
           &#8776; ${bidUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })} USD
         </p>
       )}
 
       {/* Expiry — segmented chips, consistent with the token selector above */}
       <div className="flex items-center gap-1.5 mt-2">
-        <span className="text-[12px] font-semibold mr-1" style={{ color: "var(--text-3)" }}>
+        <span className="text-[13px] font-semibold mr-1" style={{ color: "var(--text-3)" }}>
           Expires
         </span>
         {["1", "3", "7", "14", "30"].map((d) => (
@@ -277,7 +277,7 @@ function PlaceBidForm({
             type="button"
             onClick={() => setExpiryDays(d)}
             aria-pressed={expiryDays === d}
-            className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold transition-colors"
+            className="px-2.5 py-1.5 rounded-lg text-[13px] font-bold transition-colors"
             style={
               expiryDays === d
                 ? { background: "rgba(255,0,64,0.09)", border: "1px solid rgba(255,0,64,0.35)", color: "#FF0040" }
@@ -295,7 +295,7 @@ function PlaceBidForm({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-[11px]"
+            className="text-[12px]"
             style={{ color: "#EF4444" }}
           >
             {error}
@@ -306,7 +306,7 @@ function PlaceBidForm({
       <button
         type="submit"
         disabled={busy || !address}
-        className="w-full py-2.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="w-full py-2.5 rounded-xl text-[14px] font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         style={{
           background: busy ? "var(--bg-3)" : "#FF0040",
           color: busy ? "var(--text-3)" : "#fff",
@@ -358,12 +358,12 @@ function BidRow({
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="text-[11px] font-mono" style={{ color: "var(--text-2)" }}>
+          <span className="text-[12px] font-mono" style={{ color: "var(--text-2)" }}>
             {shortAddress(bid.bidder)}
           </span>
           {isBidder && (
             <span
-              className="text-[11px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+              className="text-[12px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
               style={{ background: "rgba(255,0,64,0.1)", color: "#FF0040" }}
             >
               you
@@ -371,7 +371,7 @@ function BidRow({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+          <span className="text-[14px] font-bold tabular-nums" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
             {(() => {
               const v = parseFloat(formatUnits(bid.amount, 18));
               return v >= 1000
@@ -382,7 +382,7 @@ function BidRow({
           </span>
           <div className="flex items-center gap-1" style={{ color: expired ? "#EF4444" : "#10B981" }}>
             <Clock style={{ width: 9, height: 9 }} />
-            <span className="text-[11px] font-semibold">{label}</span>
+            <span className="text-[12px] font-semibold">{label}</span>
           </div>
         </div>
       </div>
@@ -391,7 +391,7 @@ function BidRow({
           <button
             onClick={() => onAccept(bid.id)}
             disabled={anyBusy}
-            className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981]"
+            className="px-2.5 py-1 rounded-lg text-[12px] font-bold transition-all inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10B981]"
             style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)", color: "#10B981" }}
             onMouseEnter={(e) => { if (!anyBusy) (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.22)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(16,185,129,0.12)"; }}
@@ -404,7 +404,7 @@ function BidRow({
             onClick={() => onCancel(bid.id)}
             disabled={anyBusy}
             aria-label="Cancel bid"
-            className="px-2 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+            className="px-2 py-1 rounded-lg text-[12px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
             style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)", color: "var(--text-3)" }}
             onMouseEnter={(e) => { if (!anyBusy) (e.currentTarget as HTMLElement).style.color = "var(--text-1)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-3)"; }}
@@ -484,13 +484,13 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Gavel style={{ width: 12, height: 12, color: "var(--text-3)" }} />
-          <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
+          <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
             Active offers
           </span>
         </div>
         {bids.length > 0 && (
           <span
-            className="text-[11px] font-black px-2 py-0.5 rounded-full"
+            className="text-[12px] font-black px-2 py-0.5 rounded-full"
             style={{ background: "rgba(255,0,64,0.08)", color: "#FF0040", border: "1px solid rgba(255,0,64,0.18)" }}
           >
             {bids.length}
@@ -502,10 +502,10 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
       {isLoading ? (
         <div className="flex items-center gap-2 py-2" style={{ color: "var(--text-3)" }}>
           <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" />
-          <span className="text-[13px]">Loading offers…</span>
+          <span className="text-[14px]">Loading offers…</span>
         </div>
       ) : bids.length === 0 ? (
-        <p className="text-[13px] py-1" style={{ color: "var(--text-3)" }}>No active offers yet.</p>
+        <p className="text-[14px] py-1" style={{ color: "var(--text-3)" }}>No active offers yet.</p>
       ) : (
         <div>
           {bids.map((bid) => (
@@ -524,13 +524,13 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
       )}
 
       {actionError && (
-        <p className="text-[12px] leading-relaxed" style={{ color: "#EF4444" }} role="alert">
+        <p className="text-[13px] leading-relaxed" style={{ color: "#EF4444" }} role="alert">
           {actionError}
         </p>
       )}
 
       {isOwner && bids.length > 0 && (
-        <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+        <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-3)" }}>
           Accepting an offer needs a one-time approval for the bidding contract, so
           the first accept asks for two signatures.
         </p>
@@ -549,7 +549,7 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
               onSuccess={() => { setRefreshKey((k) => k + 1); refetch(); }}
             />
           ) : (
-            <p className="text-[11px] text-center py-1" style={{ color: "var(--text-3)" }}>
+            <p className="text-[12px] text-center py-1" style={{ color: "var(--text-3)" }}>
               Connect wallet to place a bid
             </p>
           )}

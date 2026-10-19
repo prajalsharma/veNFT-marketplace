@@ -92,7 +92,7 @@ export function SupportNudge() {
               Back the build.
             </p>
           </div>
-          <p className="text-[13px] leading-relaxed mb-3.5 pr-2" style={{ color: "var(--text-2)" }}>
+          <p className="text-[14px] leading-relaxed mb-3.5 pr-2" style={{ color: "var(--text-2)" }}>
             Vezo is independent and free to use. If it&apos;s helped you, a
             contribution in BTC, MEZO or MUSD keeps it running. Every supporter
             goes on the public board.
@@ -101,13 +101,13 @@ export function SupportNudge() {
             <a
               href={SUPPORT_URL}
               onClick={dismiss}
-              className="buy-cta inline-flex items-center h-10 px-4 rounded-xl text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
+              className="buy-cta inline-flex items-center h-10 px-4 rounded-xl text-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
             >
               Support Vezo
             </a>
             <button
               onClick={dismiss}
-              className="text-[13px] font-semibold rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              className="text-[14px] font-semibold rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
               style={{ color: "var(--text-3)" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}

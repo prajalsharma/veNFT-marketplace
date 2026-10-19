@@ -262,7 +262,7 @@ function UserListingItem({
               </span>
               {isDead && (
                 <span
-                  className="ml-2 align-middle text-[12px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  className="ml-2 align-middle text-[13px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
                   style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
                 >
                   {health.status === "burned" ? "Withdrawn" : health.status === "moved" ? "NFT moved" : "Not approved"}
@@ -281,7 +281,7 @@ function UserListingItem({
 
         <div className="flex items-center gap-3">
           <div
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-black uppercase tracking-widest"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[13px] font-black uppercase tracking-widest"
             style={{
               background: "rgba(16,185,129,0.08)",
               border: "1px solid rgba(16,185,129,0.2)",
@@ -529,7 +529,7 @@ function WalletNFTCard({
           <div>
             <div className="flex items-center gap-1.5 mb-1">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
-              <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>{nft.collection}</span>
+              <span className="text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>{nft.collection}</span>
               <span className="text-[16px] font-semibold" style={{ letterSpacing: "-0.02em" }}>
                 #{nft.tokenId.toString()}
               </span>
@@ -544,7 +544,7 @@ function WalletNFTCard({
               style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.22)" }}
             >
               <Award style={{ width: 10, height: 10, color: "#F59E0B" }} />
-              <span className="text-[12px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+              <span className="text-[13px] font-black uppercase tracking-widest" style={{ color: "#F59E0B" }}>
                 Grant
               </span>
             </div>
@@ -556,7 +556,7 @@ function WalletNFTCard({
           <div className="p-2.5 rounded-lg" style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-1 mb-1">
               <TrendingDown style={{ width: 10, height: 10, color: "var(--text-3)" }} />
-              <span className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>Holds</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--text-3)" }}>Holds</span>
             </div>
             <p className="text-[15px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formattedIV}{" "}
@@ -566,7 +566,7 @@ function WalletNFTCard({
           <div className="p-2.5 rounded-lg" style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-1 mb-1">
               <Zap style={{ width: 10, height: 10, color: accentColor }} />
-              <span className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>Voting power</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--text-3)" }}>Voting power</span>
             </div>
             <p className="text-[15px] font-semibold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formattedVP}
@@ -575,7 +575,7 @@ function WalletNFTCard({
           <div className="col-span-2 p-2.5 rounded-lg" style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-center gap-1 mb-1">
               <Clock style={{ width: 10, height: 10, color: "var(--text-3)" }} />
-              <span className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>Lock ends</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--text-3)" }}>Lock ends</span>
             </div>
             <p className="text-[15px] font-semibold">{lockLabel}</p>
           </div>

@@ -19,7 +19,7 @@ export default function Loading() {
             <polygon points="104,4 86,4 78,38 96,38" fill="var(--bg)" />
           </svg>
         </div>
-        <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--text-3)" }}>
+        <span className="text-[12px] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--text-3)" }}>
           Loading
         </span>
       </div>

@@ -64,11 +64,11 @@ function DealCard({ listing }: { listing: Listing }) {
               <Zap className="w-4 h-4" style={{ color: accentColor }} />
             </div>
             <div>
-              <p className="text-[13px] font-bold leading-none">
+              <p className="text-[14px] font-bold leading-none">
                 {listing.collection}{" "}
                 <span style={{ color: accentColor }}>#{listing.tokenId.toString()}</span>
               </p>
-              <p className="text-[10px] text-white/25 font-mono mt-1 leading-none">
+              <p className="text-[12px] text-white/25 font-mono mt-1 leading-none">
                 {listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}
               </p>
             </div>
@@ -78,7 +78,7 @@ function DealCard({ listing }: { listing: Listing }) {
 
         {/* Intrinsic value */}
         <div className="px-5 pb-4">
-          <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-white/30 mb-1">Intrinsic Value</p>
+          <p className="text-[12px] font-bold tracking-[0.12em] uppercase text-white/30 mb-1">Intrinsic Value</p>
           <div className="flex items-baseline gap-2">
             <span className="text-[1.75rem] font-bold tabular-nums tracking-tight leading-none">
               {formattedIntrinsic}
@@ -94,20 +94,20 @@ function DealCard({ listing }: { listing: Listing }) {
           <div className="rounded-xl bg-white/[0.025] border border-white/[0.04] px-4 py-3">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Tag className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-white/30">Ask Price</span>
+              <span className="text-[12px] font-bold tracking-[0.1em] uppercase text-white/30">Ask Price</span>
             </div>
-            <p className="text-[13px] font-bold tabular-nums text-emerald-400 leading-none">
+            <p className="text-[14px] font-bold tabular-nums text-emerald-400 leading-none">
               {formattedPrice}{" "}
-              <span className="text-white/30 font-medium text-[11px]">{getPaymentTokenSymbol(listing.paymentToken)}</span>
+              <span className="text-white/30 font-medium text-[12px]">{getPaymentTokenSymbol(listing.paymentToken)}</span>
             </p>
           </div>
 
           <div className="rounded-xl bg-white/[0.025] border border-white/[0.04] px-4 py-3">
             <div className="flex items-center gap-1.5 mb-1.5">
               <TrendingUp className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-white/30">Discount</span>
+              <span className="text-[12px] font-bold tracking-[0.1em] uppercase text-white/30">Discount</span>
             </div>
-            <p className="text-[13px] font-bold tabular-nums text-emerald-400 leading-none">
+            <p className="text-[14px] font-bold tabular-nums text-emerald-400 leading-none">
               {discountPct}% OFF
             </p>
           </div>
@@ -119,7 +119,7 @@ function DealCard({ listing }: { listing: Listing }) {
 
         {/* CTA */}
         <div className="mt-auto px-4 pb-4">
-          <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-[13px] font-bold text-white/60 group-hover:bg-[#F7931A] group-hover:text-black group-hover:border-transparent transition-all duration-200">
+          <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.04] border border-white/[0.07] text-[14px] font-bold text-white/60 group-hover:bg-[#F7931A] group-hover:text-black group-hover:border-transparent transition-all duration-200">
             View Deal
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </div>
@@ -223,7 +223,7 @@ export default function BestDealsCarousel() {
               className="flex items-end justify-between mb-10"
             >
               <div>
-                <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-emerald-400 mb-3 flex items-center gap-2">
+                <p className="text-[12px] font-bold tracking-[0.16em] uppercase text-emerald-400 mb-3 flex items-center gap-2">
                   <TrendingUp className="w-3.5 h-3.5" />
                   Best Deals Right Now
                 </p>
@@ -260,7 +260,7 @@ export default function BestDealsCarousel() {
                 )}
                 <Link
                   href="/marketplace"
-                  className="hidden sm:flex items-center gap-2 text-[13px] font-bold text-white/40 hover:text-white/80 transition-colors"
+                  className="hidden sm:flex items-center gap-2 text-[14px] font-bold text-white/40 hover:text-white/80 transition-colors"
                 >
                   View all <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
@@ -318,7 +318,7 @@ export default function BestDealsCarousel() {
             <div className="sm:hidden mt-6 text-center">
               <Link
                 href="/marketplace"
-                className="inline-flex items-center gap-2 text-[13px] font-bold text-white/40 hover:text-white/80 transition-colors"
+                className="inline-flex items-center gap-2 text-[14px] font-bold text-white/40 hover:text-white/80 transition-colors"
               >
                 View all listings <ArrowRight className="w-3.5 h-3.5" />
               </Link>

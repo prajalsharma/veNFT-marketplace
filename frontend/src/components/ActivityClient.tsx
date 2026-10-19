@@ -17,6 +17,8 @@ import { useNetwork } from "@/hooks/useNetwork";
 import { useActivityFeed } from "@/hooks/useActivityFeed";
 import { MetricStrip } from "@/components/market/MarketParts";
 import { useMarketHistory, useMarketValue, fmtCompact, fmtUsdWhole } from "@/hooks/useMarketData";
+import type { MarketStats } from "@/app/api/market-stats/route";
+import type { MarketValue } from "@/app/api/market-value/route";
 import { useListingOutcomes, OUTCOME_LABEL, OUTCOME_HELP, type ListingOutcome } from "@/hooks/useListingOutcomes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -49,7 +51,7 @@ function formatDiscount(discountBps: number | null, activity?: { type: string; c
     if (activity && activity.type !== "cancelled" && activity.paymentToken && activity.paymentToken !== locked) {
       return (
         <span
-          className="text-[12px] cursor-help"
+          className="text-[13px] cursor-help"
           style={{ color: "var(--text-3)" }}
           title={`Priced in ${activity.paymentToken} against a ${locked} position. A discount would need the ${locked}/${activity.paymentToken} rate at the time of the trade, which is not recorded on-chain.`}
         >
@@ -61,7 +63,7 @@ function formatDiscount(discountBps: number | null, activity?: { type: string; c
   }
   if (discountBps === 0) return (
     <span
-      className="text-[12px] font-bold tabular-nums"
+      className="text-[13px] font-bold tabular-nums"
       style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
     >
       Par
@@ -71,7 +73,7 @@ function formatDiscount(discountBps: number | null, activity?: { type: string; c
   if (discountBps > 0) {
     return (
       <span
-        className="text-[12px] font-black tabular-nums"
+        className="text-[13px] font-black tabular-nums"
         style={{ color: "#10B981", fontVariantNumeric: "tabular-nums" }}
       >
         {pct}% off
@@ -80,7 +82,7 @@ function formatDiscount(discountBps: number | null, activity?: { type: string; c
   }
   return (
     <span
-      className="text-[12px] font-black tabular-nums"
+      className="text-[13px] font-black tabular-nums"
       style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}
     >
       +{pct}% prem
@@ -96,7 +98,7 @@ function EventPill({ type }: { type: "sale" | "listed" | "cancelled" }) {
     cancelled: { label: "Cancelled", color: "var(--text-3)" },
   }[type];
   return (
-    <span className="inline-flex items-center gap-2 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+    <span className="inline-flex items-center gap-2 text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: config.color }} />
       {config.label}
     </span>
@@ -151,7 +153,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
           <EventPill type={activity.type} />
           {outcome && outcome !== "open" && outcome !== "unknown" && (
             <span
-              className="text-[12px] font-semibold px-1.5 py-0.5 rounded"
+              className="text-[13px] font-semibold px-1.5 py-0.5 rounded"
               style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
             >
               {OUTCOME_LABEL[outcome]}
@@ -162,7 +164,7 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
           href={activity.transactionHash ? `${explorer}/tx/${activity.transactionHash}` : undefined}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[12px] font-medium tabular-nums"
+          className="flex items-center gap-1 text-[13px] font-medium tabular-nums"
           style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
         >
           <Clock style={{ width: 10, height: 10 }} />
@@ -173,23 +175,89 @@ function MobileActivityCard({ activity, explorer, outcome }: { activity: any; ex
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activity.collection === "veBTC" ? "#F7931A" : "#4A90E2" }} />
-            <span className="text-[13px] font-semibold">
+            <span className="text-[14px] font-semibold">
               {activity.collection} <span className="tabular-nums" style={{ color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>#{activity.tokenId.toString()}</span>
             </span>
           </div>
-          <div className="flex items-center gap-1 text-[12px] font-mono" style={{ color: "var(--text-3)" }}>
+          <div className="flex items-center gap-1 text-[13px] font-mono" style={{ color: "var(--text-3)" }}>
             <span>{activity.from ? short(activity.from) : "—"}</span>
             {activity.to && <><ArrowUpRight style={{ width: 9, height: 9 }} /><span>{short(activity.to)}</span></>}
           </div>
         </div>
         <div className="text-right shrink-0">
           <p className="text-[15px] font-bold tabular-nums" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {fmtPrice(activity.price)}<span className="text-[12px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
+            {fmtPrice(activity.price)}<span className="text-[13px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>{activity.paymentToken}</span>
           </p>
           <div className="mt-0.5">{formatDiscount(activity.discountBps, activity)}</div>
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Since-launch headline ──────────────────────────────────────────────────
+
+const fmtWhole = (v: number) => Math.round(v).toLocaleString("en-US");
+
+function HistoryHero({ stats, value }: { stats: MarketStats; value: MarketValue }) {
+  const big = [
+    {
+      usd: value.mezoTradedUsd,
+      label: "MEZO traded",
+      sub: `${fmtWhole(value.mezoTraded)} MEZO across ${stats.salesByToken.MEZO.toLocaleString("en-US")} sales`,
+    },
+    {
+      usd: value.mezoListedUsd,
+      label: "MEZO brought to market",
+      sub: `${fmtWhole(value.mezoListed)} MEZO in ${value.positionsListed.toLocaleString("en-US")} veMEZO positions`,
+    },
+  ];
+  const small = [
+    { v: stats.totalSales.toLocaleString("en-US"), l: "Sales", n: `${stats.totalListings.toLocaleString("en-US")} listings` },
+    { v: fmtCompact(parseFloat(stats.volume.MUSD)), l: "MUSD traded", n: stats.averageSale.MUSD ? `avg ${fmtCompact(parseFloat(stats.averageSale.MUSD))} per sale` : "no MUSD sales yet" },
+    { v: stats.participants.toLocaleString("en-US"), l: "Participants", n: `${stats.buyers} buyers, ${stats.sellers} sellers` },
+  ];
+  return (
+    <section
+      aria-label="Since launch"
+      className="rounded-2xl overflow-hidden"
+      style={{ background: "var(--surface)", border: "1px solid var(--hairline)" }}
+    >
+      <div className="grid md:grid-cols-2">
+        {big.map((b) => (
+          <div
+            key={b.label}
+            className="hero-split px-6 py-7 md:px-9 md:py-9"
+          >
+            <p className="text-[15px] font-semibold" style={{ color: "var(--text-3)" }}>{b.label}</p>
+            <p
+              className="font-bold tabular-nums leading-none mt-3"
+              style={{ fontSize: "clamp(2.75rem, 5.2vw, 4.25rem)", letterSpacing: "-0.045em", color: "var(--text-1)" }}
+            >
+              {fmtUsdWhole(b.usd)}
+            </p>
+            <p className="text-[16px] mt-3 tabular-nums" style={{ color: "var(--text-2)" }}>{b.sub}</p>
+          </div>
+        ))}
+      </div>
+      <dl className="grid sm:grid-cols-3" style={{ borderTop: "1px solid var(--hairline)" }}>
+        {small.map((m) => (
+          <div
+            key={m.l}
+            className="hero-mini grid grid-cols-[1fr_auto] items-center gap-x-4 px-6 py-4 sm:block sm:px-6 sm:py-6 md:px-9 min-w-0"
+          >
+            <dt className="text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>{m.l}</dt>
+            <dd
+              className="row-span-2 font-bold tabular-nums leading-none sm:mt-1.5"
+              style={{ fontSize: "clamp(1.375rem, 2.2vw, 1.75rem)", letterSpacing: "-0.03em", color: "var(--text-1)" }}
+            >
+              {m.v}
+            </dd>
+            <dd className="text-[14px] mt-0.5 sm:mt-1.5" style={{ color: "var(--text-3)" }}>{m.n}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
@@ -261,7 +329,7 @@ export default function ActivityClient() {
               href={contracts.explorer}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors"
               style={{ color: "var(--text-3)" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -274,25 +342,29 @@ export default function ActivityClient() {
 
         {isDeployed && !isLoading && !error && events.length > 0 && (
           <div className="mb-6 space-y-4">
-            <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+            <p className="text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>
               Since launch
               <span className="font-normal" style={{ color: "var(--text-3)" }}> · every indexed event, not just this page{value ? ". Dollar values use MEZO's price at the time of each sale or listing" : ""}</span>
             </p>
-            <MetricStrip
-              metrics={
-                hist.stats && (hist.status === "ready" || hist.status === "stale" || hist.status === "empty")
-                  ? [
-                      { label: "Sales", value: hist.stats.totalSales.toLocaleString("en-US"), note: `${hist.stats.totalListings.toLocaleString("en-US")} listings` },
-                      { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: value && value.mezoTraded > 0 ? fmtUsdWhole(value.mezoTradedUsd) : hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet", hint: "Each sale counted at MEZO's price when it sold" },
-                      { label: "MUSD traded", value: fmtCompact(parseFloat(hist.stats.volume.MUSD)), note: hist.stats.averageSale.MUSD ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MUSD))} per sale` : "no MUSD sales yet" },
-                      ...(value ? [{ label: "MEZO brought to market", value: fmtCompact(value.mezoListed), note: fmtUsdWhole(value.mezoListedUsd), hint: `MEZO locked in the ${value.positionsListed} veMEZO positions listed on Vezo, each counted once at MEZO's price when first listed` }] : []),
-                      { label: "Participants", value: hist.stats.participants.toLocaleString("en-US"), note: `${hist.stats.buyers} buyers, ${hist.stats.sellers} sellers` },
-                    ]
-                  : hist.status === "loading"
-                    ? ["Sales", "MEZO traded", "MUSD traded", "Participants"].map((label) => ({ label, value: "…", note: "\u00a0" }))
-                    : [{ label: "Market history", value: "Unavailable", note: "index unreachable, try again shortly", tone: "muted" as const }]
-              }
-            />
+            {value && hist.stats && (hist.status === "ready" || hist.status === "stale" || hist.status === "empty") ? (
+              <HistoryHero stats={hist.stats} value={value} />
+            ) : (
+              <MetricStrip
+                metrics={
+                  hist.stats && (hist.status === "ready" || hist.status === "stale" || hist.status === "empty")
+                    ? [
+                        { label: "Sales", value: hist.stats.totalSales.toLocaleString("en-US"), note: `${hist.stats.totalListings.toLocaleString("en-US")} listings` },
+                        { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: value && value.mezoTraded > 0 ? fmtUsdWhole(value.mezoTradedUsd) : hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet", noteStrong: !!value && value.mezoTraded > 0, hint: "Each sale counted at MEZO's price when it sold" },
+                        { label: "MUSD traded", value: fmtCompact(parseFloat(hist.stats.volume.MUSD)), note: hist.stats.averageSale.MUSD ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MUSD))} per sale` : "no MUSD sales yet" },
+                        ...(value ? [{ label: "MEZO brought to market", value: fmtCompact(value.mezoListed), note: fmtUsdWhole(value.mezoListedUsd), noteStrong: true, hint: `MEZO locked in the ${value.positionsListed} veMEZO positions listed on Vezo, each counted once at MEZO's price when first listed` }] : []),
+                        { label: "Participants", value: hist.stats.participants.toLocaleString("en-US"), note: `${hist.stats.buyers} buyers, ${hist.stats.sellers} sellers` },
+                      ]
+                    : hist.status === "loading"
+                      ? ["Sales", "MEZO traded", "MUSD traded", "Participants"].map((label) => ({ label, value: "…", note: "\u00a0" }))
+                      : [{ label: "Market history", value: "Unavailable", note: "index unreachable, try again shortly", tone: "muted" as const }]
+                }
+              />
+            )}
             <div className="flex flex-wrap items-center gap-3 pt-2">
             <div className="segmented" role="group" aria-label="Event type">
               {([["all","All",events.length],["sale","Sales",counts.sale],["listed","Listings",counts.listed],["cancelled","Cancellations",counts.cancelled]] as const).map(([k,label,n]) => (
@@ -301,7 +373,7 @@ export default function ActivityClient() {
                 </button>
               ))}
             </div>
-            <p className="text-[12px]" style={{ color: "var(--text-3)" }}>Counts for the latest {events.length} events in this feed</p>
+            <p className="text-[13px]" style={{ color: "var(--text-3)" }}>Counts for the latest {events.length} events in this feed</p>
             </div>
           </div>
         )}
@@ -403,7 +475,7 @@ export default function ActivityClient() {
                               return (
                                 <span
                                   title={OUTCOME_HELP[o]}
-                                  className="inline-flex items-center gap-1 text-[12px] font-semibold px-1.5 py-0.5 rounded cursor-help"
+                                  className="inline-flex items-center gap-1 text-[13px] font-semibold px-1.5 py-0.5 rounded cursor-help"
                                   style={{ color: "#F59E0B", background: "rgba(245,158,11,0.12)" }}
                                 >
                                   {OUTCOME_LABEL[o]}
@@ -440,7 +512,7 @@ export default function ActivityClient() {
                           >
                             {fmtPrice(activity.price)}
                           </span>
-                          <span className="text-[12px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>
+                          <span className="text-[13px] font-semibold ml-1" style={{ color: "var(--text-3)" }}>
                             {activity.paymentToken}
                           </span>
                         </td>
@@ -451,7 +523,7 @@ export default function ActivityClient() {
                         </td>
 
                         {/* From */}
-                        <td className="px-6 py-5 font-mono text-[12px]" style={{ color: "var(--text-3)" }}>
+                        <td className="px-6 py-5 font-mono text-[13px]" style={{ color: "var(--text-3)" }}>
                           {activity.from ? (
                             <a
                               href={`${contracts.explorer}/address/${activity.from}`}
@@ -474,7 +546,7 @@ export default function ActivityClient() {
                         </td>
 
                         {/* To */}
-                        <td className="px-6 py-5 font-mono text-[12px]" style={{ color: "var(--text-3)" }}>
+                        <td className="px-6 py-5 font-mono text-[13px]" style={{ color: "var(--text-3)" }}>
                           {activity.to ? (
                             <a
                               href={`${contracts.explorer}/address/${activity.to}`}
@@ -503,7 +575,7 @@ export default function ActivityClient() {
                               href={`${contracts.explorer}/tx/${activity.transactionHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-end gap-1.5 text-[12px] font-medium transition-colors tabular-nums"
+                              className="inline-flex items-center justify-end gap-1.5 text-[13px] font-medium transition-colors tabular-nums"
                               style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
                               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -513,7 +585,7 @@ export default function ActivityClient() {
                             </a>
                           ) : (
                             <span
-                              className="inline-flex items-center justify-end gap-1.5 text-[12px] font-medium tabular-nums"
+                              className="inline-flex items-center justify-end gap-1.5 text-[13px] font-medium tabular-nums"
                               style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}
                             >
                               <Clock style={{ width: 10, height: 10 }} />
@@ -538,7 +610,7 @@ export default function ActivityClient() {
           </>
         )}
 
-        <p className="mt-8 text-[13px]" style={{ color: "var(--text-3)" }}>
+        <p className="mt-8 text-[14px]" style={{ color: "var(--text-3)" }}>
           Every row is an on-chain event. Open any transaction on the{" "}
           <a href={contracts.explorer} target="_blank" rel="noopener noreferrer" className="font-semibold underline-offset-2 hover:underline" style={{ color: "var(--text-2)" }}>
             Mezo explorer

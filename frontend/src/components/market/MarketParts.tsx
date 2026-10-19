@@ -20,6 +20,8 @@ export interface Metric {
   note: string;
   tone?: "default" | "positive" | "muted";
   hint?: string;
+  /** Show the note as a headline figure (e.g. a dollar value), not a caption. */
+  noteStrong?: boolean;
 }
 
 /**
@@ -35,16 +37,16 @@ export function MetricStrip({ metrics }: { metrics: Metric[] }) {
         if (loading) {
           return (
             <div key={m.label} className="metric-cell" aria-busy="true">
-              <dt className="text-[12px] font-semibold truncate self-center" style={{ color: "var(--text-3)" }}>{m.label}</dt>
+              <dt className="text-[13px] font-semibold truncate self-center" style={{ color: "var(--text-3)" }}>{m.label}</dt>
               <dd className="self-center"><div className="h-6 w-20 skeleton rounded" /></dd>
-              <dd className="text-[12px] truncate self-center" style={{ color: "var(--text-3)" }}>{m.note}</dd>
+              <dd className="text-[13px] truncate self-center" style={{ color: "var(--text-3)" }}>{m.note}</dd>
             </div>
           );
         }
         const empty = m.tone === "muted";
         return (
           <div key={m.label} className="metric-cell" title={m.hint}>
-            <dt className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>
+            <dt className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
               {m.label}
             </dt>
             <dd
@@ -57,7 +59,10 @@ export function MetricStrip({ metrics }: { metrics: Metric[] }) {
             >
               {m.value}
             </dd>
-            <dd className="text-[12px] truncate self-center" style={{ color: "var(--text-3)" }}>
+            <dd
+              className={`truncate self-center tabular-nums ${m.noteStrong ? "text-[17px] font-bold" : "text-[13px]"}`}
+              style={{ color: m.noteStrong ? "var(--text-1)" : "var(--text-3)", letterSpacing: m.noteStrong ? "-0.02em" : undefined }}
+            >
               {m.note}
             </dd>
           </div>
@@ -74,7 +79,7 @@ type SetFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) =>
 function RailGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div role="group" aria-label={title} className="py-5" style={{ borderTop: "1px solid var(--hairline)" }}>
-      <h3 className="text-[13px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
+      <h3 className="text-[14px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
         {title}
       </h3>
       {children}
@@ -102,7 +107,7 @@ function RailOption({
         </span>
       </span>
       {count !== undefined && (
-        <span className="text-[12px] tabular-nums" style={{ color: "var(--text-3)" }}>{count}</span>
+        <span className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>{count}</span>
       )}
     </label>
   );
@@ -132,7 +137,7 @@ export function FilterRail({
       <div className="flex items-center justify-between pb-4">
         <h2 className="text-[15px] font-bold" style={{ color: "var(--text-1)" }}>Filters</h2>
         {activeCount > 0 && (
-          <button onClick={onReset} className="text-[13px] font-semibold hover:underline underline-offset-2" style={{ color: "var(--text-2)" }}>
+          <button onClick={onReset} className="text-[14px] font-semibold hover:underline underline-offset-2" style={{ color: "var(--text-2)" }}>
             Reset
           </button>
         )}
@@ -222,7 +227,7 @@ export function ListingsTable({
   prices: Record<string, number | null | undefined>;
   onBuy: (l: Listing) => void;
 }) {
-  const th = "px-4 py-3 text-[12px] font-semibold text-left whitespace-nowrap";
+  const th = "px-4 py-3 text-[13px] font-semibold text-left whitespace-nowrap";
   return (
     <div className="rounded-xl overflow-x-auto" style={{ border: "1px solid var(--hairline)", background: "var(--surface)" }}>
       <table className="w-full min-w-[760px] border-collapse">
@@ -257,10 +262,10 @@ export function ListingsTable({
                 </td>
                 <td className="px-4 py-3.5 text-right whitespace-nowrap">
                   <div className="text-[15px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>
-                    {fmtAmount(l.price)} <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>{sym}</span>
+                    {fmtAmount(l.price)} <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>{sym}</span>
                   </div>
                   {usd !== null && (
-                    <div className="text-[12px] tabular-nums" style={{ color: "var(--text-3)" }}>
+                    <div className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
                       &#8776; ${usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
                     </div>
                   )}
@@ -271,7 +276,7 @@ export function ListingsTable({
                 <td className="px-4 py-3.5 text-right text-[14px] tabular-nums whitespace-nowrap" style={{ color: "var(--text-2)" }}>
                   {fmtAmount(l.intrinsicValue)} {lockedSym}
                   {l.revocable > 0n && (
-                    <div className="text-[12px]" style={{ color: "#B45309" }}>{fmtAmount(l.revocable)} revocable</div>
+                    <div className="text-[13px]" style={{ color: "#B45309" }}>{fmtAmount(l.revocable)} revocable</div>
                   )}
                 </td>
                 <td className="px-4 py-3.5 text-right text-[14px] tabular-nums whitespace-nowrap" style={{ color: "var(--text-2)" }}>
@@ -283,7 +288,7 @@ export function ListingsTable({
                 <td className="px-4 pr-5 py-3.5 text-right">
                   <button
                     onClick={() => onBuy(l)}
-                    className="btn-buy h-9 px-4 rounded-lg text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                    className="btn-buy h-9 px-4 rounded-lg text-[14px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                   >
                     Buy
                   </button>

@@ -11,7 +11,7 @@ export function StepRow({ n, label, state, detail, href, first }: { n: number; l
   return (
     <li className="flex items-center gap-3 px-4 py-3" style={{ borderTop: first ? undefined : "1px solid var(--hairline)", opacity: state === "idle" ? 0.55 : 1 }}>
       <span
-        className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold ${state === "active" ? "step-ring" : ""}`}
+        className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[13px] font-bold ${state === "active" ? "step-ring" : ""}`}
         style={{
           background: state === "done" ? "var(--success)" : state === "failed" ? "#EF4444" : "transparent",
           border: state === "done" || state === "failed" ? "none" : `1.5px solid ${state === "active" ? "var(--text-1)" : "var(--border-strong)"}`,
@@ -22,11 +22,11 @@ export function StepRow({ n, label, state, detail, href, first }: { n: number; l
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>{label}</p>
-        {detail && <p className="text-[12px]" style={{ color: "var(--text-3)" }}>{detail}</p>}
+        {detail && <p className="text-[13px]" style={{ color: "var(--text-3)" }}>{detail}</p>}
       </div>
       {state === "active" &&
         (href ? (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold underline underline-offset-2" style={{ color: "var(--text-2)" }}>
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-[13px] font-semibold underline underline-offset-2" style={{ color: "var(--text-2)" }}>
             View
           </a>
         ) : (

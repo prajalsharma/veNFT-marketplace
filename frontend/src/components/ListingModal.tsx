@@ -212,12 +212,12 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
             <div className="flex items-center gap-4 px-6 pt-5 pb-5">
               <PositionGlyph collection={veNFT.collection} lockEnd={veNFT.lockEnd} size={52} />
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>{listed ? "Listed" : "List for sale"}</p>
+                <p className="text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>{listed ? "Listed" : "List for sale"}</p>
                 <h2 className="text-[19px] font-bold truncate" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
                   {veNFT.collection} <span className="tabular-nums" style={{ color: "var(--text-3)" }}>#{veNFT.tokenId.toString()}</span>
                 </h2>
                 {isGrant && (
-                  <span className="inline-block mt-1 text-[12px] font-semibold px-1.5 py-0.5 rounded" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>Grant</span>
+                  <span className="inline-block mt-1 text-[13px] font-semibold px-1.5 py-0.5 rounded" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>Grant</span>
                 )}
               </div>
               <button
@@ -242,7 +242,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     It stays in your wallet, still voting, until someone buys it. You can cancel any time.
                   </p>
                   {listHash && (
-                    <a href={`${contracts.explorer}/tx/${listHash}`} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-[13px] font-semibold underline underline-offset-2" style={{ color: "var(--text-2)" }}>
+                    <a href={`${contracts.explorer}/tx/${listHash}`} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-[14px] font-semibold underline underline-offset-2" style={{ color: "var(--text-2)" }}>
                       View transaction
                     </a>
                   )}
@@ -256,8 +256,8 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                       ["Unlocks in", isPermanent ? "Permanent" : isExpired ? "Expired" : <CountdownCompact key="c" lockEnd={veNFT.lockEnd} />],
                     ].map(([k, v], i) => (
                       <div key={k as string} className="px-3 sm:px-3.5 py-3 min-w-0" style={{ borderLeft: i ? "1px solid var(--hairline)" : undefined }}>
-                        <dt className="text-[12px]" style={{ color: "var(--text-3)" }}>{k}</dt>
-                        <dd className="text-[13px] sm:text-[14px] font-semibold tabular-nums mt-1 truncate" style={{ color: "var(--text-1)" }}>{v}</dd>
+                        <dt className="text-[13px]" style={{ color: "var(--text-3)" }}>{k}</dt>
+                        <dd className="text-[14px] sm:text-[14px] font-semibold tabular-nums mt-1 truncate" style={{ color: "var(--text-1)" }}>{v}</dd>
                       </div>
                     ))}
                   </dl>
@@ -265,7 +265,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   {/* Price: currency first, then the amount, then how it compares */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label htmlFor="listing-price" className="text-[13px] font-semibold" style={{ color: "var(--text-2)" }}>Your price</label>
+                      <label htmlFor="listing-price" className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>Your price</label>
                       <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--bg-2)" }} role="radiogroup" aria-label="Payment currency">
                         {PAYMENT_TOKENS.map((t) => (
                           <button
@@ -274,7 +274,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                             aria-checked={paymentToken === t.symbol}
                             onClick={() => setPaymentToken(t.symbol)}
                             disabled={step === "list" && busy}
-                            className="px-2.5 py-1 rounded-md text-[12px] font-semibold transition-all"
+                            className="px-2.5 py-1 rounded-md text-[13px] font-semibold transition-all"
                             style={paymentToken === t.symbol ? { background: "var(--surface)", color: "var(--text-1)", boxShadow: "var(--shadow-sm)" } : { color: "var(--text-3)" }}
                           >
                             {t.symbol}
@@ -299,7 +299,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                       <span className="text-[15px] font-semibold" style={{ color: "var(--text-2)" }}>{paymentToken}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3 mt-2.5 min-h-[28px]">
-                      <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
+                      <p className="text-[14px] tabular-nums" style={{ color: "var(--text-3)" }}>
                         {discount !== null ? (
                           discount > 0.0005 ? (
                             <><span className="font-semibold" style={{ color: "var(--vezo-red)" }}>{crossToken && "\u2248 "}{(discount * 100).toFixed(1)}% below</span> its value</>
@@ -320,7 +320,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                               key={d}
                               onClick={() => setAt(d)}
                               disabled={step === "list" && busy}
-                              className="px-2 py-1 rounded-md text-[12px] font-semibold transition-colors"
+                              className="px-2 py-1 rounded-md text-[13px] font-semibold transition-colors"
                               style={{ border: "1px solid var(--hairline)", color: "var(--text-2)" }}
                             >
                               {d === 0 ? "At value" : `−${d * 100}%`}
@@ -345,13 +345,13 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   </dl>
 
                   {crossToken && (
-                    <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-3)" }}>
+                    <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-3)" }}>
                       Your price stays fixed in {paymentToken}. If {paymentToken} moves against {lockedSym}, buyers see the discount change. You can update the price any time.
                     </p>
                   )}
 
                   {isGrant && (
-                    <div className="flex gap-3 text-[13px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
+                    <div className="flex gap-3 text-[14px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
                       <Award style={{ width: 15, height: 15, color: "#B45309", flexShrink: 0, marginTop: 2 }} />
                       <p style={{ color: "var(--text-2)" }}>
                         <span className="font-semibold" style={{ color: "var(--text-1)" }}>Grant position.</span>{" "}
@@ -393,7 +393,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                     {txError && (
                       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex gap-3 p-3.5 rounded-xl" style={{ background: "rgba(239,68,68,0.08)" }}>
                         <AlertCircle style={{ width: 15, height: 15, color: "#EF4444", flexShrink: 0, marginTop: 2 }} />
-                        <p className="text-[13px] leading-relaxed break-words min-w-0" style={{ color: "var(--text-1)" }}>{txError}</p>
+                        <p className="text-[14px] leading-relaxed break-words min-w-0" style={{ color: "var(--text-1)" }}>{txError}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -433,7 +433,7 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                   </button>
                 )}
                 {!listed && !busy && (
-                  <p className="text-[12px] text-center mt-2.5 leading-relaxed" style={{ color: "var(--text-3)" }}>
+                  <p className="text-[13px] text-center mt-2.5 leading-relaxed" style={{ color: "var(--text-3)" }}>
                     {needsApproval ? "2 wallet steps: approve, then list. " : ""}
                     It stays in your wallet, voting and earning, until it sells.
                   </p>

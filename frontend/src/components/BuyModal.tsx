@@ -148,10 +148,10 @@ function AlertBlock({
     >
       <Icon style={{ width: 17, height: 17, color: palette.color, flexShrink: 0, marginTop: 1 }} />
       <div>
-        <p className="text-[13px] font-semibold mb-1" style={{ color: palette.color }}>
+        <p className="text-[14px] font-semibold mb-1" style={{ color: palette.color }}>
           {title}
         </p>
-        <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+        <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
           {body}
         </p>
       </div>
@@ -536,14 +536,14 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
             <div className="flex items-center gap-4 px-6 pt-5 pb-5">
               <PositionGlyph collection={listing.collection} lockEnd={listing.lockEnd} size={52} />
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
+                <p className="text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>
                   {step === "done" ? "Purchased" : "Buy position"}
                 </p>
                 <h2 className="text-[19px] font-bold truncate" style={{ letterSpacing: "-0.02em", color: "var(--text-1)" }}>
                   {listing.collection}{" "}
                   <span className="tabular-nums" style={{ color: "var(--text-3)" }}>#{listing.tokenId.toString()}</span>
                 </h2>
-                <p className="text-[12px] mt-0.5 flex items-center gap-2" style={{ color: "var(--text-3)" }}>
+                <p className="text-[13px] mt-0.5 flex items-center gap-2" style={{ color: "var(--text-3)" }}>
                   Seller <span className="font-mono" style={{ color: "var(--text-2)" }}>{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</span>
                   {listing.isGrant && (
                     <span className="font-semibold px-1.5 py-0.5 rounded" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>Grant</span>
@@ -571,21 +571,21 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     <span className="text-[15px] font-semibold ml-1.5" style={{ color: "var(--text-2)", letterSpacing: 0 }}>{paymentSymbol}</span>
                   </p>
                   {listing.discountBps !== null && Number(listing.discountBps) > 0 && (
-                    <span className="text-[13px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#fff", background: "var(--vezo-red)" }}>
+                    <span className="text-[14px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#fff", background: "var(--vezo-red)" }}>
                       {listing.discountEstimated && "\u2248 "}{(Number(listing.discountBps) / 100).toFixed(1)}% below value
                     </span>
                   )}
                   {listing.discountBps !== null && Number(listing.discountBps) < 0 && (
-                    <span className="text-[13px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>
+                    <span className="text-[14px] font-bold tabular-nums px-2 py-1 rounded-md mb-1" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>
                       {listing.discountEstimated && "\u2248 "}{(-Number(listing.discountBps) / 100).toFixed(1)}% above value
                     </span>
                   )}
                 </div>
-                <p className="text-[13px] mt-2 tabular-nums" style={{ color: "var(--text-3)" }}>
+                <p className="text-[14px] mt-2 tabular-nums" style={{ color: "var(--text-3)" }}>
                   {priceUsd !== null ? <>&#8776; ${priceUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}</> : <>&nbsp;</>}
                 </p>
                 {listing.discountEstimated && (
-                  <p className="text-[13px] mt-1" style={{ color: "var(--text-3)" }}>
+                  <p className="text-[14px] mt-1" style={{ color: "var(--text-3)" }}>
                     Priced in {paymentSymbol}, not {lockedSym}. The discount is an estimate at today&apos;s prices and moves with them.
                   </p>
                 )}
@@ -600,8 +600,8 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                     ["Unlocks in", isPermanentLock ? "Permanent" : isExpiredLock ? "Expired" : <CountdownCompact key="c" lockEnd={listing.lockEnd} />],
                   ].map(([k, v], i) => (
                     <div key={k as string} className="px-3 sm:px-3.5 py-3 min-w-0" style={{ borderLeft: i ? "1px solid var(--hairline)" : undefined }}>
-                      <dt className="text-[12px]" style={{ color: "var(--text-3)" }}>{k}</dt>
-                      <dd className="text-[13px] sm:text-[14px] font-semibold tabular-nums mt-1 truncate" style={{ color: "var(--text-1)" }}>{v}</dd>
+                      <dt className="text-[13px]" style={{ color: "var(--text-3)" }}>{k}</dt>
+                      <dd className="text-[14px] sm:text-[14px] font-semibold tabular-nums mt-1 truncate" style={{ color: "var(--text-1)" }}>{v}</dd>
                     </div>
                   ))}
                 </dl>
@@ -620,7 +620,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                       {feeInfo.fee !== null ? (
                         <>
                           {formatAmount(feeInfo.fee)} {paymentSymbol}
-                          <span className="block text-[12px]" style={{ color: "var(--text-3)" }}>deducted from the seller&apos;s proceeds</span>
+                          <span className="block text-[13px]" style={{ color: "var(--text-3)" }}>deducted from the seller&apos;s proceeds</span>
                         </>
                       ) : feeInfo.isError ? (
                         "Deducted from the seller"
@@ -638,7 +638,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
 
               {/* Grant disclosure: what's yours for sure vs what the issuer can take back */}
               {step !== "done" && listing.isGrant && (
-                <div className="text-[13px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
+                <div className="text-[14px] leading-relaxed p-3.5 rounded-xl" style={{ background: "var(--bg-2)" }}>
                   <div className="flex gap-3">
                     <Award style={{ width: 15, height: 15, color: "#B45309", flexShrink: 0, marginTop: 2 }} />
                     <p style={{ color: "var(--text-2)" }}>
@@ -663,7 +663,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                           <dd className="font-semibold" style={{ color: "#B45309" }}>{formatAmount(listing.revocable)} {lockedSym}</dd>
                         </div>
                       </dl>
-                      <p className="mt-2 pl-[27px] text-[12px]" style={{ color: "var(--text-3)" }}>
+                      <p className="mt-2 pl-[27px] text-[13px]" style={{ color: "var(--text-3)" }}>
                         {beforeCliff && <>Nothing vests before {cliffDate}. </>}
                         Value here counts only what&apos;s yours for sure
                         {listing.fullDiscountBps !== null && (
@@ -684,12 +684,12 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 <>
                   {swapRoute && (
                     <div>
-                      <p className="text-[13px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>Pay with</p>
+                      <p className="text-[14px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>Pay with</p>
                       <div className="flex gap-1 p-1 rounded-xl" style={{ background: "var(--bg-2)" }}>
                         <button
                           onClick={() => setPayWithSwap(false)}
                           disabled={isBusy}
-                          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all"
+                          className="flex-1 py-2 rounded-lg text-[14px] font-semibold transition-all"
                           style={
                             !payWithSwap
                               ? { background: "var(--surface)", color: "var(--text-1)", boxShadow: "var(--shadow-sm)" }
@@ -701,7 +701,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                         <button
                           onClick={() => setPayWithSwap(true)}
                           disabled={isBusy}
-                          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5"
+                          className="flex-1 py-2 rounded-lg text-[14px] font-semibold transition-all inline-flex items-center justify-center gap-1.5"
                           style={
                             payWithSwap
                               ? { background: "var(--surface)", color: "var(--text-1)", boxShadow: "var(--shadow-sm)" }
@@ -713,7 +713,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                         </button>
                       </div>
                       {payWithSwap && (
-                        <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+                        <p className="mt-3 text-[13px] leading-relaxed" style={{ color: "var(--text-2)" }}>
                           {swapQuoteError === "deviation" ? (
                             <span style={{ color: "#EF4444" }}>
                               The pool rate is far above the market price right now, so the
@@ -846,7 +846,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                       href={`${contracts.explorer}/tx/${sessionHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-3 text-[13px] font-semibold underline underline-offset-2"
+                      className="inline-block mt-3 text-[14px] font-semibold underline underline-offset-2"
                       style={{ color: "var(--text-2)" }}
                     >
                       View transaction
@@ -905,7 +905,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                   </button>
                 )}
                 {step === "confirm" && buyerAddress && (
-                  <p className="text-[12px] text-center mt-2.5 leading-relaxed" style={{ color: "var(--text-3)" }}>
+                  <p className="text-[13px] text-center mt-2.5 leading-relaxed" style={{ color: "var(--text-3)" }}>
                     {!isNative && !alreadyApproved && !payWithSwap || payWithSwap
                       ? `2 wallet steps: approve ${payWithSwap ? "BTC" : paymentSymbol}, then buy. `
                       : ""}

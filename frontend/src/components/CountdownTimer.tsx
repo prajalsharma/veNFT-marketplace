@@ -60,7 +60,7 @@ export function CountdownTimer({ lockEnd }: { lockEnd: bigint | number }) {
   if (isExpired) {
     return (
       <span
-        className="font-black uppercase text-[10px] tracking-widest"
+        className="font-black uppercase text-[12px] tracking-widest"
         style={{ color: "#EF4444" }}
       >
         Expired
@@ -123,7 +123,7 @@ export function CountdownCompact({ lockEnd }: { lockEnd: bigint | number }) {
   if (isExpired) {
     return (
       <span
-        className="font-black uppercase text-[10px] tracking-widest"
+        className="font-black uppercase text-[12px] tracking-widest"
         style={{ color: "#EF4444" }}
       >
         Expired

@@ -91,18 +91,18 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
             <p className="text-[19px] font-bold mb-2" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
               {status === "error" ? "Listings are unreachable" : "This spot is open"}
             </p>
-            <p className="text-[13px] leading-relaxed max-w-[26ch] mx-auto [text-wrap:balance]" style={{ color: "var(--text-2)" }}>
+            <p className="text-[14px] leading-relaxed max-w-[26ch] mx-auto [text-wrap:balance]" style={{ color: "var(--text-2)" }}>
               {status === "error"
                 ? "The market is still there; this view could not load it."
                 : "The best-priced listing sits here. List yours and it could be the one."}
             </p>
-            <Link href="/my-listings" className="btn-brand inline-flex items-center gap-1.5 mt-5 h-10 px-4 rounded-lg text-[13px] font-semibold">
+            <Link href="/my-listings" className="btn-brand inline-flex items-center gap-1.5 mt-5 h-10 px-4 rounded-lg text-[14px] font-semibold">
               List your veNFT
             </Link>
           </>
         ) : (
           <>
-            <p className="text-[12px] font-semibold mb-2 inline-flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
+            <p className="text-[13px] font-semibold mb-2 inline-flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
               <span className="w-1.5 h-1.5 rounded-full live-pulse" style={{ background: "var(--vezo-red)" }} /> Best listing right now
             </p>
             <p className="tabular-nums font-bold" style={{ fontSize: "clamp(3rem, 7vw, 4.4rem)", lineHeight: 0.95, letterSpacing: "-0.05em", color: "var(--text-1)" }}>
@@ -110,13 +110,13 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
               {(d * 100).toFixed(1)}<span style={{ fontSize: "0.5em", letterSpacing: "-0.02em" }}>%</span>
             </p>
             <p className="text-[14px] font-semibold mt-2" style={{ color: "var(--vezo-red)" }}>below value</p>
-            <p className="text-[13px] mt-3 tabular-nums" style={{ color: "var(--text-2)" }}>
+            <p className="text-[14px] mt-3 tabular-nums" style={{ color: "var(--text-2)" }}>
               {l!.collection} #{l!.tokenId.toString()}
             </p>
-            <p className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
+            <p className="text-[14px] tabular-nums" style={{ color: "var(--text-3)" }}>
               {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
             </p>
-            <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+            <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>
               See it in the market <span aria-hidden className="cta-arrow">→</span>
             </span>
           </>
@@ -146,7 +146,7 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
         <div className="relative">{body}</div>
       )}
 
-      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 -mt-6 text-[12px] font-semibold">
+      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 -mt-6 text-[13px] font-semibold">
         <span className="flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
           <span className="w-3 h-[3px] rounded-full" style={{ background: "var(--text-1)" }} /> Price paid
         </span>
@@ -158,7 +158,7 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
         </span>
       </div>
       {illustrative && status !== "loading" && (
-        <p className="text-center text-[12px] mt-2" style={{ color: "var(--text-3)" }}>Illustration, not a listing</p>
+        <p className="text-center text-[13px] mt-2" style={{ color: "var(--text-3)" }}>Illustration, not a listing</p>
       )}
     </div>
   );

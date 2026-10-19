@@ -80,7 +80,7 @@ function ContractCard({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors"
+            className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-widest transition-colors"
             style={{ color: "var(--text-3)" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = accentColor)}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
@@ -108,7 +108,7 @@ function SecurityCheck({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-2.5">
       <CheckCircle2 style={{ width: 13, height: 13, color: "#10B981", flexShrink: 0 }} />
-      <span className="text-xs font-mono" style={{ color: "var(--text-2)" }}>
+      <span className="text-[13px] font-mono" style={{ color: "var(--text-2)" }}>
         {text}
       </span>
     </div>
@@ -400,7 +400,7 @@ export default function DocsClient() {
                   >
                     <Shield style={{ width: 14, height: 14, color: "#10B981" }} />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>
+                  <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#10B981" }}>
                     Protections
                   </span>
                 </div>
@@ -429,7 +429,7 @@ export default function DocsClient() {
                         style={{ width: 14, height: 14, color: "#10B981", flexShrink: 0, marginTop: 2 }}
                       />
                       <div>
-                        <p className="text-xs font-bold mb-0.5" style={{ color: "var(--text-1)" }}>
+                        <p className="text-[13px] font-bold mb-0.5" style={{ color: "var(--text-1)" }}>
                           {item.title}
                         </p>
                         <p className="text-[14px] leading-relaxed" style={{ color: "var(--text-2)" }}>
@@ -453,7 +453,7 @@ export default function DocsClient() {
                   >
                     <Terminal style={{ width: 14, height: 14, color: "var(--text-2)" }} />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-3)" }}>
+                  <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--text-3)" }}>
                     Security Checklist
                   </span>
                 </div>

@@ -99,7 +99,7 @@ function PriceStrip() {
     );
   };
   return (
-    <div className="h-10 flex items-center text-[13px] sm:text-[14px]">
+    <div className="h-10 flex items-center text-[14px] sm:text-[14px]">
       <span className="hidden sm:inline-flex items-center shrink-0 h-full pl-5 md:pl-10 lg:pl-16 pr-4 font-semibold" style={{ color: "var(--text-3)", borderRight: "1px solid var(--hairline)" }}>
         Live prices
       </span>
@@ -116,7 +116,7 @@ function PriceStrip() {
         </div>
       </div>
       {prices.lastUpdated && (
-        <span className="hidden md:inline shrink-0 pl-4 pr-5 md:pr-10 lg:pr-16 text-[12px]" style={{ color: "var(--text-3)" }}>
+        <span className="hidden md:inline shrink-0 pl-4 pr-5 md:pr-10 lg:pr-16 text-[13px]" style={{ color: "var(--text-3)" }}>
           24h · updated {new Date(prices.lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </span>
       )}
@@ -233,7 +233,7 @@ export function Header() {
           >
             <div className="px-5 py-5 grid gap-5">
               <div>
-                <p className="text-[13px] font-semibold mb-2 px-1" style={{ color: "var(--text-3)" }}>Network</p>
+                <p className="text-[14px] font-semibold mb-2 px-1" style={{ color: "var(--text-3)" }}>Network</p>
                 <NetworkMenu variant="list" />
               </div>
               <button onClick={toggleTheme} className="flex items-center justify-between px-3.5 py-3 rounded-xl text-[15px] font-semibold" style={{ background: "var(--bg-2)", color: "var(--text-1)" }}>

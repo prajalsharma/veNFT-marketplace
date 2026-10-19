@@ -242,7 +242,7 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
       <div className="flex items-center gap-3 px-3 pt-3 pb-3.5">
         <WalletIcon icon={walletIcon} size={36} />
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-medium" style={{ color: "var(--text-3)" }}>{walletName ?? "Connected wallet"}</p>
+          <p className="text-[13px] font-medium" style={{ color: "var(--text-3)" }}>{walletName ?? "Connected wallet"}</p>
           <p className="text-[16px] font-semibold tabular-nums truncate" style={{ color: "var(--text-1)" }} title={address}>{short(address)}</p>
         </div>
         <button onClick={copy} className="hdr-icon" aria-label={copied ? "Address copied" : "Copy address"} title={copied ? "Copied" : "Copy address"}>
@@ -256,18 +256,18 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
       {/* Network */}
       {wrongNetwork ? (
         <div className="mx-1 mb-2 p-3 rounded-xl" style={{ background: "rgba(217,119,6,0.09)" }}>
-          <p className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "#B45309" }}>
+          <p className="flex items-center gap-2 text-[14px] font-semibold" style={{ color: "#B45309" }}>
             <AlertTriangle style={{ width: 14, height: 14 }} /> Your wallet is on another network
           </p>
-          <p className="text-[13px] mt-1" style={{ color: "var(--text-2)" }}>Vezo is reading {netName}. Switch to trade.</p>
-          <button onClick={doSwitch} disabled={isAdding} className="hdr-primary mt-2.5 h-9 w-full rounded-lg text-[13px] font-semibold inline-flex items-center justify-center gap-2">
+          <p className="text-[14px] mt-1" style={{ color: "var(--text-2)" }}>Vezo is reading {netName}. Switch to trade.</p>
+          <button onClick={doSwitch} disabled={isAdding} className="hdr-primary mt-2.5 h-9 w-full rounded-lg text-[14px] font-semibold inline-flex items-center justify-center gap-2">
             {isAdding && <Loader2 className="animate-spin" style={{ width: 14, height: 14 }} />}
             {isAdding ? "Check your wallet…" : `Switch to ${netName}`}
           </button>
-          {switchError && <p className="text-[12px] mt-2" style={{ color: "#DC2626" }}>{switchError}</p>}
+          {switchError && <p className="text-[13px] mt-2" style={{ color: "#DC2626" }}>{switchError}</p>}
         </div>
       ) : (
-        <div className="flex items-center justify-between mx-3 py-2 text-[13px]" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <div className="flex items-center justify-between mx-3 py-2 text-[14px]" style={{ borderTop: "1px solid var(--hairline)" }}>
           <span style={{ color: "var(--text-3)" }}>Network</span>
           <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: "var(--text-1)" }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: network === "testnet" ? "#D97706" : "var(--success)" }} />
@@ -279,8 +279,8 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
       {/* Balances */}
       <div className="mx-1 mt-1 rounded-xl" style={{ background: "var(--bg-2)" }}>
         <div className="flex items-baseline justify-between px-3 pt-3 pb-1">
-          <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>In this wallet</span>
-          <span className="text-[12px] tabular-nums" style={{ color: "var(--text-3)" }}>
+          <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>In this wallet</span>
+          <span className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
             {usdTotal !== null ? `≈ $${usdTotal.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : ""}
           </span>
         </div>
@@ -291,7 +291,7 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
               {t.row.state === "loading" ? (
                 <span className="h-3.5 w-20 rounded skeleton" aria-label={`Loading ${t.sym} balance`} />
               ) : t.row.state === "error" ? (
-                <span className="text-[13px]" style={{ color: "var(--text-3)" }}>Unavailable</span>
+                <span className="text-[14px]" style={{ color: "var(--text-3)" }}>Unavailable</span>
               ) : (
                 <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{fmtToken(t.row.value, t.sym)}</span>
               )}
@@ -299,7 +299,7 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
           ))}
         </ul>
         {anyError && (
-          <button onClick={data.refetch} className="w-full flex items-center justify-center gap-1.5 py-2 text-[12px] font-semibold" style={{ color: "var(--text-2)", borderTop: "1px solid var(--hairline)" }}>
+          <button onClick={data.refetch} className="w-full flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold" style={{ color: "var(--text-2)", borderTop: "1px solid var(--hairline)" }}>
             <RefreshCw style={{ width: 12, height: 12 }} /> Couldn&apos;t load some balances. Retry
           </button>
         )}
@@ -309,7 +309,7 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
       <Link href="/my-listings" onClick={onClose} className="hdr-item flex items-center justify-between gap-3 mx-1 mt-2 px-3 py-3 rounded-xl">
         <span>
           <span className="block text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>Portfolio</span>
-          <span className="block text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>
+          <span className="block text-[14px] tabular-nums" style={{ color: "var(--text-3)" }}>
             {data.heldState === "loading" ? "Loading positions…" : data.held === null ? "Positions unavailable" : `${data.held} veNFT${data.held === 1 ? "" : "s"} in wallet`}
             {typeof data.listed === "number" ? ` · ${data.listed} listed` : ""}
           </span>
@@ -319,10 +319,10 @@ function PanelBody({ address, walletName, walletIcon, wrongNetwork, network, onC
 
       {/* Session */}
       <div className="grid grid-cols-2 gap-1 mt-2 pt-2 mx-1" style={{ borderTop: "1px solid var(--hairline)" }}>
-        <button onClick={() => { disconnect(); onClose(); setTimeout(() => openConnectModal?.(), 150); }} className="hdr-item h-10 rounded-lg inline-flex items-center justify-center gap-2 text-[13px] font-semibold" style={{ color: "var(--text-2)" }}>
+        <button onClick={() => { disconnect(); onClose(); setTimeout(() => openConnectModal?.(), 150); }} className="hdr-item h-10 rounded-lg inline-flex items-center justify-center gap-2 text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>
           <Repeat style={{ width: 14, height: 14 }} /> Switch wallet
         </button>
-        <button onClick={() => { disconnect(); onClose(); }} className="hdr-item h-10 rounded-lg inline-flex items-center justify-center gap-2 text-[13px] font-semibold" style={{ color: "var(--text-2)" }}>
+        <button onClick={() => { disconnect(); onClose(); }} className="hdr-item h-10 rounded-lg inline-flex items-center justify-center gap-2 text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>
           <LogOut style={{ width: 14, height: 14 }} /> Disconnect
         </button>
       </div>

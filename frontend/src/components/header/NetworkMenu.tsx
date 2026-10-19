@@ -61,12 +61,12 @@ export function NetworkMenu({ variant = "compact" }: { variant?: "compact" | "li
           >
             <span>
               <span className="block text-[15px] font-semibold" style={{ color: "var(--text-1)" }}>{o.label}</span>
-              <span className="block text-[13px]" style={{ color: "var(--text-3)" }}>{o.note}</span>
+              <span className="block text-[14px]" style={{ color: "var(--text-3)" }}>{o.note}</span>
             </span>
             {network === o.id && <Check style={{ width: 16, height: 16, color: "var(--text-1)" }} />}
           </button>
         ))}
-        {error && <p className="text-[13px] px-1" style={{ color: "#DC2626" }}>{error}</p>}
+        {error && <p className="text-[14px] px-1" style={{ color: "#DC2626" }}>{error}</p>}
       </div>
     );
   }
@@ -96,12 +96,12 @@ export function NetworkMenu({ variant = "compact" }: { variant?: "compact" | "li
             >
               <span>
                 <span className="block text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>{o.label}</span>
-                <span className="block text-[12px]" style={{ color: "var(--text-3)" }}>{o.note}</span>
+                <span className="block text-[13px]" style={{ color: "var(--text-3)" }}>{o.note}</span>
               </span>
               {network === o.id && <Check style={{ width: 15, height: 15, marginTop: 3, color: "var(--text-1)" }} />}
             </button>
           ))}
-          {error && <p className="text-[12px] px-3 pb-2" style={{ color: "#DC2626" }}>{error}</p>}
+          {error && <p className="text-[13px] px-3 pb-2" style={{ color: "#DC2626" }}>{error}</p>}
         </div>
       )}
     </div>

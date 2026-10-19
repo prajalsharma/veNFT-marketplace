@@ -229,13 +229,13 @@ function TradeTimeline() {
             <span className="absolute w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2" style={{ left: 0, top: `${gy1}%`, background: "var(--vezo-red)" }} />
             <span className="absolute w-2.5 h-2.5 rounded-full translate-x-1/2 -translate-y-1/2" style={{ right: 0, top: `${gy0}%`, background: "var(--text-1)" }} />
             <span
-              className="absolute left-3 text-[13px] font-bold tabular-nums"
+              className="absolute left-3 text-[14px] font-bold tabular-nums"
               style={{ top: `calc(${gy1}% + 10px)`, color: "var(--vezo-red)" }}
             >
               {(d * 100).toFixed(1)}% below value
             </span>
           </div>
-          <div className="flex justify-between gap-3 pt-3 mt-3 text-[12px] md:text-[13px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
+          <div className="flex justify-between gap-3 pt-3 mt-3 text-[13px] md:text-[14px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
             {best ? (
               <span className="font-semibold inline-flex items-center gap-1" style={{ color: "var(--text-1)" }}>
                 Buy it in the market <ArrowRight className="cta-arrow" style={{ width: 14, height: 14 }} />
@@ -324,14 +324,14 @@ function ListedNow() {
                 href={`/marketplace?focus=${l.listingId}`}
                 className="market-row listing-row grid grid-cols-[auto_auto_minmax(0,1fr)_auto] md:grid-cols-[28px_auto_1.2fr_1fr_1fr_auto_20px] items-center gap-x-3 md:gap-x-5 px-4 md:px-6 py-4 md:py-5"
               >
-                <span className="text-[13px] font-semibold tabular-nums" style={{ color: "var(--text-3)" }}>{start + k + 1}</span>
+                <span className="text-[14px] font-semibold tabular-nums" style={{ color: "var(--text-3)" }}>{start + k + 1}</span>
                 <PositionGlyph collection={l.collection} lockEnd={l.lockEnd} size={40} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-[15px] font-semibold whitespace-nowrap truncate" style={{ color: "var(--text-1)" }}>{l.collection} <span style={{ color: "var(--text-3)" }}>#{l.tokenId.toString()}</span></span>
                     {l.isGrant && <span className="hidden sm:inline-flex"><GrantTag /></span>}
                   </div>
-                  <span className="text-[13px] tabular-nums whitespace-nowrap" style={{ color: "var(--text-3)" }}>
+                  <span className="text-[14px] tabular-nums whitespace-nowrap" style={{ color: "var(--text-3)" }}>
                     {Number(l.lockEnd) === 0 ? "Permanent lock" : <>Unlocks in <CountdownCompact lockEnd={l.lockEnd} /></>}
                   </span>
                 </div>
@@ -341,9 +341,9 @@ function ListedNow() {
                 </div>
                 <div className="text-right">
                   <div className="text-[16px] font-bold tabular-nums whitespace-nowrap" style={{ color: "var(--text-1)" }}>
-                    {fmtAmount(l.price)} <span className="text-[12px] font-semibold" style={{ color: "var(--text-3)" }}>{getPaymentTokenSymbol(l.paymentToken)}</span>
+                    {fmtAmount(l.price)} <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>{getPaymentTokenSymbol(l.paymentToken)}</span>
                   </div>
-                  <div className="text-[13px] font-semibold"><DiscountText discountBps={l.discountBps} estimated={l.discountEstimated} /></div>
+                  <div className="text-[14px] font-semibold"><DiscountText discountBps={l.discountBps} estimated={l.discountEstimated} /></div>
                 </div>
                 <ArrowRight className="row-arrow hidden md:block" style={{ width: 16, height: 16, color: "var(--text-3)" }} />
               </Link>

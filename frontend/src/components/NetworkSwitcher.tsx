@@ -39,7 +39,7 @@ export function NetworkSwitcher() {
           style={{ top: "var(--header-h)", background: "var(--bg-1)", borderBottom: "1px solid rgba(217,119,6,0.35)" }}
           role="status"
         >
-          <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-10 lg:px-16 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px]">
             <span className="inline-flex items-center gap-2 font-semibold" style={{ color: "#B45309" }}>
               <AlertTriangle style={{ width: 14, height: 14 }} /> Wrong network
             </span>
@@ -50,7 +50,7 @@ export function NetworkSwitcher() {
             <button
               onClick={handleSwitch}
               disabled={isAdding}
-              className="hdr-primary ml-auto h-8 px-3.5 rounded-lg text-[13px] font-semibold inline-flex items-center gap-2"
+              className="hdr-primary ml-auto h-8 px-3.5 rounded-lg text-[14px] font-semibold inline-flex items-center gap-2"
             >
               {isAdding ? <Loader2 className="animate-spin" style={{ width: 13, height: 13 }} /> : <ArrowRight style={{ width: 13, height: 13 }} />}
               {isAdding ? "Check your wallet…" : "Switch network"}
