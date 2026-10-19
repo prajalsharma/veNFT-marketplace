@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { encodeFunctionData, decodeFunctionResult, parseAbi } from "viem";
 import { CONTRACTS } from "@/lib/contracts";
+import { priceSeries, priceAt } from "@/lib/priceHistory";
 
 // Dollar value of what has moved through Vezo, priced at the time it happened.
 //
@@ -19,9 +20,6 @@ export const dynamic = "force-dynamic";
 
 const PAGE = 1000;
 const MAX_PAGES = 20;
-const HOUR = 3_600_000;
-// CoinGecko returns hourly points only for ranges up to 90 days.
-const CHUNK_SEC = 85 * 86_400;
 const HEADERS = { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=3600" };
 
 const m = CONTRACTS.mainnet;
@@ -51,9 +49,8 @@ export interface MarketValue {
 }
 
 // ── Caches ──────────────────────────────────────────────────────────────────
-// Closed price windows and past-block reads never change, so they are kept for
-// the life of the instance. Only the window touching "now" is refetched.
-const priceChunks = new Map<number, [number, number][]>();
+// Past-block reads never change, so they are kept for the life of the
+// instance. Price history is cached in lib/priceHistory.
 const lockedAt = new Map<string, number>();
 let memo: { at: number; body: MarketValue } | null = null;
 const MEMO_MS = 10 * 60_000;
@@ -89,55 +86,6 @@ async function events(url: string): Promise<Ev[]> {
     if (d.activityEvents.length < PAGE) break;
   }
   return out;
-}
-
-async function priceWindow(from: number, now: number): Promise<[number, number][]> {
-  const to = from + CHUNK_SEC;
-  const closed = to < now - 3600;
-  const hit = priceChunks.get(from);
-  if (hit && closed) return hit;
-  const res = await fetch(
-    `https://api.coingecko.com/api/v3/coins/mezo/market_chart/range?vs_currency=usd&from=${from}&to=${Math.min(to, now)}`,
-    {
-      headers: { Accept: "application/json", "User-Agent": "Vezo-Exchange/1.0" },
-      // Closed windows never change: keep them in Next's shared data cache so
-      // every instance and deploy reuses them instead of spending CoinGecko's
-      // small free rate limit. Only 200 responses are cached. The open window
-      // refreshes hourly, matching the hourly points it returns.
-      ...(closed ? { cache: "force-cache" as const } : { next: { revalidate: 3600 } }),
-    }
-  );
-  if (!res.ok) {
-    if (hit) return hit;
-    throw new Error(`coingecko ${res.status}`);
-  }
-  const prices = ((await res.json()) as { prices?: [number, number][] }).prices ?? [];
-  if (closed) priceChunks.set(from, prices);
-  return prices;
-}
-
-/** Hourly MEZO/USD from `startSec` to now, sorted by time. */
-async function mezoPrices(startSec: number): Promise<[number, number][]> {
-  const now = Math.floor(Date.now() / 1000);
-  // Align windows so closed ones keep the same cache key across requests.
-  const first = Math.floor(startSec / CHUNK_SEC) * CHUNK_SEC;
-  const all: [number, number][] = [];
-  for (let f = first; f < now; f += CHUNK_SEC) all.push(...(await priceWindow(f, now)));
-  return all.sort((a, b) => a[0] - b[0]);
-}
-
-/** Price at the point nearest to `ms`, or null if none is within 3 hours. */
-function priceAt(series: [number, number][], ms: number): number | null {
-  let lo = 0, hi = series.length - 1;
-  if (hi < 0) return null;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (series[mid][0] < ms) lo = mid + 1;
-    else hi = mid;
-  }
-  const near = [lo - 1, lo].filter((i) => i >= 0 && i < series.length)
-    .reduce((a, b) => (Math.abs(series[a][0] - ms) <= Math.abs(series[b][0] - ms) ? a : b));
-  return Math.abs(series[near][0] - ms) <= 3 * HOUR ? series[near][1] : null;
 }
 
 /** locked(tokenId).amount at each block, in MEZO. One JSON-RPC batch. */
@@ -190,8 +138,7 @@ export async function GET() {
   try {
     const evs = await events(url);
     if (evs.length === 0) throw new Error("no events");
-    const start = Math.min(...evs.map((e) => Number(e.timestamp)));
-    const series = await mezoPrices(start);
+    const series = await priceSeries("mezo", evs.map((e) => Number(e.timestamp)));
 
     let mezoTraded = 0, mezoTradedUsd = 0, musdTraded = 0;
     for (const e of evs) {

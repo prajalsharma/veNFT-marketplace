@@ -106,11 +106,18 @@ interface Donor {
   MUSD: string;
   count: number;
   lastAt: string | null;
+  /** USD at the time of each contribution (server); absent for optimistic
+   *  entries and null when price history was unavailable. */
+  usd?: number | null;
 }
 
 interface BoardData {
   donors: Donor[];
   totals: { BTC: string; MEZO: string; MUSD: string };
+  totalsUsd?: { BTC: number; MEZO: number; MUSD: number } | null;
+  totalUsd?: number | null;
+  /** Optimistic contributions the server hasn't indexed yet (wei). */
+  pending?: { BTC: string; MEZO: string; MUSD: string };
   donationCount: number;
 }
 
@@ -581,23 +588,31 @@ function SupportersBoard({
   );
 
   const ranked = useMemo(() => {
-    const donors = [...(data?.donors ?? [])].sort((a, b) => usdOf(b) - usdOf(a));
+    const worth = (d: Donor) => (typeof d.usd === "number" ? d.usd : usdOf(d));
+    const donors = [...(data?.donors ?? [])].sort((a, b) => worth(b) - worth(a));
     let anonSeq = 0;
     return donors.map((d) => ({
       ...d,
-      usd: usdOf(d),
+      usd: worth(d),
       display: d.anon ? `anon${++anonSeq}` : d.name ?? shortAddr(d.address),
       mono: !d.anon && !d.name,
     }));
   }, [data, usdOf]);
 
-  const totalUsd = data ? usdOf(data.totals) : 0;
-  const tokenLine = data
-    ? (["BTC", "MEZO", "MUSD"] as const)
-        .filter((t) => BigInt(data.totals[t]) > 0n)
-        .map((t) => `${fmtAmount(BigInt(data.totals[t]))} ${t}`)
-        .join(" · ")
-    : "";
+  // Dollar worth per token: priced when each contribution arrived (server),
+  // falling back to live prices if that history couldn't be loaded.
+  const atTime = !!data?.totalsUsd;
+  const live = (t: SupportToken, wei: string) => {
+    const p = prices[t];
+    return p ? parseFloat(formatEther(BigInt(wei))) * p : 0;
+  };
+  const tokenUsd = (t: SupportToken) => {
+    if (!data) return 0;
+    if (data.totalsUsd) return data.totalsUsd[t] + (data.pending ? live(t, data.pending[t]) : 0);
+    return live(t, data.totals[t]);
+  };
+  const totalUsd = data ? tokenUsd("BTC") + tokenUsd("MEZO") + tokenUsd("MUSD") : 0;
+  const fmtUsd = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div
@@ -628,24 +643,55 @@ function SupportersBoard({
         </a>
       </div>
 
-      {data && data.donors.length > 0 && (
-        <div
-          className="mx-6 mb-4 px-4 py-3 rounded-xl flex items-baseline justify-between gap-3 flex-wrap"
-          style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
-        >
-          <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>
+      <section
+        aria-label="Raised so far"
+        className="mx-6 mb-5 rounded-xl overflow-hidden"
+        style={{ background: "var(--bg-2)", border: "1px solid var(--border-subtle)" }}
+      >
+        <div className="px-5 pt-5 pb-4">
+          <p className="text-[14px] font-semibold inline-flex items-center gap-2" style={{ color: "var(--text-3)" }}>
+            <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
             Raised so far
-          </span>
-          <span className="text-right">
-            <span className="text-[16px] font-bold tabular-nums mr-2" style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
-              &#8776; ${totalUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-            <span className="text-[13px] tabular-nums" style={{ color: "var(--text-3)", fontVariantNumeric: "tabular-nums" }}>
-              {tokenLine}
-            </span>
-          </span>
+          </p>
+          {data ? (
+            <p
+              className="font-bold tabular-nums leading-none mt-2.5"
+              style={{ fontSize: "clamp(2.25rem, 4vw, 2.75rem)", letterSpacing: "-0.04em", color: "var(--text-1)" }}
+            >
+              {fmtUsd(totalUsd)}
+            </p>
+          ) : (
+            <span className="inline-block mt-2.5 h-10 w-36 skeleton rounded" aria-label="Loading total" />
+          )}
+          <p className="text-[14px] mt-2" style={{ color: "var(--text-3)" }}>
+            {!data
+              ? "\u00a0"
+              : data.donationCount === 0
+                ? "Nothing yet. Be the first to back Vezo."
+                : `${data.donationCount} ${data.donationCount === 1 ? "contribution" : "contributions"}${atTime ? ", each counted at its token's price when it arrived" : ", at today's prices"}`}
+          </p>
         </div>
-      )}
+        <dl style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          {(["BTC", "MEZO", "MUSD"] as const).map((t, i) => (
+            <div
+              key={t}
+              className="flex items-center gap-3 px-5 py-3"
+              style={i ? { borderTop: "1px solid var(--border-subtle)" } : undefined}
+            >
+              <dt className="flex items-center gap-2 text-[14px] font-semibold w-16 shrink-0" style={{ color: "var(--text-2)" }}>
+                <span aria-hidden className="w-2 h-2 rounded-full" style={{ background: TOKEN_META[t].dot }} />
+                {t}
+              </dt>
+              <dd className="flex-1 min-w-0 truncate text-[14px] tabular-nums" style={{ color: "var(--text-2)" }}>
+                {data ? `${fmtAmount(BigInt(data.totals[t]))} ${t}` : "\u00a0"}
+              </dd>
+              <dd className="shrink-0 text-[15px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>
+                {data ? fmtUsd(tokenUsd(t)) : ""}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       {loading && !data ? (
         <div className="px-6 pb-6 space-y-3">
@@ -715,7 +761,7 @@ function SupportersBoard({
                   className="shrink-0 text-[14px] font-bold tabular-nums"
                   style={{ color: "var(--text-1)", fontVariantNumeric: "tabular-nums" }}
                 >
-                  {d.usd > 0 ? `$${d.usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                  {d.usd > 0 ? fmtUsd(d.usd) : "—"}
                 </span>
               </motion.div>
             );
@@ -773,7 +819,7 @@ function MainnetRecord() {
                 <span className="inline-block h-[1.6rem] w-16 rounded skeleton" aria-label={`Loading ${s.l}`} />
               )}
               <p className="text-[13px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
-              {s.s ? <p className="text-[17px] font-bold tabular-nums mt-1 leading-none" style={{ color: "var(--vezo-red-text)", letterSpacing: "-0.02em" }}>{s.s}</p> : null}
+              {s.s ? <p className="text-[17px] font-bold tabular-nums mt-1 leading-none" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>{s.s}</p> : null}
             </div>
           ))}
         </div>
@@ -820,6 +866,7 @@ export default function SupportClient() {
     if (localDonors.length === 0) return base;
     const donors = base.donors.map((d) => ({ ...d }));
     const totals = { BTC: BigInt(base.totals.BTC), MEZO: BigInt(base.totals.MEZO), MUSD: BigInt(base.totals.MUSD) };
+    const pending = { BTC: 0n, MEZO: 0n, MUSD: 0n };
     let extraCount = 0;
     for (const ld of localDonors) {
       const t = donatedToken(ld);
@@ -831,14 +878,18 @@ export default function SupportClient() {
         existing.count += 1;
         existing.lastAt = ld.lastAt;
         if (ld.name || ld.anon) { existing.name = ld.name; existing.anon = ld.anon; }
+        existing.usd = undefined; // revalue at live prices until the server absorbs it
       } else {
         const { baseline: _b, ...donor } = ld;
         donors.push(donor);
       }
       totals[t] += BigInt(ld[t]);
+      pending[t] += BigInt(ld[t]);
       extraCount += 1;
     }
     return {
+      ...base,
+      pending: { BTC: pending.BTC.toString(), MEZO: pending.MEZO.toString(), MUSD: pending.MUSD.toString() },
       donors,
       totals: { BTC: totals.BTC.toString(), MEZO: totals.MEZO.toString(), MUSD: totals.MUSD.toString() },
       donationCount: base.donationCount + extraCount,

@@ -229,10 +229,13 @@ function HistoryHero({ stats, value }: { stats: MarketStats; value: MarketValue 
             key={b.label}
             className="hero-split px-6 py-7 md:px-9 md:py-9"
           >
-            <p className="text-[15px] font-semibold" style={{ color: "var(--text-3)" }}>{b.label}</p>
+            <p className="text-[15px] font-semibold inline-flex items-center gap-2" style={{ color: "var(--text-3)" }}>
+              <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--vezo-red)" }} />
+              {b.label}
+            </p>
             <p
               className="font-bold tabular-nums leading-none mt-3"
-              style={{ fontSize: "clamp(2.75rem, 5.2vw, 4.25rem)", letterSpacing: "-0.045em", color: "var(--vezo-red)" }}
+              style={{ fontSize: "clamp(2.75rem, 5.2vw, 4.25rem)", letterSpacing: "-0.045em", color: "var(--text-1)" }}
             >
               {fmtUsdWhole(b.usd)}
             </p>

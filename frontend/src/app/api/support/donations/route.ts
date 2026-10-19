@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CONTRACTS } from "@/lib/contracts";
 import { SUPPORT_ADDRESS, decodeGraffiti } from "@/lib/support";
+import { priceSeries, priceAt, type CoinId, type Series } from "@/lib/priceHistory";
 
 // Supporter board data — rebuilt entirely from public chain data.
 //
@@ -183,10 +184,38 @@ export async function GET() {
     MUSD: bigint;
     count: number;
     lastAt: string | null;
+    usd: number;
   }
   const donors = new Map<string, Donor>();
 
+  // Each contribution is valued at its token's price in the hour it arrived,
+  // the same rule as the marketplace figures. If history can't be loaded the
+  // dollar fields are null and the page falls back to live prices.
+  const COIN: Record<RawDonation["token"], CoinId> = { BTC: "bitcoin", MEZO: "mezo", MUSD: "mezo-usd" };
+  const secOf = (d: RawDonation) => Math.floor(new Date(d.timestamp ?? Date.now()).getTime() / 1000);
+  let usdOk = true;
+  const series: Partial<Record<RawDonation["token"], Series>> = {};
+  try {
+    for (const t of ["BTC", "MEZO", "MUSD"] as const) {
+      const ts = all.filter((d) => d.token === t).map(secOf);
+      if (ts.length) series[t] = await priceSeries(COIN[t], ts);
+    }
+  } catch {
+    usdOk = false;
+  }
+  const usdOf = (d: RawDonation): number | null => {
+    if (!usdOk) return null;
+    // Within the last hour CoinGecko may not have a point yet: use the latest.
+    const s = series[d.token] ?? [];
+    const px = priceAt(s, secOf(d) * 1000) ?? (s.length && Date.now() - s[s.length - 1][0] < 6 * 3_600_000 ? s[s.length - 1][1] : null);
+    if (px === null) { usdOk = false; return null; }
+    return (Number(d.value) / 1e18) * px;
+  };
+  const totalsUsd = { BTC: 0, MEZO: 0, MUSD: 0 };
+
   for (const d of all) {
+    const v = usdOf(d);
+    if (v !== null) totalsUsd[d.token] += v;
     const donor = donors.get(d.from) ?? {
       address: d.from,
       name: null,
@@ -196,8 +225,10 @@ export async function GET() {
       MUSD: 0n,
       count: 0,
       lastAt: null,
+      usd: 0,
     };
     donor[d.token] += d.value;
+    donor.usd += v ?? 0;
     donor.count += 1;
     donor.lastAt = d.timestamp ?? donor.lastAt;
     // Latest graffiti wins, so a donor can rename (or go anonymous) later.
@@ -223,8 +254,12 @@ export async function GET() {
       BTC: d.BTC.toString(),
       MEZO: d.MEZO.toString(),
       MUSD: d.MUSD.toString(),
+      usd: usdOk ? d.usd : null,
     })),
     totals: { BTC: totals.BTC.toString(), MEZO: totals.MEZO.toString(), MUSD: totals.MUSD.toString() },
+    // Dollar value at the time of each contribution; null if prices were unavailable.
+    totalsUsd: usdOk ? totalsUsd : null,
+    totalUsd: usdOk ? totalsUsd.BTC + totalsUsd.MEZO + totalsUsd.MUSD : null,
     donationCount: all.length,
     updatedAt: Date.now(),
   }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60" } });
