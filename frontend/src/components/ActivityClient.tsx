@@ -276,16 +276,16 @@ export default function ActivityClient() {
           <div className="mb-6 space-y-4">
             <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
               Since launch
-              <span className="font-normal" style={{ color: "var(--text-3)" }}> · every indexed event, not just this page</span>
+              <span className="font-normal" style={{ color: "var(--text-3)" }}> · every indexed event, not just this page{value ? ". Dollar values use MEZO's price at the time of each sale or listing" : ""}</span>
             </p>
             <MetricStrip
               metrics={
                 hist.stats && (hist.status === "ready" || hist.status === "stale" || hist.status === "empty")
                   ? [
                       { label: "Sales", value: hist.stats.totalSales.toLocaleString("en-US"), note: `${hist.stats.totalListings.toLocaleString("en-US")} listings` },
-                      { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: value && value.mezoTraded > 0 ? `${fmtUsdWhole(value.mezoTradedUsd)} when sold` : hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet", hint: "Each sale counted at MEZO's price when it sold" },
+                      { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: value && value.mezoTraded > 0 ? fmtUsdWhole(value.mezoTradedUsd) : hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet", hint: "Each sale counted at MEZO's price when it sold" },
                       { label: "MUSD traded", value: fmtCompact(parseFloat(hist.stats.volume.MUSD)), note: hist.stats.averageSale.MUSD ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MUSD))} per sale` : "no MUSD sales yet" },
-                      ...(value ? [{ label: "MEZO brought to market", value: fmtCompact(value.mezoListed), note: `${fmtUsdWhole(value.mezoListedUsd)} when listed`, hint: `MEZO locked in the ${value.positionsListed} veMEZO positions listed on Vezo, each counted once at MEZO's price when first listed` }] : []),
+                      ...(value ? [{ label: "MEZO brought to market", value: fmtCompact(value.mezoListed), note: fmtUsdWhole(value.mezoListedUsd), hint: `MEZO locked in the ${value.positionsListed} veMEZO positions listed on Vezo, each counted once at MEZO's price when first listed` }] : []),
                       { label: "Participants", value: hist.stats.participants.toLocaleString("en-US"), note: `${hist.stats.buyers} buyers, ${hist.stats.sellers} sellers` },
                     ]
                   : hist.status === "loading"

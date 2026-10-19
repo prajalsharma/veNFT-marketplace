@@ -742,9 +742,9 @@ function MainnetRecord() {
         { v: n(st.totalSales), l: st.totalSales === 1 ? "sale" : "sales" },
         { v: n(st.totalListings), l: "veNFT listings" },
         { v: n(st.participants), l: "users" },
-        { v: vol(st.volume.MEZO), l: "MEZO volume", s: value && value.mezoTraded > 0 ? `${fmtUsdWhole(value.mezoTradedUsd)} when sold` : undefined },
+        { v: vol(st.volume.MEZO), l: "MEZO volume", s: value && value.mezoTraded > 0 ? fmtUsdWhole(value.mezoTradedUsd) : undefined },
         { v: vol(st.volume.MUSD), l: "MUSD volume" },
-        ...(value ? [{ v: Math.round(value.mezoListed).toLocaleString("en-US"), l: "MEZO brought to market", s: `${fmtUsdWhole(value.mezoListedUsd)} when listed` }] : []),
+        ...(value ? [{ v: Math.round(value.mezoListed).toLocaleString("en-US"), l: "MEZO brought to market", s: fmtUsdWhole(value.mezoListedUsd) }] : []),
         ...(parseFloat(st.volume.BTC) > 0 ? [{ v: parseFloat(st.volume.BTC).toLocaleString("en-US", { maximumFractionDigits: 4 }), l: "BTC volume" }] : []),
       ]
     : null;
@@ -779,6 +779,11 @@ function MainnetRecord() {
           ))}
         </div>
       )}
+      {value && hist.status !== "error" ? (
+        <p className="text-[12px] -mt-1 mb-5 text-center" style={{ color: "var(--text-3)" }}>
+          Dollar values use MEZO&apos;s price at the time of each sale or listing.
+        </p>
+      ) : null}
     </>
   );
 }
