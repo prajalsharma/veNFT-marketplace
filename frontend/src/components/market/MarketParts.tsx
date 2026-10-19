@@ -29,7 +29,7 @@ export interface Metric {
  */
 export function MetricStrip({ metrics }: { metrics: Metric[] }) {
   return (
-    <dl className="metric-strip">
+    <dl className="metric-strip" style={{ "--metric-n": metrics.length } as React.CSSProperties}>
       {metrics.map((m) => {
         const loading = m.value === "Loading…" || m.value === "…";
         if (loading) {

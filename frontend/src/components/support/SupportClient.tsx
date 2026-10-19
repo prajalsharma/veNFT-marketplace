@@ -26,7 +26,7 @@ import {
 import { CONTRACTS } from "@/lib/contracts";
 import { mezoMainnet } from "@/lib/wagmi";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
-import { useMarketHistory } from "@/hooks/useMarketData";
+import { useMarketHistory, useMarketValue, fmtUsdWhole } from "@/hooks/useMarketData";
 import { useNetwork } from "@/hooks/useNetwork";
 import {
   SUPPORT_ADDRESS,
@@ -733,16 +733,18 @@ function SupportersBoard({
 
 function MainnetRecord() {
   const hist = useMarketHistory();
+  const value = useMarketValue();
   const st = hist.stats;
   const n = (v: number) => v.toLocaleString("en-US");
   const vol = (v: string) => Math.round(parseFloat(v)).toLocaleString("en-US");
-  const items = st
+  const items: { v: string; l: string; s?: string }[] | null = st
     ? [
         { v: n(st.totalSales), l: st.totalSales === 1 ? "sale" : "sales" },
         { v: n(st.totalListings), l: "veNFT listings" },
         { v: n(st.participants), l: "users" },
-        { v: vol(st.volume.MEZO), l: "MEZO volume" },
+        { v: vol(st.volume.MEZO), l: "MEZO volume", s: value && value.mezoTraded > 0 ? `${fmtUsdWhole(value.mezoTradedUsd)} when sold` : undefined },
         { v: vol(st.volume.MUSD), l: "MUSD volume" },
+        ...(value ? [{ v: Math.round(value.mezoListed).toLocaleString("en-US"), l: "MEZO brought to market", s: `${fmtUsdWhole(value.mezoListedUsd)} when listed` }] : []),
         ...(parseFloat(st.volume.BTC) > 0 ? [{ v: parseFloat(st.volume.BTC).toLocaleString("en-US", { maximumFractionDigits: 4 }), l: "BTC volume" }] : []),
       ]
     : null;
@@ -759,7 +761,7 @@ function MainnetRecord() {
         </p>
       ) : (
         <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 mb-5" aria-busy={!items}>
-          {(items ?? Array.from({ length: 5 }, (_, k) => ({ v: "", l: ["sales", "veNFT listings", "users", "MEZO volume", "MUSD volume"][k] }))).map((s) => (
+          {(items ?? Array.from({ length: 5 }, (_, k) => ({ v: "", l: ["sales", "veNFT listings", "users", "MEZO volume", "MUSD volume"][k] }) as { v: string; l: string; s?: string })).map((s) => (
             <div key={s.l} className="text-center">
               {s.v ? (
                 <p
@@ -772,6 +774,7 @@ function MainnetRecord() {
                 <span className="inline-block h-[1.6rem] w-16 rounded skeleton" aria-label={`Loading ${s.l}`} />
               )}
               <p className="text-[12px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
+              {s.s ? <p className="text-[12px] tabular-nums" style={{ color: "var(--text-2)" }}>{s.s}</p> : null}
             </div>
           ))}
         </div>

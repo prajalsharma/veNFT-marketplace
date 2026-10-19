@@ -27,6 +27,7 @@ import { usePriceTicker } from "./usePriceTicker";
 import { getPaymentTokenSymbol } from "@/lib/tokens";
 import { isBuyable } from "@/lib/listings";
 import type { MarketStats } from "@/app/api/market-stats/route";
+import type { MarketValue } from "@/app/api/market-value/route";
 
 export type DataStatus = "loading" | "ready" | "empty" | "stale" | "error";
 
@@ -137,6 +138,27 @@ export function useMarketHistory(): MarketHistory {
     return { status: stale ? "stale" : "ready", stats: data };
   }, [data, isLoading, isError]);
 }
+
+/** Dollar value of MEZO traded and brought to market, priced at the time each
+ *  sale or listing happened (/api/market-value). Null until loaded or when the
+ *  price history is unreachable: callers then show the MEZO figures alone. */
+export function useMarketValue(): MarketValue | null {
+  const { data } = useQuery({
+    queryKey: ["market-value"],
+    queryFn: async (): Promise<MarketValue> => {
+      const res = await fetch("/api/market-value");
+      if (!res.ok) throw new Error(`market-value ${res.status}`);
+      return res.json();
+    },
+    staleTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+  return data && data.status === "ok" ? data : null;
+}
+
+/** "$17,520": whole dollars, for the history figures. */
+export const fmtUsdWhole = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
 
 // ─── Number transitions ──────────────────────────────────────────────────────
 

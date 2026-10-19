@@ -16,7 +16,7 @@ import React, { useMemo, useState } from "react";
 import { useNetwork } from "@/hooks/useNetwork";
 import { useActivityFeed } from "@/hooks/useActivityFeed";
 import { MetricStrip } from "@/components/market/MarketParts";
-import { useMarketHistory, fmtCompact } from "@/hooks/useMarketData";
+import { useMarketHistory, useMarketValue, fmtCompact, fmtUsdWhole } from "@/hooks/useMarketData";
 import { useListingOutcomes, OUTCOME_LABEL, OUTCOME_HELP, type ListingOutcome } from "@/hooks/useListingOutcomes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -221,6 +221,7 @@ export default function ActivityClient() {
 
   const outcomes = useListingOutcomes(unresolvedIds);
   const hist = useMarketHistory();
+  const value = useMarketValue();
 
   // Event-type filter. Counts come from the full feed so the tabs describe it.
   const [kind, setKind] = useState<"all" | "sale" | "listed" | "cancelled">("all");
@@ -282,8 +283,9 @@ export default function ActivityClient() {
                 hist.stats && (hist.status === "ready" || hist.status === "stale" || hist.status === "empty")
                   ? [
                       { label: "Sales", value: hist.stats.totalSales.toLocaleString("en-US"), note: `${hist.stats.totalListings.toLocaleString("en-US")} listings` },
-                      { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet" },
+                      { label: "MEZO traded", value: fmtCompact(parseFloat(hist.stats.volume.MEZO)), note: value && value.mezoTraded > 0 ? `${fmtUsdWhole(value.mezoTradedUsd)} when sold` : hist.stats.averageSale.MEZO ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MEZO))} per sale` : "no MEZO sales yet", hint: "Each sale counted at MEZO's price when it sold" },
                       { label: "MUSD traded", value: fmtCompact(parseFloat(hist.stats.volume.MUSD)), note: hist.stats.averageSale.MUSD ? `avg ${fmtCompact(parseFloat(hist.stats.averageSale.MUSD))} per sale` : "no MUSD sales yet" },
+                      ...(value ? [{ label: "MEZO brought to market", value: fmtCompact(value.mezoListed), note: `${fmtUsdWhole(value.mezoListedUsd)} when listed`, hint: `MEZO locked in the ${value.positionsListed} veMEZO positions listed on Vezo, each counted once at MEZO's price when first listed` }] : []),
                       { label: "Participants", value: hist.stats.participants.toLocaleString("en-US"), note: `${hist.stats.buyers} buyers, ${hist.stats.sellers} sellers` },
                     ]
                   : hist.status === "loading"
