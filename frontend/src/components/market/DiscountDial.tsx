@@ -116,7 +116,7 @@ export function DiscountDial({ listing, status }: { listing: Listing | null; sta
             <p className="text-[14px] tabular-nums" style={{ color: "var(--text-3)" }}>
               {fmtAmount(l!.price)} {getPaymentTokenSymbol(l!.paymentToken)} for {fmtAmount(l!.intrinsicValue)} {l!.collection === "veBTC" ? "BTC" : "MEZO"}
             </p>
-            <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[14px] font-semibold" style={{ color: "var(--text-1)" }}>
+            <span className="dial-cta inline-flex items-center gap-1 mt-4 text-[14px] font-semibold" style={{ color: "var(--vezo-red-text)" }}>
               See it in the market <span aria-hidden className="cta-arrow">→</span>
             </span>
           </>

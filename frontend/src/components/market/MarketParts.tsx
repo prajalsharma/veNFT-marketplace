@@ -18,7 +18,7 @@ export interface Metric {
   label: string;
   value: string;
   note: string;
-  tone?: "default" | "positive" | "muted";
+  tone?: "default" | "positive" | "muted" | "warning";
   hint?: string;
   /** Show the note as a headline figure (e.g. a dollar value), not a caption. */
   noteStrong?: boolean;
@@ -52,7 +52,7 @@ export function MetricStrip({ metrics }: { metrics: Metric[] }) {
             <dd
               className={`truncate self-center tabular-nums ${empty ? "text-[15px] font-semibold" : "metric-value font-bold"}`}
               style={{
-                color: empty ? "var(--text-3)" : m.tone === "positive" ? "var(--success)" : "var(--text-1)",
+                color: empty ? "var(--text-3)" : m.tone === "positive" ? "var(--success)" : m.tone === "warning" ? "var(--warning)" : "var(--text-1)",
                 letterSpacing: empty ? 0 : "-0.03em",
                 fontVariantNumeric: "tabular-nums",
               }}

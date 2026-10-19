@@ -546,7 +546,7 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                 <p className="text-[13px] mt-0.5 flex items-center gap-2" style={{ color: "var(--text-3)" }}>
                   Seller <span className="font-mono" style={{ color: "var(--text-2)" }}>{listing.seller.slice(0, 6)}…{listing.seller.slice(-4)}</span>
                   {listing.isGrant && (
-                    <span className="font-semibold px-1.5 py-0.5 rounded" style={{ color: "#B45309", background: "rgba(245,158,11,0.14)" }}>Grant</span>
+                    <span className="font-semibold px-1.5 py-0.5 rounded" style={{ color: "var(--warning)", background: "rgba(245,158,11,0.14)" }}>Grant</span>
                   )}
                 </p>
               </div>

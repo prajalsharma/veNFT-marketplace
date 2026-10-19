@@ -83,7 +83,7 @@ function formatDiscount(discountBps: number | null, activity?: { type: string; c
   return (
     <span
       className="text-[13px] font-black tabular-nums"
-      style={{ color: "#EF4444", fontVariantNumeric: "tabular-nums" }}
+      style={{ color: "var(--warning)", fontVariantNumeric: "tabular-nums" }}
     >
       +{pct}% prem
     </span>
@@ -232,7 +232,7 @@ function HistoryHero({ stats, value }: { stats: MarketStats; value: MarketValue 
             <p className="text-[15px] font-semibold" style={{ color: "var(--text-3)" }}>{b.label}</p>
             <p
               className="font-bold tabular-nums leading-none mt-3"
-              style={{ fontSize: "clamp(2.75rem, 5.2vw, 4.25rem)", letterSpacing: "-0.045em", color: "var(--text-1)" }}
+              style={{ fontSize: "clamp(2.75rem, 5.2vw, 4.25rem)", letterSpacing: "-0.045em", color: "var(--vezo-red)" }}
             >
               {fmtUsdWhole(b.usd)}
             </p>
@@ -330,9 +330,7 @@ export default function ActivityClient() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors"
-              style={{ color: "var(--text-3)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-1)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
+              style={{ color: "var(--vezo-red-text)" }}
             >
               Explorer
               <ExternalLink style={{ width: 10, height: 10 }} />

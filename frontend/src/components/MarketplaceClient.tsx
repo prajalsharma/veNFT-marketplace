@@ -462,7 +462,7 @@ export default function MarketplaceClient() {
     let listingCount = 0;
     if (priced.length > 0) {
       const avg = priced.reduce((s, l) => s + Number(l.discountBps ?? 0n), 0) / priced.length;
-      avgDiscount = `${(avg / 100).toFixed(1)}%`;
+      avgDiscount = avg < 0 ? `${(-avg / 100).toFixed(1)}% over` : `${(avg / 100).toFixed(1)}%`;
       listingCount = priced.length;
     }
 
@@ -559,8 +559,8 @@ export default function MarketplaceClient() {
                 {
                   label: "Average discount",
                   value: marketStats.avgDiscount === "No listings" ? "None listed" : marketStats.avgDiscount,
-                  note: "below intrinsic value",
-                  tone: marketStats.avgDiscount === "No listings" || marketStats.avgDiscount === "—" ? "muted" : "positive",
+                  note: marketStats.avgDiscount.endsWith("over") ? "above intrinsic value" : "below intrinsic value",
+                  tone: marketStats.avgDiscount === "No listings" || marketStats.avgDiscount === "—" ? "muted" : marketStats.avgDiscount.endsWith("over") ? "warning" : "positive",
                   hint: "Average discount to intrinsic value across every open listing, grant positions included.",
                 },
               ]}

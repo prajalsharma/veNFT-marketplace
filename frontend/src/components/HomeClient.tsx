@@ -73,7 +73,7 @@ function HeroBand({ network }: { network: string }) {
               aria-label="Buy locked Bitcoin for less than it holds."
             >
               {["Buy", "locked", "Bitcoin", "for", "less", "than", "it", "holds."].map((w, k) => (
-                <span key={k} aria-hidden className="word-rise" style={{ animationDelay: `${80 + k * 55}ms`, color: k < 3 ? "var(--text-1)" : "var(--text-3)" }}>
+                <span key={k} aria-hidden className="word-rise" style={{ animationDelay: `${80 + k * 55}ms`, color: k < 3 ? "var(--text-1)" : k < 5 ? "var(--vezo-red)" : "var(--text-3)" }}>
                   {w}{k < 7 ? "\u00a0" : ""}
                 </span>
               ))}
@@ -237,7 +237,7 @@ function TradeTimeline() {
           </div>
           <div className="flex justify-between gap-3 pt-3 mt-3 text-[13px] md:text-[14px]" style={{ borderTop: "1px solid var(--hairline)", color: "var(--text-3)" }}>
             {best ? (
-              <span className="font-semibold inline-flex items-center gap-1" style={{ color: "var(--text-1)" }}>
+              <span className="font-semibold inline-flex items-center gap-1" style={{ color: "var(--vezo-red-text)" }}>
                 Buy it in the market <ArrowRight className="cta-arrow" style={{ width: 14, height: 14 }} />
               </span>
             ) : (

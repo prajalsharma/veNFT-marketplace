@@ -61,6 +61,10 @@
   --vezo-red-12: rgba(255,0,64,0.12);
   --vezo-red-22: rgba(255,0,64,0.22);
   --vezo-red-40: rgba(255,0,64,0.40);
+  /* Red for small text: passes 4.5:1 on the surfaces of this theme */
+  --vezo-red-text: #FF0040;
+  /* Caution (priced above value): amber, so red stays the brand colour */
+  --warning: #F59E0B;
 
   /* Surfaces — deep off-black */
   --bg:   #080808;
@@ -124,6 +128,8 @@
   --vezo-red-12: rgba(232,0,58,0.10);
   --vezo-red-22: rgba(232,0,58,0.18);
   --vezo-red-40: rgba(232,0,58,0.38);
+  --vezo-red-text: #D10036;
+  --warning: #B45309;
 
   /* Warm ivory premium surfaces */
   --bg:   #F2EFE9;
@@ -758,8 +764,8 @@ select option {
    a light background). Primary actions use the same inverse tone as the
    header's Connect button; red stays reserved for focus. */
 [data-rk] {
-  --rk-colors-accentColor: var(--text-1) !important;
-  --rk-colors-accentColorForeground: var(--bg-1) !important;
+  --rk-colors-accentColor: var(--vezo-red) !important;
+  --rk-colors-accentColorForeground: #fff !important;
   --rk-colors-connectButtonBackground: var(--bg-1) !important;
   --rk-colors-connectButtonText: var(--text-1) !important;
   --rk-colors-modalBackground: var(--bg-1) !important;
@@ -969,11 +975,11 @@ select option {
 
 /* Primary action: solid ink, not a gradient, with a physical press */
 .btn-buy {
-  background: var(--text-1);
-  color: var(--bg);
+  background: var(--vezo-red);
+  color: #fff;
   transition: transform 120ms var(--ease-out), opacity 160ms var(--ease-out);
 }
-.btn-buy:hover:not(:disabled) { opacity: 0.88; }
+.btn-buy:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-buy:active:not(:disabled) { transform: scale(0.98); }
 .btn-buy:disabled { background: var(--bg-2); color: var(--text-3); }
 
@@ -1232,7 +1238,8 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
    tones (ghost, outline, primary) and one popover surface. */
 :root { --header-solid: var(--bg); --header-h: 97px; }
 .hdr-nav { color: var(--text-2); letter-spacing: -0.01em; transition: color 140ms ease; }
-.hdr-nav:hover, .hdr-nav[data-active] { color: var(--text-1); }
+.hdr-nav:hover { color: var(--text-1); }
+.hdr-nav[data-active] { color: var(--vezo-red-text); }
 .hdr-nav[data-active] { font-weight: 600; }
 .hdr-nav:focus-visible { box-shadow: inset 0 0 0 2px var(--vezo-red); border-radius: 6px; }
 .hdr-ghost { color: var(--text-2); transition: color 140ms ease, background-color 140ms ease; }
@@ -1241,8 +1248,8 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
 .hdr-outline:hover { border-color: var(--border-strong); }
 .hdr-warn { border: 1px solid rgba(217,119,6,0.45); background: rgba(217,119,6,0.08); color: #B45309; }
 .dark .hdr-warn { color: #F59E0B; }
-.hdr-primary { background: var(--text-1); color: var(--bg-1); transition: opacity 140ms ease, transform 120ms ease; }
-.hdr-primary:hover:not(:disabled) { opacity: 0.88; }
+.hdr-primary { background: var(--vezo-red); color: #fff; transition: opacity 140ms ease, transform 120ms ease; }
+.hdr-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .hdr-primary:active:not(:disabled) { transform: scale(0.98); }
 .hdr-primary:disabled { opacity: 0.6; cursor: default; }
 :is(.hdr-ghost, .hdr-outline, .hdr-warn, .hdr-primary, .hdr-item, .hdr-icon):focus-visible { outline: 2px solid var(--vezo-red); outline-offset: 2px; }

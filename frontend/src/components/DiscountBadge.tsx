@@ -49,9 +49,9 @@ export function DiscountBadge({ discountBps }: DiscountBadgeProps) {
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[13px] font-bold tabular-nums"
       style={{
-        background: isDiscount ? "rgba(16,185,129,0.09)" : "rgba(239,68,68,0.09)",
-        border: isDiscount ? "1px solid rgba(16,185,129,0.24)" : "1px solid rgba(239,68,68,0.24)",
-        color: isDiscount ? "#10B981" : "#EF4444",
+        background: isDiscount ? "rgba(16,185,129,0.09)" : "rgba(245,158,11,0.12)",
+        border: isDiscount ? "1px solid rgba(16,185,129,0.24)" : "1px solid rgba(245,158,11,0.3)",
+        color: isDiscount ? "#10B981" : "var(--warning)",
       }}
     >
       {isDiscount ? (

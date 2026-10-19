@@ -93,14 +93,14 @@ export function PriceValueBar({ discountBps, legend = false }: { discountBps: bi
         {rest > 0.002 && (
           <div
             className="h-full rounded-full bar-fill bar-fill--late"
-            style={{ width: `${rest * 100}%`, background: premium ? "#EF4444" : "var(--success)" }}
+            style={{ width: `${rest * 100}%`, background: premium ? "var(--warning)" : "var(--success)" }}
           />
         )}
       </div>
       {legend && (
         <div className="flex justify-between mt-2 text-[13px] font-semibold tabular-nums">
           <span style={{ color: "var(--text-2)" }}>{premium ? `Worth ${pct(paid)} of the price` : `You pay ${pct(paid)}`}</span>
-          <span style={{ color: premium ? "#EF4444" : "var(--success)" }}>
+          <span style={{ color: premium ? "var(--warning)" : "var(--success)" }}>
             {premium ? `${pct(-d)} over value` : `${pct(rest)} discount`}
           </span>
         </div>

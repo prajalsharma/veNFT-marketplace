@@ -465,8 +465,7 @@ function DonatePanel({ onDonated }: { onDonated: (d: Donor) => void }) {
             return (
               <button
                 onClick={openConnectModal}
-                className="w-full py-3 rounded-xl text-[14px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
-                style={{ background: "var(--text-1)", color: "var(--bg)" }}
+                className="btn-brand w-full py-3 rounded-xl text-[14px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
               >
                 Connect wallet
               </button>
@@ -774,7 +773,7 @@ function MainnetRecord() {
                 <span className="inline-block h-[1.6rem] w-16 rounded skeleton" aria-label={`Loading ${s.l}`} />
               )}
               <p className="text-[13px] mt-1.5" style={{ color: "var(--text-3)" }}>{s.l}</p>
-              {s.s ? <p className="text-[17px] font-bold tabular-nums mt-1 leading-none" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>{s.s}</p> : null}
+              {s.s ? <p className="text-[17px] font-bold tabular-nums mt-1 leading-none" style={{ color: "var(--vezo-red-text)", letterSpacing: "-0.02em" }}>{s.s}</p> : null}
             </div>
           ))}
         </div>

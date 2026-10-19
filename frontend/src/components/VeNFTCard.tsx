@@ -71,7 +71,7 @@ export function DiscountText({ discountBps, estimated = false }: { discountBps: 
   return (
     <span
       className="tabular-nums"
-      style={{ color: d > 0 ? "var(--success)" : "#EF4444", fontVariantNumeric: "tabular-nums" }}
+      style={{ color: d > 0 ? "var(--success)" : "var(--warning)", fontVariantNumeric: "tabular-nums" }}
       title={estimated ? "Estimate: priced in a different token, converted at today's prices" : undefined}
     >
       {approx}{d > 0 ? `${d.toFixed(1)}% off` : `${(-d).toFixed(1)}% over`}
