@@ -120,7 +120,7 @@ export function SiteFooter() {
               The secondary market for veBTC and veMEZO. Listings stay in the seller&apos;s wallet until one transaction settles both sides.
             </p>
             <p className="text-[15px] leading-[1.6] mt-6" style={{ color: "var(--text-2)" }}>
-              Independent and free to use.{" "}
+              Independent, with a 1% fee on sales.{" "}
               <a href="https://support.vezo.exchange" className="footer-link font-semibold inline-flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]" style={{ color: "var(--text-1)" }}>
                 Support the build <span aria-hidden className="cta-arrow">→</span>
               </a>

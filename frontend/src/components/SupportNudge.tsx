@@ -93,7 +93,7 @@ export function SupportNudge() {
             </p>
           </div>
           <p className="text-[14px] leading-relaxed mb-3.5 pr-2" style={{ color: "var(--text-2)" }}>
-            Vezo is independent and free to use. If it&apos;s helped you, a
+            Vezo is independent and takes only 1% per sale. If it&apos;s helped you, a
             contribution in BTC, MEZO or MUSD keeps it running. Every supporter
             goes on the public board.
           </p>

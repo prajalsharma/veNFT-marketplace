@@ -906,7 +906,7 @@ function RaisedMeter({ data, onPick }: { data: BoardData | null; onPick: (usd: n
   );
 }
 
-// ─── What you're backing ─────────────────────────────────────────────────────
+// ─── Our impact so far ───────────────────────────────────────────────────────
 
 function TrackRecord() {
   const hist = useMarketHistory();
@@ -925,10 +925,10 @@ function TrackRecord() {
   return (
     <section aria-labelledby="backing-h" className="pt-4">
       <h2 id="backing-h" className="font-bold" style={{ fontSize: "clamp(1.6rem, 3vw, 2.1rem)", letterSpacing: "-0.035em", color: "var(--text-1)" }}>
-        What you&apos;re backing
+        Our impact on Mezo so far
       </h2>
       <p className="text-[16px] leading-relaxed mt-2 max-w-[56ch]" style={{ color: "var(--text-2)" }}>
-        The first secondary market for veNFTs on Mezo. Live on mainnet since March 16, 2026, contracts reviewed by the Mezo team, free to use beyond a small protocol fee.
+        The first secondary market for veNFTs on Mezo. Live on mainnet since March 16, 2026, contracts reviewed by the Mezo team, and a flat 1% fee on sales.
       </p>
 
       {hist.status === "error" ? (
@@ -979,19 +979,19 @@ function TrackRecord() {
   );
 }
 
-// ─── Where it goes ───────────────────────────────────────────────────────────
+// ─── What support builds ─────────────────────────────────────────────────────
 
 const USES = [
-  { t: "Keeping the lights on", d: "Hosting, price feeds, and the on-chain index behind Activity and the board." },
-  { t: "Reviews before every change", d: "New contract code gets checked before it touches anyone's veNFT." },
-  { t: "The next features", d: "Better bidding, more payment routes, and tools for sellers." },
+  { t: "New features", d: "Better bidding, more ways to pay, and tools that make selling a veNFT easier." },
+  { t: "A safer Vezo", d: "Every contract change gets reviewed before it touches anyone's veNFT." },
+  { t: "Fast and reliable", d: "Hosting, price feeds, and the on-chain index behind Activity and this board." },
 ];
 
 function WhereItGoes() {
   return (
     <section aria-labelledby="goes-h">
       <h2 id="goes-h" className="font-bold" style={{ fontSize: "clamp(1.6rem, 3vw, 2.1rem)", letterSpacing: "-0.035em", color: "var(--text-1)" }}>
-        Where it goes
+        What your support builds
       </h2>
       <ol className="mt-6">
         {USES.map((u, i) => (
@@ -1218,12 +1218,12 @@ export default function SupportClient() {
           className="font-bold"
           style={{ fontSize: "clamp(2.6rem, 6vw, 4.4rem)", letterSpacing: "-0.05em", lineHeight: 1.02, color: "var(--text-1)", textWrap: "balance" }}
         >
-          Keep Vezo free for everyone on Mezo
+          Help shape what Vezo builds next
         </h1>
         <p className="mt-5 leading-relaxed max-w-[54ch]" style={{ color: "var(--text-2)", fontSize: "clamp(1.06rem, 1.5vw, 1.2rem)" }}>
-          A small independent team builds and runs Vezo. If it found you a discount or
-          freed a lock you were stuck with, chip in for the next stretch. Any amount, in
-          BTC, MEZO, or MUSD.
+          Vezo takes a flat 1% of each sale, and that&apos;s all. Your support goes into new
+          features and into making Vezo more useful for everyone holding a veNFT on Mezo,
+          without raising that fee. Any amount, in BTC, MEZO, or MUSD.
         </p>
         <RaisedMeter data={merged} onPick={pickFromHero} />
       </motion.div>
