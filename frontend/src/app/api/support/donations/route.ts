@@ -12,6 +12,14 @@ import { priceSeries, priceAt, type CoinId, type Series } from "@/lib/priceHisto
 //    decode the optional "vezo:<name>" / "vezo:anon" graffiti the donate flow
 //    appends to the transfer calldata.
 //
+// What counts as support. The wallet is also used to manage the funds (swaps,
+// approvals), so "anything that arrives" is not enough:
+//   a. Someone else signed it. Tokens that land in a transaction the support
+//      wallet sent itself (swap output, refunds) are our own money moving.
+//   b. It is worth at least MIN_USD when it arrived. Dust and gas top-ups
+//      are not contributions.
+//   c. The sender is not one of our own wallets (SUPPORT_IGNORE_SENDERS).
+//
 // No database anywhere: names, amounts, and ranks are all reconstructable by
 // anyone from the explorer. Cached for 60s at the edge.
 
@@ -24,6 +32,20 @@ export const dynamic = "force-dynamic";
 const EXPLORER_API = "https://api.explorer.mezo.org/api/v2";
 const RPC = CONTRACTS.mainnet.rpcUrl;
 const MAX_PAGES = 6; // 50 items/page — lifts trivially if the board outgrows it
+const MIN_USD = 1;
+// Used only when price history can't be loaded, so the floor still applies.
+const MIN_UNITS: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
+  BTC: 10n ** 13n, // 0.00001 BTC
+  MEZO: 100n * 10n ** 18n,
+  MUSD: 10n ** 18n,
+};
+// Our own wallets (gas top-ups, moving funds in). Server-only, comma separated.
+const IGNORED_SENDERS = new Set(
+  (process.env.SUPPORT_IGNORE_SENDERS ?? "")
+    .split(",")
+    .map((a) => a.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 const TOKEN_BY_ADDR: Record<string, "BTC" | "MEZO" | "MUSD"> = {
   [CONTRACTS.mainnet.BTC.toLowerCase()]: "BTC",
@@ -76,9 +98,9 @@ async function fetchPaged(path: string, filterQuery: string): Promise<Record<str
   return items;
 }
 
-/** Batch eth_getTransactionByHash to recover graffiti from donation inputs. */
-async function fetchInputs(hashes: string[]): Promise<Map<string, string>> {
-  const inputs = new Map<string, string>();
+/** Batch eth_getTransactionByHash: graffiti from the input, and who signed it. */
+async function fetchTxs(hashes: string[]): Promise<Map<string, { input: string; from: string }>> {
+  const inputs = new Map<string, { input: string; from: string }>();
   const CHUNK = 20;
   for (let i = 0; i < hashes.length; i += CHUNK) {
     const batch = hashes.slice(i, i + CHUNK).map((h, j) => ({
@@ -95,10 +117,13 @@ async function fetchInputs(hashes: string[]): Promise<Map<string, string>> {
         next: { revalidate: 3600 }, // tx inputs are immutable
       });
       if (!res.ok) continue;
-      const results = (await res.json()) as { id: number; result?: { hash: string; input: string } }[];
+      const results = (await res.json()) as { id: number; result?: { hash: string; input: string; from: string } }[];
       for (const r of Array.isArray(results) ? results : []) {
         if (r?.result?.hash && typeof r.result.input === "string") {
-          inputs.set(r.result.hash.toLowerCase(), r.result.input);
+          inputs.set(r.result.hash.toLowerCase(), {
+            input: r.result.input,
+            from: String(r.result.from ?? "").toLowerCase(),
+          });
         }
       }
     } catch {
@@ -111,10 +136,13 @@ async function fetchInputs(hashes: string[]): Promise<Map<string, string>> {
 export async function GET() {
   const addr = SUPPORT_ADDRESS.toLowerCase();
 
-  const [transfers, txs] = await Promise.all([
+  const [transfers, txs, sent] = await Promise.all([
     fetchPaged(`/addresses/${SUPPORT_ADDRESS}/token-transfers`, "filter=to"),
     fetchPaged(`/addresses/${SUPPORT_ADDRESS}/transactions`, "filter=to"),
+    fetchPaged(`/addresses/${SUPPORT_ADDRESS}/transactions`, "filter=from"),
   ]);
+  // Rule a: transactions the support wallet signed itself.
+  const selfSent = new Set(sent.map((t) => String(t.hash ?? "").toLowerCase()).filter(Boolean));
 
   const donations = new Map<string, RawDonation>();
 
@@ -127,6 +155,7 @@ export async function GET() {
     const total = t.total as Record<string, unknown> | undefined;
     const hash = String(t.transaction_hash ?? t.tx_hash ?? "").toLowerCase();
     if (!sym || !hash || !from || String(to).toLowerCase() !== addr) continue;
+    if (selfSent.has(hash) || IGNORED_SENDERS.has(String(from).toLowerCase())) continue;
     let value: bigint;
     try {
       value = BigInt(String(total?.value ?? "0"));
@@ -152,6 +181,7 @@ export async function GET() {
     const to = (t.to as Record<string, unknown> | undefined)?.hash;
     if (!hash || loggedHashes.has(hash) || !from) continue;
     if (String(to).toLowerCase() !== addr) continue;
+    if (selfSent.has(hash) || IGNORED_SENDERS.has(String(from).toLowerCase())) continue;
     if (t.status && t.status !== "ok") continue;
     let value: bigint;
     try {
@@ -169,11 +199,13 @@ export async function GET() {
     });
   }
 
-  const all = [...donations.values()].sort(
+  const candidates = [...donations.values()].sort(
     (a, b) => new Date(a.timestamp ?? 0).getTime() - new Date(b.timestamp ?? 0).getTime()
   );
 
-  const inputs = await fetchInputs([...new Set(all.map((d) => d.hash))]);
+  const txInfo = await fetchTxs([...new Set(candidates.map((d) => d.hash))]);
+  // Rule a again, from the node: covers a self-sent tx the explorer list missed.
+  const signedByOthers = candidates.filter((d) => txInfo.get(d.hash)?.from !== addr);
 
   interface Donor {
     address: string;
@@ -197,7 +229,7 @@ export async function GET() {
   const series: Partial<Record<RawDonation["token"], Series>> = {};
   try {
     for (const t of ["BTC", "MEZO", "MUSD"] as const) {
-      const ts = all.filter((d) => d.token === t).map(secOf);
+      const ts = signedByOthers.filter((d) => d.token === t).map(secOf);
       if (ts.length) series[t] = await priceSeries(COIN[t], ts);
     }
   } catch {
@@ -211,10 +243,17 @@ export async function GET() {
     if (px === null) { usdOk = false; return null; }
     return (Number(d.value) / 1e18) * px;
   };
+  // Rule b: value every candidate first; prices are all-or-nothing (usdOk).
+  const valued = signedByOthers.map((d) => ({ d, v: usdOf(d) }));
+  const all = valued
+    .filter(({ d, v }) => (usdOk && v !== null ? v >= MIN_USD : d.value >= MIN_UNITS[d.token]))
+    .map(({ d }) => d);
+  const usdByTx = new Map(valued.map(({ d, v }) => [`${d.hash}:${d.token}`, v]));
+
   const totalsUsd = { BTC: 0, MEZO: 0, MUSD: 0 };
 
   for (const d of all) {
-    const v = usdOf(d);
+    const v = usdOk ? usdByTx.get(`${d.hash}:${d.token}`) ?? null : null;
     if (v !== null) totalsUsd[d.token] += v;
     const donor = donors.get(d.from) ?? {
       address: d.from,
@@ -232,7 +271,7 @@ export async function GET() {
     donor.count += 1;
     donor.lastAt = d.timestamp ?? donor.lastAt;
     // Latest graffiti wins, so a donor can rename (or go anonymous) later.
-    const g = decodeGraffiti(inputs.get(d.hash));
+    const g = decodeGraffiti(txInfo.get(d.hash)?.input);
     if (g) {
       donor.anon = g.anon;
       donor.name = g.anon ? null : g.name;

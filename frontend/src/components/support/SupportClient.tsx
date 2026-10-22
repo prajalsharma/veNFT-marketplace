@@ -532,8 +532,8 @@ function AddressBlock() {
         Prefer your own wallet?
       </p>
       <p className="text-[14px] leading-relaxed mb-3" style={{ color: "var(--text-3)" }}>
-        Send BTC, MEZO, or MUSD on the Mezo network directly. Anything that arrives
-        here counts as support, because this wallet does nothing else.
+        Send BTC, MEZO, or MUSD on the Mezo network directly. Any transfer of $1 or
+        more shows up on the board.
       </p>
       <div className="flex items-center gap-2">
         <code
@@ -668,7 +668,7 @@ function SupportersBoard({
               ? "\u00a0"
               : data.donationCount === 0
                 ? "Nothing yet. Be the first to back Vezo."
-                : `${data.donationCount} ${data.donationCount === 1 ? "contribution" : "contributions"}${atTime ? ", each counted at its token's price when it arrived" : ", at today's prices"}`}
+                : `${data.donationCount} ${data.donationCount === 1 ? "contribution" : "contributions"}${atTime ? `, ${data.donationCount === 1 ? "counted" : "each counted"} at its token's price when it arrived` : ", at today's prices"}`}
           </p>
         </div>
         <dl style={{ borderTop: "1px solid var(--border-subtle)" }}>
