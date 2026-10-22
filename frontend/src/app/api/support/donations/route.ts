@@ -215,6 +215,7 @@ export async function GET() {
     MEZO: bigint;
     MUSD: bigint;
     count: number;
+    firstAt: string | null;
     lastAt: string | null;
     usd: number;
   }
@@ -263,6 +264,8 @@ export async function GET() {
       MEZO: 0n,
       MUSD: 0n,
       count: 0,
+      // `all` is oldest first, so the first contribution seen is the earliest.
+      firstAt: d.timestamp,
       lastAt: null,
       usd: 0,
     };
