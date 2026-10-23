@@ -33,7 +33,9 @@ export const dynamic = "force-dynamic";
 
 const EXPLORER_API = "https://api.explorer.mezo.org/api/v2";
 const RPC = CONTRACTS.mainnet.rpcUrl;
-const MAX_PAGES = 6; // 50 items/page — lifts trivially if the board outgrows it
+// 50 items a page. Stream payouts from the recurring support contract also
+// land here (and are dropped below), so the window has room for many of them.
+const MAX_PAGES = 40;
 const MIN_USD = 1;
 // Used only when price history can't be loaded, so the floor still applies.
 const MIN_UNITS: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
@@ -297,7 +299,10 @@ export async function GET() {
   // contract's own payouts were left out above, so nothing counts twice.
   let streamCount = 0;
   try {
-    const streams = (await loadStreams()).filter((st) => BigInt(st.streamed) >= MIN_LISTED[st.token]);
+    // Vezo's own wallets never count as supporters, as with one-off transfers.
+    const streams = (await loadStreams()).filter(
+      (st) => BigInt(st.streamed) >= MIN_LISTED[st.token] && st.backer !== addr && !IGNORED_SENDERS.has(st.backer)
+    );
     const nowSec = Math.floor(Date.now() / 1000);
     const latest: Partial<Record<RawDonation["token"], number | null>> = {};
     for (const t of ["BTC", "MEZO", "MUSD"] as const) {
@@ -323,7 +328,9 @@ export async function GET() {
       if (!donor.name && !donor.anon && st.name) donor.name = st.name;
       if (st.createdAt && (!donor.firstAt || st.createdAt < donor.firstAt)) donor.firstAt = st.createdAt;
       // A live stream is paying right now, so it counts as the latest activity.
-      if (st.status === "Active") donor.lastAt = new Date().toISOString();
+      // A finished stream keeps the Active status on-chain; only one that is
+      // still running counts as activity right now.
+      if (st.status === "Active" && st.endsAt && st.endsAt * 1000 > Date.now()) donor.lastAt = new Date().toISOString();
       donors.set(st.backer, donor);
       streamCount += 1;
     }

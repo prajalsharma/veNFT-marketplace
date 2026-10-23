@@ -66,18 +66,21 @@ function streamedNow(s: StreamRow, now: number): bigint {
   return (dep * BigInt(t)) / BigInt(s.duration);
 }
 
-function useStreams() {
+/** The connected wallet's own streams, looked up by its address so that no
+ *  amount of other streams can hide them (or their cancel buttons). */
+function useMyStreams(address?: string) {
   const [streams, setStreams] = useState<StreamRow[] | null>(null);
-  const refetch = useCallback(async (fresh = false) => {
+  const refetch = useCallback(async () => {
+    if (!address) { setStreams([]); return; }
     try {
-      const res = await fetch(`/api/support/backers${fresh ? `?t=${Date.now()}` : ""}`, { cache: "no-store" });
+      const res = await fetch(`/api/support/backers?backer=${address}`, { cache: "no-store" });
       if (res.ok) setStreams((await res.json()).streams ?? []);
     } catch { /* keep the last state */ }
-  }, []);
+  }, [address]);
   useEffect(() => {
     if (!LIVE) { setStreams([]); return; }
     refetch();
-    const id = setInterval(() => refetch(), 60_000);
+    const id = setInterval(refetch, 60_000);
     return () => clearInterval(id);
   }, [refetch]);
   return { streams, refetch };
@@ -413,12 +416,9 @@ function MyPlans({ streams, now, onChanged }: { streams: StreamRow[]; now: numbe
 
 export default function RecurringSupport() {
   const { address } = useAccount();
-  const { streams, refetch } = useStreams();
+  const { streams, refetch } = useMyStreams(address);
   const now = useNow();
-  const mine = useMemo(
-    () => (streams ?? []).filter((s) => address && s.backer === address.toLowerCase()).sort((a, b) => Number(b.id) - Number(a.id)),
-    [streams, address]
-  );
+  const mine = useMemo(() => [...(streams ?? [])].sort((a, b) => Number(b.id) - Number(a.id)), [streams]);
 
   const [open, setOpen] = useState(false);
   const reduced = useReducedMotion();
@@ -473,7 +473,7 @@ export default function RecurringSupport() {
               className="overflow-hidden"
             >
               <div className="pt-6 mt-6" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                <StartStream onStarted={() => refetch(true)} />
+                <StartStream onStarted={() => refetch()} />
               </div>
             </motion.div>
           )}
@@ -483,7 +483,7 @@ export default function RecurringSupport() {
 
       {mine.length > 0 && (
         <div className="mt-8">
-          <MyPlans streams={mine} now={now} onChanged={() => refetch(true)} />
+          <MyPlans streams={mine} now={now} onChanged={() => refetch()} />
         </div>
       )}
 
