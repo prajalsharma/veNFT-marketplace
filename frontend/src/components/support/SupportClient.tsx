@@ -9,7 +9,7 @@
  * /api/support/donations). No database, nothing to trust but the chain.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, usePublicClient, useSendTransaction } from "wagmi";
 import { encodeFunctionData, erc20Abi, formatEther, parseEther } from "viem";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -101,6 +101,44 @@ function timeAgo(iso: string | null): string | null {
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
+interface Plan {
+  id: string;
+  token: SupportToken;
+  deposit: string;
+  duration: number;
+  streamed: string;
+  counted: string;
+  state: "streaming" | "paused" | "ended early" | "completed";
+  startedAt: string | null;
+  endsAt: number | null;
+}
+
+/** "3 months", or days when the length isn't whole months. */
+function planLength(seconds: number): string {
+  const month = 30 * 86400;
+  const m = seconds / month;
+  if (Number.isInteger(m)) return `${m} ${m === 1 ? "month" : "months"}`;
+  const d = Math.round(seconds / 86400);
+  return `${d} ${d === 1 ? "day" : "days"}`;
+}
+
+/** One plan as the board shows it, e.g. "50 MUSD over 3 months (16.67 a month)". */
+function planText(p: Plan): string {
+  const dep = BigInt(p.deposit);
+  const months = p.duration / (30 * 86400);
+  const over = `${fmtAmount(dep)} ${p.token} over ${planLength(p.duration)}`;
+  const rate = months > 1 ? ` (${fmtRate(dep, months)} a month)` : "";
+  if (p.state === "streaming") return over + rate;
+  if (p.state === "completed") return `${over}, completed`;
+  if (p.state === "paused") return `Paused, ${fmtAmount(BigInt(p.streamed))} of ${fmtAmount(dep)} ${p.token} streamed`;
+  return `Ended early, ${fmtAmount(BigInt(p.streamed))} ${p.token} streamed`;
+}
+
+function fmtRate(dep: bigint, months: number): string {
+  const v = parseFloat(formatEther(dep)) / months;
+  return v.toLocaleString("en-US", { maximumFractionDigits: v >= 1 ? 2 : 6 });
+}
+
 interface Donor {
   address: string;
   name: string | null;
@@ -111,6 +149,10 @@ interface Donor {
   count: number;
   /** Supports through a recurring stream (server). */
   monthly?: boolean;
+  /** One-off transfers only (server); the token totals above add plans. */
+  gifts?: { BTC: string; MEZO: string; MUSD: string };
+  /** Recurring plans, one per stream (server). */
+  plans?: Plan[];
   /** First contribution (server). */
   firstAt?: string | null;
   lastAt: string | null;
@@ -1030,15 +1072,18 @@ function SupportersBoard({ data, loading, youAddress }: { data: BoardData | null
                     <span className={d.mono ? "font-mono text-[15px]" : ""}>{d.display}</span>
                     {you && <span className="ml-2 text-[14px] font-semibold" style={{ color: "var(--vezo-red-text)" }}>you</span>}
                   </p>
-                  <p className="text-[14px] tabular-nums mt-0.5 truncate" style={{ color: "var(--text-3)" }}>
-                    {d.monthly && (
-                      <span className="font-semibold" style={{ color: "var(--vezo-red-text)" }}>Monthly · </span>
-                    )}
-                    {(["BTC", "MEZO", "MUSD"] as const)
-                      .filter((t) => BigInt(d[t]) > 0n)
-                      .map((t) => `${fmtAmount(BigInt(d[t]))} ${t}`)
-                      .join(" · ")}
-                    {timeAgo(d.lastAt) ? ` · ${timeAgo(d.lastAt)}` : ""}
+                  <p className="text-[14px] leading-snug tabular-nums mt-0.5" style={{ color: "var(--text-3)" }}>
+                    {[
+                      ...(d.plans ?? []).map((pl) => (
+                        <span key={pl.id} className={pl.state === "streaming" ? "font-semibold" : ""} style={pl.state === "streaming" ? { color: "var(--vezo-red-text)" } : undefined}>
+                          {planText(pl)}
+                        </span>
+                      )),
+                      ...(["BTC", "MEZO", "MUSD"] as const)
+                        .filter((t) => BigInt((d.gifts ?? d)[t]) > 0n)
+                        .map((t) => <span key={t}>{`${fmtAmount(BigInt((d.gifts ?? d)[t]))} ${t}`}</span>),
+                      ...(timeAgo(d.lastAt) ? [<span key="ago">{timeAgo(d.lastAt)}</span>] : []),
+                    ].map((el, i) => <Fragment key={i}>{i > 0 && " · "}{el}</Fragment>)}
                   </p>
                 </div>
                 <span className="shrink-0 text-[17px] font-bold tabular-nums" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>

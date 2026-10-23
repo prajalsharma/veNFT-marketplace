@@ -227,6 +227,24 @@ export async function GET() {
     usd: number;
     /** Supports through a recurring stream. */
     monthly: boolean;
+    /** One-off transfers only, per token (the token totals above add plans). */
+    gifts: { BTC: bigint; MEZO: bigint; MUSD: bigint };
+    /** Recurring plans, one per stream, as the contract records them. */
+    plans: Plan[];
+  }
+  interface Plan {
+    id: string;
+    token: RawDonation["token"];
+    /** The whole deposit, streamed evenly over `duration` seconds of running. */
+    deposit: string;
+    duration: number;
+    /** Reached Vezo so far (live at read time). */
+    streamed: string;
+    /** What this plan counts for on the board (see countedAmount). */
+    counted: string;
+    state: "streaming" | "paused" | "ended early" | "completed";
+    startedAt: string | null;
+    endsAt: number | null;
   }
   const donors = new Map<string, Donor>();
 
@@ -278,8 +296,11 @@ export async function GET() {
       lastAt: null,
       usd: 0,
       monthly: false,
+      gifts: { BTC: 0n, MEZO: 0n, MUSD: 0n },
+      plans: [],
     };
     donor[d.token] += d.value;
+    donor.gifts[d.token] += d.value;
     donor.usd += v ?? 0;
     donor.count += 1;
     donor.lastAt = d.timestamp ?? donor.lastAt;
@@ -319,16 +340,30 @@ export async function GET() {
       const donor = donors.get(st.backer) ?? {
         address: st.backer, name: null, anon: false, BTC: 0n, MEZO: 0n, MUSD: 0n,
         count: 0, firstAt: st.createdAt, lastAt: st.createdAt, usd: 0, monthly: true,
+        gifts: { BTC: 0n, MEZO: 0n, MUSD: 0n }, plans: [],
       };
+      donor.plans.push({
+        id: st.id,
+        token: st.token,
+        deposit: st.deposit,
+        duration: st.duration,
+        streamed: st.streamed,
+        counted: amt.toString(),
+        state: isRunning(st) ? "streaming"
+          : st.status === "Paused" ? "paused"
+          : st.status === "Canceled" ? (BigInt(st.streamed) >= BigInt(st.deposit) ? "completed" : "ended early")
+          : "completed",
+        startedAt: st.createdAt,
+        endsAt: st.endsAt,
+      });
       donor[st.token] += amt;
       donor.usd += v ?? 0;
       donor.count += 1;
       donor.monthly = true;
       if (!donor.name && !donor.anon && st.name) donor.name = st.name;
       if (st.createdAt && (!donor.firstAt || st.createdAt < donor.firstAt)) donor.firstAt = st.createdAt;
-      // A running stream is paying right now, so it counts as the latest
-      // activity. A finished one keeps the Active status on-chain, so it doesn't.
-      if (isRunning(st)) donor.lastAt = new Date().toISOString();
+      // The row's time is when the plan started; its text says if it's still streaming.
+      if (st.createdAt && (!donor.lastAt || st.createdAt > donor.lastAt)) donor.lastAt = st.createdAt;
       donors.set(st.backer, donor);
       streamCount += 1;
     }
@@ -350,6 +385,7 @@ export async function GET() {
       BTC: d.BTC.toString(),
       MEZO: d.MEZO.toString(),
       MUSD: d.MUSD.toString(),
+      gifts: { BTC: d.gifts.BTC.toString(), MEZO: d.gifts.MEZO.toString(), MUSD: d.gifts.MUSD.toString() },
       usd: usdOk ? d.usd : null,
     })),
     totals: { BTC: totals.BTC.toString(), MEZO: totals.MEZO.toString(), MUSD: totals.MUSD.toString() },
