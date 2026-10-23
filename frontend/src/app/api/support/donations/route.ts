@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { CONTRACTS } from "@/lib/contracts";
 import { SUPPORT_ADDRESS, decodeGraffiti } from "@/lib/support";
 import { priceSeries, priceAt, type CoinId, type Series } from "@/lib/priceHistory";
-import { loadStreams } from "@/lib/backerStreamsServer";
-import { MIN_LISTED } from "@/lib/backerStreams";
+import { countedAmount, isRunning, loadStreams } from "@/lib/backerStreamsServer";
 
 // Supporter board data — rebuilt entirely from public chain data.
 //
@@ -293,16 +292,16 @@ export async function GET() {
     donors.set(d.from, donor);
   }
 
-  // Recurring support counts in the same board and the same total: each
-  // stream adds what it has streamed so far, under the backer's address,
-  // valued at today's price (it arrives a little every second). The stream
-  // contract's own payouts were left out above, so nothing counts twice.
+  // Recurring support counts in the same board and the same total, under the
+  // backer's address, valued at today's price. A running stream counts the
+  // deposit its backer committed; a paused, canceled or finished one counts
+  // what actually reached Vezo. The stream contract's own payouts were left
+  // out above, so nothing counts twice.
   let streamCount = 0;
   try {
     // Vezo's own wallets never count as supporters, as with one-off transfers.
-    const streams = (await loadStreams()).filter(
-      (st) => BigInt(st.streamed) >= MIN_LISTED[st.token] && st.backer !== addr && !IGNORED_SENDERS.has(st.backer)
-    );
+    // loadStreams already applies the listing rule (running, or paid MIN_LISTED).
+    const streams = (await loadStreams()).filter((st) => st.backer !== addr && !IGNORED_SENDERS.has(st.backer));
     const nowSec = Math.floor(Date.now() / 1000);
     const latest: Partial<Record<RawDonation["token"], number | null>> = {};
     for (const t of ["BTC", "MEZO", "MUSD"] as const) {
@@ -313,7 +312,7 @@ export async function GET() {
       } catch { latest[t] = null; }
     }
     for (const st of streams) {
-      const amt = BigInt(st.streamed);
+      const amt = countedAmount(st);
       const px = latest[st.token];
       const v = px ? (Number(amt) / 1e18) * px : null;
       if (v === null) usdOk = false; else totalsUsd[st.token] += v;
@@ -327,10 +326,9 @@ export async function GET() {
       donor.monthly = true;
       if (!donor.name && !donor.anon && st.name) donor.name = st.name;
       if (st.createdAt && (!donor.firstAt || st.createdAt < donor.firstAt)) donor.firstAt = st.createdAt;
-      // A live stream is paying right now, so it counts as the latest activity.
-      // A finished stream keeps the Active status on-chain; only one that is
-      // still running counts as activity right now.
-      if (st.status === "Active" && st.endsAt && st.endsAt * 1000 > Date.now()) donor.lastAt = new Date().toISOString();
+      // A running stream is paying right now, so it counts as the latest
+      // activity. A finished one keeps the Active status on-chain, so it doesn't.
+      if (isRunning(st)) donor.lastAt = new Date().toISOString();
       donors.set(st.backer, donor);
       streamCount += 1;
     }

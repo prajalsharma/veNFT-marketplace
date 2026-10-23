@@ -12,8 +12,10 @@
 //    filtered by event signature, so other events and old spam cannot push new
 //    streams out. Streams below the smallest deposit, and streams canceled
 //    before they paid MIN_LISTED, are dropped from the logs alone. The rest are
-//    read from the contract in batches, and only streams that have actually
-//    paid MIN_LISTED are kept, so paused or unpaid spam never takes a slot.
+//    read from the contract in batches. A running stream is listed at once
+//    (its deposit is locked and paying Vezo every second); a paused, canceled
+//    or finished one only if it actually paid MIN_LISTED, so paused spam never
+//    takes a slot.
 //
 // Residual, accepted: a flood bigger than the scan budget (thousands of
 // streams, each costing gas, or locked deposits for the unpaid kind) can still
@@ -59,8 +61,8 @@ export interface StreamRow {
 
 export const STREAMS_LIVE = M.backerStreams !== ZERO;
 
-interface RawLog { topics: Hex[]; data: Hex; at: string | null }
-interface Created { id: bigint; backer: string; name: string; token: Sym; deposit: bigint; at: string | null }
+interface RawLog { topics: Hex[]; data: Hex; at: string | null; block: bigint | null }
+interface Created { id: bigint; backer: string; name: string; token: Sym; deposit: bigint; at: string | null; block: bigint | null }
 
 /** Newest-first logs of one event type (explorer v2 filters by topic). */
 async function logsNewestFirst(topic0: Hex, maxPages: number): Promise<RawLog[]> {
@@ -75,12 +77,13 @@ async function logsNewestFirst(topic0: Hex, maxPages: number): Promise<RawLog[]>
     if (res.status === 404) break;
     if (!res.ok) throw new Error(`explorer ${res.status}`);
     const body = (await res.json()) as {
-      items?: { topics: (Hex | null)[]; data: Hex; block_timestamp?: string | null }[];
+      items?: { topics: (Hex | null)[]; data: Hex; block_number?: number | null; block_timestamp?: string | null }[];
       next_page_params?: Record<string, unknown> | null;
     };
     for (const l of body.items ?? []) {
       if (l.topics[0]?.toLowerCase() !== topic0.toLowerCase()) continue; // the filter is the server's; trust but check
-      out.push({ topics: l.topics.filter(Boolean) as Hex[], data: l.data, at: l.block_timestamp ?? null });
+      // The v2 log list leaves block_timestamp out; readRows fills it from the block.
+      out.push({ topics: l.topics.filter(Boolean) as Hex[], data: l.data, at: l.block_timestamp ?? null, block: l.block_number != null ? BigInt(l.block_number) : null });
     }
     next = body.next_page_params ?? null;
     if (!next) break;
@@ -95,11 +98,12 @@ async function createdLogsOf(backer: `0x${string}`): Promise<RawLog[]> {
   const res = await fetch(url, { cache: "no-store", headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`explorer ${res.status}`);
   const body = (await res.json()) as { result?: unknown };
-  const rows = Array.isArray(body.result) ? (body.result as { topics: (Hex | null)[]; data: Hex; timeStamp?: string }[]) : [];
+  const rows = Array.isArray(body.result) ? (body.result as { topics: (Hex | null)[]; data: Hex; timeStamp?: string; blockNumber?: string }[]) : [];
   return rows.map((r) => ({
     topics: r.topics.filter(Boolean) as Hex[],
     data: r.data,
     at: r.timeStamp ? new Date(parseInt(r.timeStamp, 16) * 1000).toISOString() : null,
+    block: r.blockNumber ? BigInt(r.blockNumber) : null,
   }));
 }
 
@@ -108,7 +112,7 @@ function decodeCreated(l: RawLog): Created | null {
     const ev = decodeEventLog({ abi: BACKER_STREAMS_ABI, eventName: "StreamCreated", data: l.data, topics: l.topics as [Hex, ...Hex[]] });
     const token = SYMBOL[ev.args.token.toLowerCase()];
     if (!token) return null;
-    return { id: ev.args.id, backer: ev.args.backer.toLowerCase(), name: ev.args.name, token, deposit: ev.args.deposit, at: l.at };
+    return { id: ev.args.id, backer: ev.args.backer.toLowerCase(), name: ev.args.name, token, deposit: ev.args.deposit, at: l.at, block: l.block };
   } catch {
     return null;
   }
@@ -117,11 +121,20 @@ function decodeCreated(l: RawLog): Created | null {
 async function readRows(list: Created[]): Promise<StreamRow[]> {
   // viem batches these concurrent calls into JSON-RPC batch requests.
   const client = createPublicClient({ transport: http(M.rpcUrl, { batch: { batchSize: 150 } }) });
+  // Start times missing from the logs come from their blocks, one read per block.
+  const blockTime = new Map<bigint, Promise<string | null>>();
+  const timeOf = (b: bigint) => {
+    if (!blockTime.has(b)) {
+      blockTime.set(b, client.getBlock({ blockNumber: b }).then((x) => new Date(Number(x.timestamp) * 1000).toISOString(), () => null));
+    }
+    return blockTime.get(b)!;
+  };
   return Promise.all(list.map(async (c) => {
-    const [s, streamed, endsAt] = await Promise.all([
+    const [s, streamed, endsAt, at] = await Promise.all([
       client.readContract({ address: M.backerStreams, abi: BACKER_STREAMS_ABI, functionName: "getStream", args: [c.id] }),
       client.readContract({ address: M.backerStreams, abi: BACKER_STREAMS_ABI, functionName: "streamedOf", args: [c.id] }),
       client.readContract({ address: M.backerStreams, abi: BACKER_STREAMS_ABI, functionName: "endsAt", args: [c.id] }),
+      c.at || c.block === null ? Promise.resolve(c.at) : timeOf(c.block),
     ]);
     return {
       id: c.id.toString(),
@@ -136,7 +149,7 @@ async function readRows(list: Created[]): Promise<StreamRow[]> {
       runStart: Number(s.runStart),
       status: STREAM_STATUS[s.status],
       endsAt: Number(endsAt) || null,
-      createdAt: c.at,
+      createdAt: at,
     };
   }));
 }
@@ -149,7 +162,20 @@ export async function loadStreamsOf(backer: `0x${string}`): Promise<StreamRow[]>
   return readRows(created);
 }
 
-/** Streams that have paid at least MIN_LISTED, newest first, for the board. */
+/** Still paying out right now: active and not past its end. */
+export function isRunning(r: StreamRow, nowSec = Math.floor(Date.now() / 1000)): boolean {
+  return r.status === "Active" && !!r.endsAt && r.endsAt > nowSec;
+}
+
+/**
+ * What a stream counts for on the board: a running stream counts the whole
+ * deposit the backer committed; any other counts only what reached Vezo.
+ */
+export function countedAmount(r: StreamRow): bigint {
+  return isRunning(r) ? BigInt(r.deposit) : BigInt(r.streamed);
+}
+
+/** Running streams, and others that paid at least MIN_LISTED, newest first. */
 export async function loadStreams(): Promise<StreamRow[]> {
   if (!STREAMS_LIVE) return [];
   const [createdRaw, canceledRaw] = await Promise.all([
@@ -175,8 +201,9 @@ export async function loadStreams(): Promise<StreamRow[]> {
     if (candidates.length >= MAX_CANDIDATES) break;
   }
 
-  // The contract, not the logs, decides what has been paid: paused and unpaid
-  // streams are dropped here, before any cap on rows.
+  // The contract, not the logs, decides the status and what has been paid:
+  // paused and unpaid streams are dropped here, before any cap on rows.
   const rows = await readRows(candidates);
-  return rows.filter((r) => BigInt(r.streamed) >= MIN_LISTED[r.token]).slice(0, MAX_LISTED);
+  const now = Math.floor(Date.now() / 1000);
+  return rows.filter((r) => isRunning(r, now) || BigInt(r.streamed) >= MIN_LISTED[r.token]).slice(0, MAX_LISTED);
 }

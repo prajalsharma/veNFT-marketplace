@@ -63,10 +63,12 @@ export const MIN_LISTED: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
   MUSD: 10n ** 18n,          // 1 MUSD
 };
 
-// The board only reads streams whose deposit reaches the smallest choice
-// (about $5), so a flood of 1 wei streams costs the server nothing to skip.
+// The board only reads streams whose deposit reaches this floor, so a flood
+// of 1 wei streams costs the server nothing to skip. It sits well under $5 at
+// October 2026 prices (BTC $82k, MEZO $0.0027), and the form refuses any
+// deposit below it, so a stream can never start and then be left off the board.
 export const MIN_INDEXED: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
-  BTC: 5n * 10n ** 13n,       // 0.00005 BTC
-  MEZO: 1000n * 10n ** 18n,   // 1,000 MEZO
+  BTC: 2n * 10n ** 13n,       // 0.00002 BTC
+  MEZO: 500n * 10n ** 18n,    // 500 MEZO
   MUSD: 4n * 10n ** 18n,      // 4 MUSD
 };

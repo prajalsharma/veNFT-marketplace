@@ -20,6 +20,7 @@ import { useNetwork } from "@/hooks/useNetwork";
 import {
   BACKER_STREAMS_ABI,
   MAX_PROJECT_NAME_BYTES,
+  MIN_INDEXED,
   MIN_TOTAL_USD,
   MONTH_CHOICES,
   MONTHLY_USD,
@@ -138,6 +139,8 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
     if (tooSmall) { setError(`The smallest total is $${MIN_TOTAL_USD}.`); return; }
     if (tooLong) { setError("That name is too long. Keep it under 32 characters."); return; }
     const wei = parseEther(amount);
+    // The board skips deposits under MIN_INDEXED; never let one start unseen.
+    if (wei < MIN_INDEXED[token]) { setError(`The smallest total in ${token} is ${formatEther(MIN_INDEXED[token])} ${token}.`); return; }
     try {
       const bal = await publicClient.readContract({ address: TOKEN[token], abi: erc20Abi, functionName: "balanceOf", args: [address] });
       if (bal < wei) { setError(`Not enough ${token} on Mezo for this.`); return; }
@@ -164,7 +167,7 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
       setError(/reject|denied|cancell?ed/i.test(msg) ? "Cancelled in the wallet." : "That didn't go through. Check the wallet and try again.");
       setStage("idle");
     }
-  }, [address, publicClient, amount, name, tooLong, token, months, writeContractAsync, onStarted]);
+  }, [address, publicClient, amount, name, tooSmall, tooLong, token, months, writeContractAsync, onStarted]);
 
   const chip = (on: boolean) => ({
     background: on ? "var(--text-1)" : "var(--bg-2)",
