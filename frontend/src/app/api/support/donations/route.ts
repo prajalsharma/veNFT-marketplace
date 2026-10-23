@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { CONTRACTS } from "@/lib/contracts";
 import { SUPPORT_ADDRESS, decodeGraffiti } from "@/lib/support";
 import { priceSeries, priceAt, type CoinId, type Series } from "@/lib/priceHistory";
+import { loadStreams } from "@/lib/backerStreamsServer";
+import { MIN_LISTED } from "@/lib/backerStreams";
 
 // Supporter board data — rebuilt entirely from public chain data.
 //
@@ -222,6 +224,8 @@ export async function GET() {
     firstAt: string | null;
     lastAt: string | null;
     usd: number;
+    /** Supports through a recurring stream. */
+    monthly: boolean;
   }
   const donors = new Map<string, Donor>();
 
@@ -272,6 +276,7 @@ export async function GET() {
       firstAt: d.timestamp,
       lastAt: null,
       usd: 0,
+      monthly: false,
     };
     donor[d.token] += d.value;
     donor.usd += v ?? 0;
@@ -284,6 +289,46 @@ export async function GET() {
       donor.name = g.anon ? null : g.name;
     }
     donors.set(d.from, donor);
+  }
+
+  // Recurring support counts in the same board and the same total: each
+  // stream adds what it has streamed so far, under the backer's address,
+  // valued at today's price (it arrives a little every second). The stream
+  // contract's own payouts were left out above, so nothing counts twice.
+  let streamCount = 0;
+  try {
+    const streams = (await loadStreams()).filter((st) => BigInt(st.streamed) >= MIN_LISTED[st.token]);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const latest: Partial<Record<RawDonation["token"], number | null>> = {};
+    for (const t of ["BTC", "MEZO", "MUSD"] as const) {
+      if (!streams.some((st) => st.token === t)) continue;
+      try {
+        const sr = series[t] ?? (await priceSeries(COIN[t], [nowSec]));
+        latest[t] = priceAt(sr, nowSec * 1000) ?? (sr.length ? sr[sr.length - 1][1] : null);
+      } catch { latest[t] = null; }
+    }
+    for (const st of streams) {
+      const amt = BigInt(st.streamed);
+      const px = latest[st.token];
+      const v = px ? (Number(amt) / 1e18) * px : null;
+      if (v === null) usdOk = false; else totalsUsd[st.token] += v;
+      const donor = donors.get(st.backer) ?? {
+        address: st.backer, name: null, anon: false, BTC: 0n, MEZO: 0n, MUSD: 0n,
+        count: 0, firstAt: st.createdAt, lastAt: st.createdAt, usd: 0, monthly: true,
+      };
+      donor[st.token] += amt;
+      donor.usd += v ?? 0;
+      donor.count += 1;
+      donor.monthly = true;
+      if (!donor.name && !donor.anon && st.name) donor.name = st.name;
+      if (st.createdAt && (!donor.firstAt || st.createdAt < donor.firstAt)) donor.firstAt = st.createdAt;
+      // A live stream is paying right now, so it counts as the latest activity.
+      if (st.status === "Active") donor.lastAt = new Date().toISOString();
+      donors.set(st.backer, donor);
+      streamCount += 1;
+    }
+  } catch {
+    // Streams unavailable: the board still shows one-off contributions.
   }
 
   const totals = { BTC: 0n, MEZO: 0n, MUSD: 0n };
@@ -306,7 +351,7 @@ export async function GET() {
     // Dollar value at the time of each contribution; null if prices were unavailable.
     totalsUsd: usdOk ? totalsUsd : null,
     totalUsd: usdOk ? totalsUsd.BTC + totalsUsd.MEZO + totalsUsd.MUSD : null,
-    donationCount: all.length,
+    donationCount: all.length + streamCount,
     updatedAt: Date.now(),
   }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60" } });
 }

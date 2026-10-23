@@ -20,7 +20,6 @@ import { useNetwork } from "@/hooks/useNetwork";
 import {
   BACKER_STREAMS_ABI,
   MAX_PROJECT_NAME_BYTES,
-  MIN_LISTED,
   MIN_TOTAL_USD,
   MONTH_CHOICES,
   MONTHLY_USD,
@@ -420,13 +419,6 @@ export default function RecurringSupport() {
     () => (streams ?? []).filter((s) => address && s.backer === address.toLowerCase()).sort((a, b) => Number(b.id) - Number(a.id)),
     [streams, address]
   );
-  // Public list: only streams that have actually paid Vezo a real amount.
-  // Anyone can open a stream under any name, so neither a deposit nor a 1 wei
-  // payment proves anything.
-  const board = useMemo(
-    () => (streams ?? []).filter((s) => streamedNow(s, now) >= MIN_LISTED[s.token]).sort((a, b) => Number(a.id) - Number(b.id)),
-    [streams, now]
-  );
 
   const [open, setOpen] = useState(false);
   const reduced = useReducedMotion();
@@ -492,27 +484,6 @@ export default function RecurringSupport() {
       {mine.length > 0 && (
         <div className="mt-8">
           <MyPlans streams={mine} now={now} onChanged={() => refetch(true)} />
-        </div>
-      )}
-
-      {board.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-[18px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Monthly supporters</h3>
-          <ul className="mt-2">
-            {board.map((s) => {
-              const done = s.status !== "Canceled" && streamedNow(s, now) >= BigInt(s.deposit);
-              const label = done ? "Completed" : s.status === "Active" ? "Streaming" : s.status === "Paused" ? "Paused" : "Ended";
-              return (
-                <li key={s.id} className="flex items-center gap-4 py-3.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                  <span className={`flex-1 min-w-0 truncate text-[16px] font-semibold ${s.name ? "" : "font-mono text-[15px]"}`} style={{ color: "var(--text-1)" }}>
-                    {s.name || `${s.backer.slice(0, 6)}…${s.backer.slice(-4)}`}
-                  </span>
-                  <span className="text-[14px]" style={{ color: label === "Streaming" ? "#10B981" : "var(--text-3)" }}>{label}</span>
-                  <span className="text-[15px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>{fmt(streamedNow(s, now))} {s.token}</span>
-                </li>
-              );
-            })}
-          </ul>
         </div>
       )}
 

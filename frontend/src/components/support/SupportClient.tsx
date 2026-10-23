@@ -109,7 +109,9 @@ interface Donor {
   MEZO: string;
   MUSD: string;
   count: number;
-  /** First contribution (server); used to mark founding supporters. */
+  /** Supports through a recurring stream (server). */
+  monthly?: boolean;
+  /** First contribution (server). */
   firstAt?: string | null;
   lastAt: string | null;
   /** USD at the time of each contribution (server); absent for optimistic
@@ -731,16 +733,10 @@ function useRanked(data: BoardData | null) {
       return live(t, data.totals[t]);
     };
     const byToken = { BTC: tokenUsd("BTC"), MEZO: tokenUsd("MEZO"), MUSD: tokenUsd("MUSD") };
-    // Founding supporters: the first FOUNDING_SPOTS wallets, in the order they
-    // first contributed on-chain. Fixed forever once taken.
-    const firstOf = (d: Donor) => new Date(d.firstAt ?? d.lastAt ?? Date.now()).getTime();
-    const founders = [...ranked].sort((a, b) => firstOf(a) - firstOf(b)).slice(0, FOUNDING_SPOTS);
-    const founding = new Set(founders.map((d) => d.address));
-    return { ranked, founders, founding, byToken, total: byToken.BTC + byToken.MEZO + byToken.MUSD, atTime: !!data?.totalsUsd };
+    return { ranked, byToken, total: byToken.BTC + byToken.MEZO + byToken.MUSD, atTime: !!data?.totalsUsd };
   }, [data, prices]);
 }
 
-const FOUNDING_SPOTS = 10;
 
 const fmtUsd = (v: number) => `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -752,18 +748,13 @@ const nextMilestone = (v: number) => MILESTONES.find((m) => m > v) ?? Math.ceil(
 // ─── Hero: raised so far ─────────────────────────────────────────────────────
 
 function RaisedMeter({ data, onPick }: { data: BoardData | null; onPick: (usd: number) => void }) {
-  const { ranked, founders, byToken, total, atTime } = useRanked(data);
+  const { byToken, total, atTime } = useRanked(data);
   const reduced = useReducedMotion();
   const goal = nextMilestone(total);
   const pct = Math.min(1, total / goal);
   const left = Math.max(0, goal - total);
   // Smallest preset that closes the gap on its own: a concrete, doable ask.
   const closer = USD_PRESETS.find((u) => u >= left) ?? null;
-  const latest = useMemo(
-    () => [...ranked].sort((a, b) => new Date(b.lastAt ?? 0).getTime() - new Date(a.lastAt ?? 0).getTime())[0],
-    [ranked]
-  );
-  const spotsLeft = FOUNDING_SPOTS - founders.length;
 
   return (
     <section aria-label="Raised so far" className="mt-9">
@@ -850,59 +841,6 @@ function RaisedMeter({ data, onPick }: { data: BoardData | null; onPick: (usd: n
         </div>
       )}
 
-      {/* Founding supporters: ten seats, filled in on-chain order. */}
-      {data && (
-        <div className="mt-7">
-          <div className="flex items-baseline justify-between gap-4 flex-wrap">
-            <p className="text-[16px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.01em" }}>
-              Founding supporters
-            </p>
-            <p className="text-[14px] tabular-nums" style={{ color: "var(--text-2)" }}>
-              {spotsLeft > 0 ? (
-                <><span className="font-bold" style={{ color: "var(--vezo-red-text)" }}>{spotsLeft} of {FOUNDING_SPOTS}</span> spots left</>
-              ) : "All ten spots taken"}
-            </p>
-          </div>
-          <div className="grid grid-cols-10 gap-1.5 sm:gap-2 mt-3 max-w-[440px]" role="list">
-            {Array.from({ length: FOUNDING_SPOTS }, (_, i) => {
-              const f = founders[i];
-              return f ? (
-                <motion.span
-                  role="listitem"
-                  key={f.address}
-                  title={f.display}
-                  className="aspect-square"
-                  initial={reduced ? false : { scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 420, damping: 20, delay: 0.3 + i * 0.05 }}
-                >
-                  <Avatar address={f.address} label={f.display} anon={f.anon} fluid />
-                  <span className="sr-only">{f.display}</span>
-                </motion.span>
-              ) : (
-                <span
-                  role="listitem"
-                  key={`open-${i}`}
-                  aria-label="Open spot"
-                  className="aspect-square rounded-full inline-flex items-center justify-center text-[12px] sm:text-[13px] font-bold tabular-nums"
-                  style={{ border: "1.5px dashed var(--border-strong)", color: "var(--text-4)" }}
-                >
-                  {i + 1}
-                </span>
-              );
-            })}
-          </div>
-          <p className="text-[14px] mt-3" style={{ color: "var(--text-3)" }}>
-            {latest ? (
-              <>
-                Latest: <span className={`font-semibold ${latest.mono ? "font-mono" : ""}`} style={{ color: "var(--text-2)" }}>{latest.display}</span>
-                {timeAgo(latest.lastAt) ? `, ${timeAgo(latest.lastAt)}` : ""}.{" "}
-              </>
-            ) : null}
-            The first ten names keep the mark on the board for good.
-          </p>
-        </div>
-      )}
     </section>
   );
 }
@@ -1022,14 +960,14 @@ function WhereItGoes() {
 // ─── Supporters wall ─────────────────────────────────────────────────────────
 
 function SupportersBoard({ data, loading, youAddress }: { data: BoardData | null; loading: boolean; youAddress?: string }) {
-  const { ranked, founding } = useRanked(data);
+  const { ranked } = useRanked(data);
   const reduced = useReducedMotion();
 
   return (
     <section aria-labelledby="board-h">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 id="board-h" className="font-bold" style={{ fontSize: "clamp(1.6rem, 3vw, 2.1rem)", letterSpacing: "-0.035em", color: "var(--text-1)" }}>
+          <h2 id="board-h" className="text-[20px] font-bold" style={{ letterSpacing: "-0.025em", color: "var(--text-1)" }}>
             Supporters
           </h2>
           <p className="text-[15px] mt-1" style={{ color: "var(--text-3)" }}>
@@ -1093,8 +1031,8 @@ function SupportersBoard({ data, loading, youAddress }: { data: BoardData | null
                     {you && <span className="ml-2 text-[14px] font-semibold" style={{ color: "var(--vezo-red-text)" }}>you</span>}
                   </p>
                   <p className="text-[14px] tabular-nums mt-0.5 truncate" style={{ color: "var(--text-3)" }}>
-                    {founding.has(d.address) && (
-                      <span className="font-semibold" style={{ color: "var(--vezo-red-text)" }}>Founding supporter · </span>
+                    {d.monthly && (
+                      <span className="font-semibold" style={{ color: "var(--vezo-red-text)" }}>Monthly · </span>
                     )}
                     {(["BTC", "MEZO", "MUSD"] as const)
                       .filter((t) => BigInt(d[t]) > 0n)
@@ -1227,12 +1165,15 @@ export default function SupportClient() {
           without raising that fee. Any amount, in BTC, MEZO, or MUSD.
         </p>
         <RaisedMeter data={merged} onPick={pickFromHero} />
+        <div className="mt-9">
+          <SupportersBoard data={merged} loading={loading} youAddress={address} />
+        </div>
       </motion.div>
 
       <motion.div
         {...rise(0.12)}
         ref={panelRef}
-        className="min-w-0 space-y-6 lg:col-start-2 lg:row-start-1 lg:row-span-5 lg:sticky lg:top-24 scroll-mt-24"
+        className="min-w-0 space-y-6 lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:sticky lg:top-24 scroll-mt-24"
         id="back"
       >
         <DonatePanel onDonated={onDonated} request={request} />
@@ -1253,9 +1194,6 @@ export default function SupportClient() {
 
       <div className="min-w-0 lg:col-start-1"><TrackRecord /></div>
       <div className="min-w-0 lg:col-start-1"><WhereItGoes /></div>
-      <div className="min-w-0 lg:col-start-1">
-        <SupportersBoard data={merged} loading={loading} youAddress={address} />
-      </div>
       <div className="min-w-0 lg:col-start-1"><RecurringSupport /></div>
 
       {/* Phones: bring the ask back without scrolling up */}
