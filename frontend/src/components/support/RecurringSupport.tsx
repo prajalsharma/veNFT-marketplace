@@ -21,6 +21,7 @@ import {
   BACKER_STREAMS_ABI,
   MAX_PROJECT_NAME_BYTES,
   MIN_LISTED,
+  MIN_TOTAL_USD,
   MONTH_CHOICES,
   MONTHLY_USD,
   MONTH_SECONDS,
@@ -101,18 +102,27 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
   const { switchToMainnet } = useNetwork();
   const prices = usePriceTicker();
 
-  const [monthly, setMonthly] = useState(10);
+  // The amount is either a monthly rate or a total spread over the months;
+  // the contract only ever sees the total and the duration.
+  const [usdInput, setUsdInput] = useState("10");
+  const [mode, setMode] = useState<"monthly" | "total">("monthly");
   const [months, setMonths] = useState(3);
   const [token, setToken] = useState<Sym>("MUSD");
   const [name, setName] = useState("");
   const [stage, setStage] = useState<"idle" | "approving" | "starting" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const totalUsd = monthly * months;
+  const typed = parseFloat(usdInput);
+  const valid = isFinite(typed) && typed > 0;
+  const totalUsd = valid ? (mode === "monthly" ? typed * months : typed) : 0;
+  const perMonth = months > 0 ? totalUsd / months : 0;
+  const tooSmall = valid && totalUsd < MIN_TOTAL_USD;
+  const usd2 = (v: number) => `$${v.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
   // MUSD is the dollar here, so $10 a month for 3 months is 30 MUSD. BTC and
   // MEZO convert at the live price when the stream starts.
   const amount = useMemo(() => {
-    if (token === "MUSD") return String(totalUsd);
+    if (!totalUsd) return null;
+    if (token === "MUSD") return parseFloat(totalUsd.toFixed(6)).toString();
     const p = prices[token];
     return p ? parseFloat((totalUsd / p).toPrecision(4)).toString() : null;
   }, [totalUsd, token, prices]);
@@ -123,6 +133,7 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
   const start = useCallback(async () => {
     setError(null);
     if (!address || !publicClient || !amount) return;
+    if (tooSmall) { setError(`The smallest total is $${MIN_TOTAL_USD}.`); return; }
     if (tooLong) { setError("That name is too long. Keep it under 32 characters."); return; }
     const wei = parseEther(amount);
     try {
@@ -162,26 +173,70 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid sm:grid-cols-2 gap-5">
-        <div>
-          <p className="text-[14px] font-semibold mb-2.5" style={{ color: "var(--text-2)" }}>Each month</p>
-          <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Amount each month">
-            {MONTHLY_USD.map((u) => (
-              <button key={u} type="button" aria-pressed={monthly === u} onClick={() => setMonthly(u)}
-                className="min-h-[46px] rounded-xl text-[16px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-                style={chip(monthly === u)}>${u}</button>
+      <div>
+        <div className="flex items-center justify-between gap-3 mb-2.5">
+          <label htmlFor="stream-usd" className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>Amount</label>
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-xl" style={{ background: "var(--bg-2)" }} role="group" aria-label="Amount is">
+            {([["monthly", "a month"], ["total", "in total"]] as const).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={mode === m}
+                onClick={() => setMode(m)}
+                className="relative h-8 px-3 rounded-lg text-[13px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                style={{ color: mode === m ? "var(--text-1)" : "var(--text-3)" }}
+              >
+                {mode === m && <motion.span layoutId="stream-mode" className="absolute inset-0 rounded-lg" style={{ background: "var(--bg-1)", boxShadow: "var(--shadow-sm)" }} transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                <span className="relative">{label}</span>
+              </button>
             ))}
           </div>
         </div>
-        <div>
-          <p className="text-[14px] font-semibold mb-2.5" style={{ color: "var(--text-2)" }}>For</p>
-          <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Number of months">
-            {MONTH_CHOICES.map((m) => (
-              <button key={m} type="button" aria-pressed={months === m} onClick={() => setMonths(m)}
-                className="min-h-[46px] rounded-xl text-[15px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
-                style={chip(months === m)}>{m} mo</button>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          <div className="relative">
+            <span aria-hidden className="absolute left-4 top-1/2 -translate-y-1/2 text-[17px] font-semibold" style={{ color: "var(--text-3)" }}>$</span>
+            <input
+              id="stream-usd"
+              inputMode="decimal"
+              value={usdInput}
+              onChange={(e) => setUsdInput(e.target.value.replace(/[^0-9.]/g, ""))}
+              aria-describedby="stream-summary"
+              className="w-full rounded-xl pl-8 pr-24 py-3 text-[17px] font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-[#FF0040]"
+              style={{ background: "var(--bg-2)", border: `1px solid ${tooSmall ? "#EF4444" : "var(--border-subtle)"}`, color: "var(--text-1)" }}
+            />
+            <span aria-hidden className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>
+              {mode === "monthly" ? "a month" : "in total"}
+            </span>
+          </div>
+          <div className="hidden sm:grid grid-cols-4 gap-1.5" role="group" aria-label="Quick amounts">
+            {MONTHLY_USD.map((u) => (
+              <button key={u} type="button" aria-pressed={typed === u} onClick={() => setUsdInput(String(u))}
+                className="min-h-[50px] px-3 rounded-xl text-[15px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                style={chip(typed === u)}>${u}</button>
             ))}
           </div>
+        </div>
+        <div className="grid sm:hidden grid-cols-4 gap-1.5 mt-2" role="group" aria-label="Quick amounts">
+          {MONTHLY_USD.map((u) => (
+            <button key={u} type="button" aria-pressed={typed === u} onClick={() => setUsdInput(String(u))}
+              className="min-h-[44px] rounded-xl text-[15px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              style={chip(typed === u)}>${u}</button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[14px] font-semibold mb-2.5" style={{ color: "var(--text-2)" }}>Over</p>
+        <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Number of months">
+          {MONTH_CHOICES.map((m) => (
+            <button key={m} type="button" aria-pressed={months === m} onClick={() => setMonths(m)}
+              className="min-h-[46px] rounded-xl text-[15px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+              style={chip(months === m)}
+              aria-label={`${m} ${m === 1 ? "month" : "months"}`}>
+              <span className="sm:hidden">{m} mo</span>
+              <span className="hidden sm:inline">{m} {m === 1 ? "month" : "months"}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -218,10 +273,24 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
         </div>
       </div>
 
-      <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)" }}>
-        You deposit <span className="font-bold tabular-nums" style={{ color: "var(--text-1)" }}>{amount ? `${amount} ${token}` : `$${totalUsd} in ${token}`}</span> once
-        {token !== "MUSD" && amount && <> (about ${totalUsd})</>}. It reaches Vezo bit by bit over {months} {months === 1 ? "month" : "months"}.
-      </p>
+      <div id="stream-summary" aria-live="polite" className="rounded-xl px-5 py-4" style={{ background: "var(--bg-2)" }}>
+        {valid && !tooSmall ? (
+          <>
+            <p className="text-[18px] font-bold tabular-nums" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
+              {usd2(totalUsd)} over {months} {months === 1 ? "month" : "months"}
+              <span className="font-semibold" style={{ color: "var(--text-2)" }}> · about {usd2(perMonth)} a month</span>
+            </p>
+            <p className="text-[14px] leading-relaxed mt-1.5" style={{ color: "var(--text-2)" }}>
+              You fund <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>{amount ? `${amount} ${token}` : `${usd2(totalUsd)} in ${token}`}</span> up
+              front and it reaches Vezo a little each day. Cancel any time and what hasn&apos;t streamed comes back to you.
+            </p>
+          </>
+        ) : (
+          <p className="text-[14px]" style={{ color: tooSmall ? "#EF4444" : "var(--text-3)" }}>
+            {tooSmall ? `The smallest total is $${MIN_TOTAL_USD}.` : "Enter an amount."}
+          </p>
+        )}
+      </div>
 
       <AnimatePresence>
         {error && (
@@ -245,8 +314,8 @@ function StartStream({ onStarted }: { onStarted: () => void }) {
             if (!(mounted && account)) return <button onClick={openConnectModal} className={`btn-brand ${base}`}>Connect wallet to start</button>;
             if (chainId !== mezoMainnet.id) return <button onClick={switchToMainnet} className={base} style={{ background: "var(--bg-2)", border: "1px solid var(--border)", color: "var(--text-1)" }}>Switch to Mezo mainnet</button>;
             return (
-              <button onClick={start} disabled={busy || !amount} className={`${busy ? "" : "btn-brand"} ${base} disabled:cursor-not-allowed`} style={busy ? { background: "var(--bg-3)", color: "var(--text-3)" } : undefined}>
-                {busy ? <><Loader2 className="animate-spin" style={{ width: 16, height: 16 }} />{stage === "approving" ? `Allow ${token} in your wallet…` : "Starting…"}</> : <>Support ${monthly} a month for {months} {months === 1 ? "month" : "months"}</>}
+              <button onClick={start} disabled={busy || !amount || tooSmall} className={`${busy ? "" : "btn-brand"} ${base} disabled:cursor-not-allowed`} style={busy ? { background: "var(--bg-3)", color: "var(--text-3)" } : undefined}>
+                {busy ? <><Loader2 className="animate-spin" style={{ width: 16, height: 16 }} />{stage === "approving" ? `Allow ${token} in your wallet…` : "Starting…"}</> : <>Start {usd2(totalUsd)} over {months} {months === 1 ? "month" : "months"}</>}
               </button>
             );
           }}

@@ -43,9 +43,11 @@ export type StreamStatus = (typeof STREAM_STATUS)[number];
 export const MONTH_SECONDS = 30 * 24 * 60 * 60;
 export const MAX_PROJECT_NAME_BYTES = 32;
 
-// Recurring support is picked as an amount per month and a number of months;
-// the deposit is the product, streamed evenly over that time.
+// Recurring support is an amount (a month, or in total) and a number of
+// months; the deposit is the total, streamed evenly over that time.
 export const MONTHLY_USD = [5, 10, 25, 50];
+// Keeps every stream above the board's read floor (MIN_INDEXED).
+export const MIN_TOTAL_USD = 5;
 export const MONTH_CHOICES = [1, 3, 6, 12];
 
 export function nameBytes(s: string): number {
