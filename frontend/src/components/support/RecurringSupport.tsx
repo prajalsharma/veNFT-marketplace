@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Project plans: a project picks a tier, deposits once, and the deposit
- * streams to the support wallet over the tier's months through
- * VezoBackerStreams. The project's own wallet can pause (the clock stops) or
- * cancel (everything not yet streamed comes straight back) at any time.
+ * Recurring support: a supporter picks an amount a month and a number of
+ * months, deposits once, and VezoBackerStreams streams it to the support
+ * wallet over that time. Only the supporter's wallet can pause (the clock
+ * stops) or cancel (everything not yet streamed comes straight back).
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,8 +21,9 @@ import {
   BACKER_STREAMS_ABI,
   MAX_PROJECT_NAME_BYTES,
   MIN_LISTED,
+  MONTH_CHOICES,
+  MONTHLY_USD,
   MONTH_SECONDS,
-  TIERS,
   nameBytes,
   type StreamStatus,
 } from "@/lib/backerStreams";
@@ -91,30 +92,30 @@ function useNow() {
   return now;
 }
 
-// ─── Start a plan ────────────────────────────────────────────────────────────
+// ─── Start recurring support ─────────────────────────────────────────────────
 
-function StartPlan({ onStarted }: { onStarted: () => void }) {
+function StartStream({ onStarted }: { onStarted: () => void }) {
   const { address, chainId } = useAccount();
   const publicClient = usePublicClient({ chainId: mezoMainnet.id });
   const { writeContractAsync } = useWriteContract();
   const { switchToMainnet } = useNetwork();
   const prices = usePriceTicker();
-  const reduced = useReducedMotion();
 
-  const [tierIdx, setTierIdx] = useState(2);
+  const [monthly, setMonthly] = useState(10);
+  const [months, setMonths] = useState(3);
   const [token, setToken] = useState<Sym>("MUSD");
   const [name, setName] = useState("");
   const [stage, setStage] = useState<"idle" | "approving" | "starting" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const tier = TIERS[tierIdx];
-  // MUSD is the dollar here, so a $25 plan is 25 MUSD. BTC and MEZO convert
-  // at the live price when the plan starts.
+  const totalUsd = monthly * months;
+  // MUSD is the dollar here, so $10 a month for 3 months is 30 MUSD. BTC and
+  // MEZO convert at the live price when the stream starts.
   const amount = useMemo(() => {
-    if (token === "MUSD") return String(tier.usd);
+    if (token === "MUSD") return String(totalUsd);
     const p = prices[token];
-    return p ? parseFloat((tier.usd / p).toPrecision(4)).toString() : null;
-  }, [tier.usd, token, prices]);
+    return p ? parseFloat((totalUsd / p).toPrecision(4)).toString() : null;
+  }, [totalUsd, token, prices]);
 
   const tooLong = nameBytes(name) > MAX_PROJECT_NAME_BYTES;
   const busy = stage === "approving" || stage === "starting";
@@ -122,13 +123,11 @@ function StartPlan({ onStarted }: { onStarted: () => void }) {
   const start = useCallback(async () => {
     setError(null);
     if (!address || !publicClient || !amount) return;
-    const project = name.trim();
-    if (!project) { setError("Add your project name. It shows on the board."); return; }
     if (tooLong) { setError("That name is too long. Keep it under 32 characters."); return; }
     const wei = parseEther(amount);
     try {
       const bal = await publicClient.readContract({ address: TOKEN[token], abi: erc20Abi, functionName: "balanceOf", args: [address] });
-      if (bal < wei) { setError(`Not enough ${token} on Mezo for this plan.`); return; }
+      if (bal < wei) { setError(`Not enough ${token} on Mezo for this.`); return; }
       const allowance = await publicClient.readContract({ address: TOKEN[token], abi: erc20Abi, functionName: "allowance", args: [address, M.backerStreams] });
       if (allowance < wei) {
         setStage("approving");
@@ -140,7 +139,7 @@ function StartPlan({ onStarted }: { onStarted: () => void }) {
         address: M.backerStreams,
         abi: BACKER_STREAMS_ABI,
         functionName: "create",
-        args: [TOKEN[token], wei, BigInt(tier.months * MONTH_SECONDS), project],
+        args: [TOKEN[token], wei, BigInt(months * MONTH_SECONDS), name.trim()],
         chainId: mezoMainnet.id,
       });
       const r = await publicClient.waitForTransactionReceipt({ hash: h });
@@ -152,73 +151,48 @@ function StartPlan({ onStarted }: { onStarted: () => void }) {
       setError(/reject|denied|cancell?ed/i.test(msg) ? "Cancelled in the wallet." : "That didn't go through. Check the wallet and try again.");
       setStage("idle");
     }
-  }, [address, publicClient, amount, name, tooLong, token, tier.months, writeContractAsync, onStarted]);
+  }, [address, publicClient, amount, name, tooLong, token, months, writeContractAsync, onStarted]);
+
+  const chip = (on: boolean) => ({
+    background: on ? "var(--text-1)" : "var(--bg-2)",
+    color: on ? "var(--bg-1)" : "var(--text-1)",
+    border: `1px solid ${on ? "var(--text-1)" : "var(--border-subtle)"}`,
+    transition: "background .18s, color .18s",
+  });
 
   return (
     <div className="space-y-6">
-      {/* Tiers: one list, the chosen row opens to show what it includes */}
-      <div role="radiogroup" aria-label="Plan" className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-1)" }}>
-        {TIERS.map((t, i) => {
-          const on = i === tierIdx;
-          return (
-            <button
-              key={t.usd}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => setTierIdx(i)}
-              className="w-full text-left px-5 py-4 flex gap-4 items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF0040]"
-              style={{ borderTop: i ? "1px solid var(--border-subtle)" : undefined, background: on ? "var(--bg-2)" : "transparent", transition: "background .18s" }}
-            >
-              <span
-                aria-hidden
-                className="mt-1 w-[18px] h-[18px] rounded-full shrink-0 inline-flex items-center justify-center"
-                style={{ border: `1.5px solid ${on ? "var(--vezo-red)" : "var(--border-strong)"}` }}
-              >
-                {on && <span className="w-[9px] h-[9px] rounded-full" style={{ background: "var(--vezo-red)" }} />}
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="flex items-baseline justify-between gap-3">
-                  <span className="text-[20px] font-bold tabular-nums" style={{ color: "var(--text-1)", letterSpacing: "-0.03em" }}>${t.usd}</span>
-                  <span className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>
-                    {t.months} {t.months === 1 ? "month" : "months"}
-                  </span>
-                </span>
-                <span className="block text-[14px] mt-0.5" style={{ color: "var(--text-3)" }}>
-                  {t.perks[0]}{t.perks.length > 1 && !on ? ` · +${t.perks.length - 1} more` : ""}
-                </span>
-                <AnimatePresence initial={false}>
-                  {on && t.perks.length > 1 && (
-                    <motion.ul
-                      initial={reduced ? false : { height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                      className="overflow-hidden"
-                    >
-                      {t.perks.slice(1).map((p) => (
-                        <li key={p} className="flex gap-2 text-[14px] mt-1.5" style={{ color: "var(--text-2)" }}>
-                          <Check aria-hidden style={{ width: 14, height: 14, marginTop: 3, color: "var(--vezo-red-text)", flexShrink: 0 }} />
-                          {p}
-                        </li>
-                      ))}
-                    </motion.ul>
-                  )}
-                </AnimatePresence>
-              </span>
-            </button>
-          );
-        })}
+      <div className="grid sm:grid-cols-2 gap-5">
+        <div>
+          <p className="text-[14px] font-semibold mb-2.5" style={{ color: "var(--text-2)" }}>Each month</p>
+          <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Amount each month">
+            {MONTHLY_USD.map((u) => (
+              <button key={u} type="button" aria-pressed={monthly === u} onClick={() => setMonthly(u)}
+                className="min-h-[46px] rounded-xl text-[16px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                style={chip(monthly === u)}>${u}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[14px] font-semibold mb-2.5" style={{ color: "var(--text-2)" }}>For</p>
+          <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Number of months">
+            {MONTH_CHOICES.map((m) => (
+              <button key={m} type="button" aria-pressed={months === m} onClick={() => setMonths(m)}
+                className="min-h-[46px] rounded-xl text-[15px] font-bold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+                style={chip(months === m)}>{m} mo</button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-[1fr_auto] gap-3">
         <div>
-          <label htmlFor="project-name" className="block text-[14px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>Project name</label>
+          <label htmlFor="stream-name" className="block text-[14px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>Name on the board <span style={{ color: "var(--text-3)", fontWeight: 500 }}>(optional)</span></label>
           <input
-            id="project-name"
+            id="stream-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Shown on the backers board"
+            placeholder="You or your project"
             className="w-full rounded-xl px-4 py-3 text-[15px] font-medium focus:outline-none focus:ring-2 focus:ring-[#FF0040]"
             style={{ background: "var(--bg-2)", border: `1px solid ${tooLong ? "#EF4444" : "var(--border-subtle)"}`, color: "var(--text-1)" }}
           />
@@ -235,7 +209,7 @@ function StartPlan({ onStarted }: { onStarted: () => void }) {
                 className="relative h-10 px-3 rounded-lg text-[14px] font-bold inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
                 style={{ color: token === t ? "var(--text-1)" : "var(--text-3)" }}
               >
-                {token === t && <motion.span layoutId="plan-token" className="absolute inset-0 rounded-lg" style={{ background: "var(--bg-1)", boxShadow: "var(--shadow-sm)" }} transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                {token === t && <motion.span layoutId="stream-token" className="absolute inset-0 rounded-lg" style={{ background: "var(--bg-1)", boxShadow: "var(--shadow-sm)" }} transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
                 <span className="relative w-1.5 h-1.5 rounded-full" style={{ background: DOT[t] }} />
                 <span className="relative">{t}</span>
               </button>
@@ -244,9 +218,9 @@ function StartPlan({ onStarted }: { onStarted: () => void }) {
         </div>
       </div>
 
-      <p className="text-[15px]" style={{ color: "var(--text-2)" }}>
-        You deposit <span className="font-bold tabular-nums" style={{ color: "var(--text-1)" }}>{amount ?? "…"} {token}</span> once.
-        It streams to Vezo over {tier.months} {tier.months === 1 ? "month" : "months"}, and you can pause or cancel at any time.
+      <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-2)" }}>
+        You deposit <span className="font-bold tabular-nums" style={{ color: "var(--text-1)" }}>{amount ? `${amount} ${token}` : `$${totalUsd} in ${token}`}</span> once
+        {token !== "MUSD" && amount && <> (about ${totalUsd})</>}. It reaches Vezo bit by bit over {months} {months === 1 ? "month" : "months"}.
       </p>
 
       <AnimatePresence>
@@ -258,30 +232,21 @@ function StartPlan({ onStarted }: { onStarted: () => void }) {
       </AnimatePresence>
 
       {stage === "done" ? (
-        <div className="rounded-xl px-5 py-4 flex items-center gap-3" style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}>
+        <div className="rounded-xl px-5 py-4 flex items-center gap-3 flex-wrap" style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}>
           <Check style={{ width: 18, height: 18, color: "#10B981" }} />
-          <p className="text-[15px] font-semibold flex-1" style={{ color: "var(--text-1)" }}>Your plan is live. Manage it below, and we&apos;ll be in touch on X.</p>
+          <p className="text-[15px] font-semibold flex-1" style={{ color: "var(--text-1)" }}>It&apos;s streaming. Thank you. You can pause or cancel it below.</p>
           <button onClick={() => { setStage("idle"); setName(""); }} className="text-[14px] font-semibold" style={{ color: "var(--text-2)" }}>Start another</button>
-        </div>
-      ) : !LIVE ? (
-        <div className="space-y-2">
-          <button disabled className="w-full min-h-[52px] rounded-xl text-[16px] font-bold" style={{ background: "var(--bg-3)", color: "var(--text-3)" }}>
-            Plans open soon
-          </button>
-          <p className="text-[14px]" style={{ color: "var(--text-3)" }}>
-            The contract is in review. Want in early?{" "}
-            <a href="https://x.com/VezoExchange" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: "var(--text-1)" }}>Message us on X</a>.
-          </p>
         </div>
       ) : (
         <ConnectButton.Custom>
           {({ account, openConnectModal, mounted }) => {
             const base = "w-full min-h-[52px] rounded-xl text-[16px] font-bold inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2";
+            if (!LIVE) return <button disabled className={base} style={{ background: "var(--bg-3)", color: "var(--text-3)" }}>Opening soon</button>;
             if (!(mounted && account)) return <button onClick={openConnectModal} className={`btn-brand ${base}`}>Connect wallet to start</button>;
             if (chainId !== mezoMainnet.id) return <button onClick={switchToMainnet} className={base} style={{ background: "var(--bg-2)", border: "1px solid var(--border)", color: "var(--text-1)" }}>Switch to Mezo mainnet</button>;
             return (
               <button onClick={start} disabled={busy || !amount} className={`${busy ? "" : "btn-brand"} ${base} disabled:cursor-not-allowed`} style={busy ? { background: "var(--bg-3)", color: "var(--text-3)" } : undefined}>
-                {busy ? <><Loader2 className="animate-spin" style={{ width: 16, height: 16 }} />{stage === "approving" ? `Allow ${token} in your wallet…` : "Starting your plan…"}</> : <>Start the ${tier.usd} plan</>}
+                {busy ? <><Loader2 className="animate-spin" style={{ width: 16, height: 16 }} />{stage === "approving" ? `Allow ${token} in your wallet…` : "Starting…"}</> : <>Support ${monthly} a month for {months} {months === 1 ? "month" : "months"}</>}
               </button>
             );
           }}
@@ -319,7 +284,7 @@ function MyPlans({ streams, now, onChanged }: { streams: StreamRow[]; now: numbe
 
   return (
     <div className="space-y-3">
-      <h3 className="text-[18px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Your plans</h3>
+      <h3 className="text-[18px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Your recurring support</h3>
       {error && <p role="alert" className="text-[14px]" style={{ color: "#EF4444" }}>{error}</p>}
       {streams.map((s) => {
         const dep = BigInt(s.deposit);
@@ -332,7 +297,7 @@ function MyPlans({ streams, now, onChanged }: { streams: StreamRow[]; now: numbe
         return (
           <div key={s.id} className="rounded-2xl p-5" style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}>
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
-              <p className="text-[16px] font-bold" style={{ color: "var(--text-1)" }}>{s.name || `Plan #${s.id}`}</p>
+              <p className="text-[16px] font-bold" style={{ color: "var(--text-1)" }}>{s.name || `Stream #${s.id}`}</p>
               <p className="text-[14px] font-semibold" style={{ color: s.status === "Paused" ? "var(--warning)" : s.status === "Canceled" ? "var(--text-3)" : "#10B981" }}>
                 {s.status === "Canceled" ? "Canceled" : done ? "Finished" : s.status === "Paused" ? "Paused" : `Streaming · ends ${ends}`}
               </p>
@@ -364,7 +329,7 @@ function MyPlans({ streams, now, onChanged }: { streams: StreamRow[]; now: numbe
                   </>
                 ) : (
                   <button onClick={() => setConfirmCancel(s.id)} disabled={!!busy} className="inline-flex items-center gap-1.5 px-4 min-h-[44px] rounded-xl text-[14px] font-bold disabled:opacity-60" style={{ color: "var(--text-2)" }}>
-                    <X style={{ width: 14, height: 14 }} /> Cancel plan
+                    <X style={{ width: 14, height: 14 }} /> Cancel
                   </button>
                 )}
               </div>
@@ -378,7 +343,7 @@ function MyPlans({ streams, now, onChanged }: { streams: StreamRow[]; now: numbe
 
 // ─── Section ─────────────────────────────────────────────────────────────────
 
-export default function ProjectBackers() {
+export default function RecurringSupport() {
   const { address } = useAccount();
   const { streams, refetch } = useStreams();
   const now = useNow();
@@ -386,42 +351,74 @@ export default function ProjectBackers() {
     () => (streams ?? []).filter((s) => address && s.backer === address.toLowerCase()).sort((a, b) => Number(b.id) - Number(a.id)),
     [streams, address]
   );
-  // Public board: only plans that have actually paid Vezo a real amount.
-  // Anyone can open a plan under any name, so neither a deposit nor a 1 wei
+  // Public list: only streams that have actually paid Vezo a real amount.
+  // Anyone can open a stream under any name, so neither a deposit nor a 1 wei
   // payment proves anything.
   const board = useMemo(
     () => (streams ?? []).filter((s) => streamedNow(s, now) >= MIN_LISTED[s.token]).sort((a, b) => Number(a.id) - Number(b.id)),
     [streams, now]
   );
 
+  const [open, setOpen] = useState(false);
+  const reduced = useReducedMotion();
+  // The "Prefer monthly?" link at the top of the page opens the form too.
+  useEffect(() => {
+    const show = () => {
+      setOpen(true);
+      // Scroll once the form is in the layout; scrolling in the same frame
+      // gets cancelled by the height change.
+      requestAnimationFrame(() => requestAnimationFrame(() =>
+        document.getElementById("monthly")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" })
+      ));
+    };
+    window.addEventListener("vezo:open-monthly", show);
+    return () => window.removeEventListener("vezo:open-monthly", show);
+  }, [reduced]);
+
   return (
-    <section aria-labelledby="projects-h" id="projects" className="scroll-mt-28">
-      <h2 id="projects-h" className="font-bold" style={{ fontSize: "clamp(1.6rem, 3vw, 2.1rem)", letterSpacing: "-0.035em", color: "var(--text-1)" }}>
-        For projects on Mezo
-      </h2>
-      <p className="text-[16px] leading-relaxed mt-2 max-w-[60ch]" style={{ color: "var(--text-2)" }}>
-        Back Vezo with a plan and we promote you on X, and share every post in the Mezo Discord.
-        Pay once and the money streams to us over the months of your plan. Pause any time and the
-        clock stops. Cancel any time and everything not yet streamed comes straight back to you.
-      </p>
+    <section aria-labelledby="monthly-h" id="monthly" className="scroll-mt-28">
+      <div className="support-panel p-6 md:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+          <div className="min-w-0 max-w-[52ch]">
+            <h2 id="monthly-h" className="text-[22px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.03em" }}>
+              Support Vezo every month
+            </h2>
+            <p className="text-[15px] leading-relaxed mt-1.5" style={{ color: "var(--text-2)" }}>
+              Recurring support runs on a smart contract. Deposit once and it streams to Vezo
+              over the months you pick. Pause or cancel any time, and whatever hasn&apos;t
+              streamed comes back to you.
+            </p>
+          </div>
+          {!open && (
+            <button
+              onClick={() => setOpen(true)}
+              aria-expanded={false}
+              aria-controls="monthly-form"
+              className="btn-brand shrink-0 px-5 min-h-[46px] rounded-xl text-[15px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] focus-visible:ring-offset-2"
+            >
+              Set it up
+            </button>
+          )}
+        </div>
 
-      <ol className="grid sm:grid-cols-3 gap-x-6 gap-y-3 mt-6 mb-7">
-        {[
-          ["Deposit once", "Your plan amount goes into a public contract, not to us."],
-          ["It streams", "It moves to Vezo second by second over your plan."],
-          ["You stay in control", "Pause, resume or cancel from your wallet. No one else can."],
-        ].map(([t, d], i) => (
-          <li key={t} className="flex gap-3">
-            <span className="font-bold tabular-nums text-[15px]" style={{ color: "var(--vezo-red-text)" }}>0{i + 1}</span>
-            <span>
-              <span className="block text-[15px] font-bold" style={{ color: "var(--text-1)" }}>{t}</span>
-              <span className="block text-[14px] mt-0.5" style={{ color: "var(--text-3)" }}>{d}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              id="monthly-form"
+              initial={reduced ? false : { height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pt-6 mt-6" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                <StartStream onStarted={() => refetch(true)} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-      <StartPlan onStarted={() => refetch(true)} />
 
       {mine.length > 0 && (
         <div className="mt-8">
@@ -431,28 +428,28 @@ export default function ProjectBackers() {
 
       {board.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-[18px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Project backers</h3>
+          <h3 className="text-[18px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>Monthly supporters</h3>
           <ul className="mt-2">
-            {board.map((s) => (
-              <li key={s.id} className="flex items-center gap-4 py-3.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                <span className="flex-1 min-w-0 truncate text-[16px] font-semibold" style={{ color: "var(--text-1)" }}>{s.name || `Plan #${s.id}`}</span>
-                {(() => {
-                  const done = s.status !== "Canceled" && streamedNow(s, now) >= BigInt(s.deposit);
-                  const label = done ? "Completed" : s.status === "Active" ? "Active" : s.status === "Paused" ? "Paused" : "Ended";
-                  return <span className="text-[14px]" style={{ color: label === "Active" ? "#10B981" : "var(--text-3)" }}>{label}</span>;
-                })()}
-                <span className="text-[15px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>
-                  {fmt(streamedNow(s, now))} {s.token}
-                </span>
-              </li>
-            ))}
+            {board.map((s) => {
+              const done = s.status !== "Canceled" && streamedNow(s, now) >= BigInt(s.deposit);
+              const label = done ? "Completed" : s.status === "Active" ? "Streaming" : s.status === "Paused" ? "Paused" : "Ended";
+              return (
+                <li key={s.id} className="flex items-center gap-4 py-3.5" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                  <span className={`flex-1 min-w-0 truncate text-[16px] font-semibold ${s.name ? "" : "font-mono text-[15px]"}`} style={{ color: "var(--text-1)" }}>
+                    {s.name || `${s.backer.slice(0, 6)}…${s.backer.slice(-4)}`}
+                  </span>
+                  <span className="text-[14px]" style={{ color: label === "Streaming" ? "#10B981" : "var(--text-3)" }}>{label}</span>
+                  <span className="text-[15px] font-bold tabular-nums" style={{ color: "var(--text-1)" }}>{fmt(streamedNow(s, now))} {s.token}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
 
       {LIVE && (
         <a href={`${M.explorer}/address/${M.backerStreams}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[14px] font-semibold mt-5" style={{ color: "var(--text-3)" }}>
-          Read the contract on the explorer <ExternalLink style={{ width: 12, height: 12 }} />
+          View the contract on the explorer <ExternalLink style={{ width: 12, height: 12 }} />
         </a>
       )}
     </section>

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { CONTRACTS } from "@/lib/contracts";
 import { mezoMainnet } from "@/lib/wagmi";
-import ProjectBackers from "./ProjectBackers";
+import RecurringSupport from "./RecurringSupport";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
 import { useMarketHistory, useMarketValue, fmtUsdWhole } from "@/hooks/useMarketData";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -1236,6 +1236,18 @@ export default function SupportClient() {
         id="back"
       >
         <DonatePanel onDonated={onDonated} request={request} />
+        <a
+          href="#monthly"
+          onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event("vezo:open-monthly")); }}
+          className="flex items-center justify-between gap-3 rounded-2xl px-5 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040]"
+          style={{ background: "var(--bg-1)", border: "1px solid var(--border-subtle)" }}
+        >
+          <span>
+            <span className="block text-[15px] font-bold" style={{ color: "var(--text-1)" }}>Prefer monthly?</span>
+            <span className="block text-[14px] mt-0.5" style={{ color: "var(--text-3)" }}>Set up recurring support. Pause or cancel any time.</span>
+          </span>
+          <span aria-hidden className="text-[18px] font-bold" style={{ color: "var(--vezo-red-text)" }}>→</span>
+        </a>
         <AddressBlock />
       </motion.div>
 
@@ -1244,7 +1256,7 @@ export default function SupportClient() {
       <div className="min-w-0 lg:col-start-1">
         <SupportersBoard data={merged} loading={loading} youAddress={address} />
       </div>
-      <div className="min-w-0 lg:col-start-1"><ProjectBackers /></div>
+      <div className="min-w-0 lg:col-start-1"><RecurringSupport /></div>
 
       {/* Phones: bring the ask back without scrolling up */}
       <AnimatePresence>

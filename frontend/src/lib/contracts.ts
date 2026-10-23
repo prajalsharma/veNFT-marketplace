@@ -75,10 +75,10 @@ export const CONTRACTS = {
     swapPaymentRouter: addr("NEXT_PUBLIC_SWAP_PAYMENT_ROUTER_MAINNET", "0x638Bab65738bA7BcD47D3c1d6Cb4eaf6CC872617"),
     // Mezo's Velodrome-v2 PoolFactory (resolves the BTC/MUSD pool for swaps).
     poolFactory: addr("NEXT_PUBLIC_POOL_FACTORY_MAINNET", "0x83FE469C636C4081b87bA5b3Ae9991c6Ed104248"),
-    // VezoBackerStreams — prepaid, cancellable project subscriptions that
-    // stream to the support wallet. Zero until deployed; the support page
-    // shows the tiers and holds the start button until this is set.
-    backerStreams: addr("NEXT_PUBLIC_BACKER_STREAMS_MAINNET", ZERO_ADDRESS),
+    // VezoBackerStreams — recurring support: a deposit that streams to the
+    // support wallet over the months the supporter picks, pausable and
+    // cancellable by them alone. Deployed 23 Oct 2026, block 12,700,779.
+    backerStreams: addr("NEXT_PUBLIC_BACKER_STREAMS_MAINNET", "0xCe6863B5ac0c225CD9944a3FF4216a25aa1D2621"),
   },
 } as const;
 

@@ -41,8 +41,12 @@ const MIN_UNITS: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
 };
 // Our own wallets (gas top-ups, moving funds in). Server-only, comma separated.
 const IGNORED_SENDERS = new Set(
-  (process.env.SUPPORT_IGNORE_SENDERS ?? "")
-    .split(",")
+  [
+    // Recurring support pays out from its contract; those streams are listed
+    // in their own section, so they are not counted again here.
+    CONTRACTS.mainnet.backerStreams,
+    ...(process.env.SUPPORT_IGNORE_SENDERS ?? "").split(","),
+  ]
     .map((a) => a.trim().toLowerCase())
     .filter(Boolean)
 );

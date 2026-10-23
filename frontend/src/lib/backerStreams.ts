@@ -1,9 +1,9 @@
-// Project subscriptions: shared ABI, tiers and helpers for VezoBackerStreams.
+// Recurring support: shared ABI and helpers for VezoBackerStreams.
 //
-// A project deposits the full tier up front. The contract streams it to the
-// support wallet second by second over the tier's months. Only the project's
-// wallet can pause (the clock stops and the end date moves out), resume, or
-// cancel (everything not yet streamed comes straight back). There is no admin.
+// A supporter deposits once. The contract streams it to the support wallet
+// second by second over the months they chose. Only the supporter's wallet can
+// pause (the clock stops and the end date moves out), resume, or cancel
+// (everything not yet streamed comes straight back). There is no admin.
 
 export const BACKER_STREAMS_ABI = [
   { type: "function", name: "create", stateMutability: "nonpayable",
@@ -43,33 +43,17 @@ export type StreamStatus = (typeof STREAM_STATUS)[number];
 export const MONTH_SECONDS = 30 * 24 * 60 * 60;
 export const MAX_PROJECT_NAME_BYTES = 32;
 
-export interface Tier {
-  usd: number;
-  months: number;
-  perks: string[];
-}
-
-// The proposal's tiers. Bigger tiers buy a longer run, not just more posts.
-export const TIERS: Tier[] = [
-  { usd: 5, months: 1, perks: ["5 posts about your project", "Replies on 10 of your tweets"] },
-  { usd: 10, months: 2, perks: ["5 posts a month", "Replies on 10 of your tweets a month"] },
-  { usd: 25, months: 3, perks: ["6 posts a month", "Replies on 15 of your tweets a month", "One explainer thread on your project"] },
-  { usd: 50, months: 3, perks: ["8 posts a month", "Replies on 20 of your tweets a month", "One explainer thread, pinned for a week"] },
-  { usd: 100, months: 4, perks: [
-    "10 posts a month and replies on 25 of your tweets",
-    "A repost of every big announcement",
-    "Two explainer threads timed to your launches",
-    "A joint X Space or AMA",
-    "If you serve veNFT holders: a Vezo pop-up that sends our users to you",
-  ] },
-];
+// Recurring support is picked as an amount per month and a number of months;
+// the deposit is the product, streamed evenly over that time.
+export const MONTHLY_USD = [5, 10, 25, 50];
+export const MONTH_CHOICES = [1, 3, 6, 12];
 
 export function nameBytes(s: string): number {
   return new TextEncoder().encode(s).length;
 }
 
 // A plan shows on the public board only after it has paid at least this much
-// (about $1). Anyone can open a plan under any name, so the board needs a
+// (about $1). Anyone can open a stream under any name, so the board needs a
 // real payment before it shows a name, not a 1 wei one.
 export const MIN_LISTED: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
   BTC: 10n ** 13n,           // 0.00001 BTC
@@ -77,8 +61,8 @@ export const MIN_LISTED: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
   MUSD: 10n ** 18n,          // 1 MUSD
 };
 
-// The board only reads plans whose deposit reaches a real tier (about $5), so
-// a flood of 1 wei plans costs the server nothing to skip.
+// The board only reads streams whose deposit reaches the smallest choice
+// (about $5), so a flood of 1 wei streams costs the server nothing to skip.
 export const MIN_INDEXED: Record<"BTC" | "MEZO" | "MUSD", bigint> = {
   BTC: 5n * 10n ** 13n,       // 0.00005 BTC
   MEZO: 1000n * 10n ** 18n,   // 1,000 MEZO
