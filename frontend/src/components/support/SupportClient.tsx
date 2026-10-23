@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { CONTRACTS } from "@/lib/contracts";
 import { mezoMainnet } from "@/lib/wagmi";
+import ProjectBackers from "./ProjectBackers";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
 import { useMarketHistory, useMarketValue, fmtUsdWhole } from "@/hooks/useMarketData";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -1231,7 +1232,7 @@ export default function SupportClient() {
       <motion.div
         {...rise(0.12)}
         ref={panelRef}
-        className="min-w-0 space-y-6 lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:sticky lg:top-24 scroll-mt-24"
+        className="min-w-0 space-y-6 lg:col-start-2 lg:row-start-1 lg:row-span-5 lg:sticky lg:top-24 scroll-mt-24"
         id="back"
       >
         <DonatePanel onDonated={onDonated} request={request} />
@@ -1243,6 +1244,7 @@ export default function SupportClient() {
       <div className="min-w-0 lg:col-start-1">
         <SupportersBoard data={merged} loading={loading} youAddress={address} />
       </div>
+      <div className="min-w-0 lg:col-start-1"><ProjectBackers /></div>
 
       {/* Phones: bring the ask back without scrolling up */}
       <AnimatePresence>

@@ -46,6 +46,8 @@ export const CONTRACTS = {
     swapPaymentRouter: hard(ZERO_ADDRESS),
     // Velodrome-v2 PoolFactory — not available on testnet.
     poolFactory: hard(ZERO_ADDRESS),
+    // VezoBackerStreams (project subscriptions) — mainnet only.
+    backerStreams: hard(ZERO_ADDRESS),
   },
   mainnet: {
     chainId: 31612,
@@ -73,6 +75,10 @@ export const CONTRACTS = {
     swapPaymentRouter: addr("NEXT_PUBLIC_SWAP_PAYMENT_ROUTER_MAINNET", "0x638Bab65738bA7BcD47D3c1d6Cb4eaf6CC872617"),
     // Mezo's Velodrome-v2 PoolFactory (resolves the BTC/MUSD pool for swaps).
     poolFactory: addr("NEXT_PUBLIC_POOL_FACTORY_MAINNET", "0x83FE469C636C4081b87bA5b3Ae9991c6Ed104248"),
+    // VezoBackerStreams — prepaid, cancellable project subscriptions that
+    // stream to the support wallet. Zero until deployed; the support page
+    // shows the tiers and holds the start button until this is set.
+    backerStreams: addr("NEXT_PUBLIC_BACKER_STREAMS_MAINNET", ZERO_ADDRESS),
   },
 } as const;
 
