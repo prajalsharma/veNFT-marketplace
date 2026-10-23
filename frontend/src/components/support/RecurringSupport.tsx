@@ -488,9 +488,14 @@ export default function RecurringSupport() {
       )}
 
       {LIVE && (
-        <a href={`${M.explorer}/address/${M.backerStreams}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[14px] font-semibold mt-5" style={{ color: "var(--text-3)" }}>
-          View the contract on the explorer <ExternalLink style={{ width: 12, height: 12 }} />
-        </a>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5">
+          <a href={`https://repo.sourcify.dev/31612/${M.backerStreams}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>
+            Read the verified source <ExternalLink style={{ width: 12, height: 12 }} />
+          </a>
+          <a href={`${M.explorer}/address/${M.backerStreams}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[14px] font-semibold" style={{ color: "var(--text-3)" }}>
+            View the contract on the explorer <ExternalLink style={{ width: 12, height: 12 }} />
+          </a>
+        </div>
       )}
     </section>
   );
