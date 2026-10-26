@@ -18,7 +18,7 @@
   "crons": [
     {
       "path": "/api/cron/collect-streams",
-      "schedule": "0 6 * * *"
+      "schedule": "0 6 * * 1"
     }
   ]
 }

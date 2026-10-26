@@ -4,7 +4,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import { CONTRACTS } from "@/lib/contracts";
 import { BACKER_STREAMS_ABI } from "@/lib/backerStreams";
 
-// Daily auto-payout for recurring support (Vercel Cron, see vercel.json).
+// Weekly auto-payout for recurring support (Vercel Cron, Mondays 06:00 UTC,
+// see the repo-root vercel.json).
 //
 // A stream's money waits in VezoBackerStreams until someone calls
 // withdraw(id). Anyone may call it and it always pays RECIPIENT, the support
