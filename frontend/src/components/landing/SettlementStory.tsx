@@ -2,11 +2,10 @@
 
 // How a trade settles, told as one listing moving through its states.
 //
-// On wide screens the listing is pinned while the three steps scroll past;
-// whichever step is centred drives the listing's state (listed, offered,
-// settled). Phones get the same idea in a compact card pinned under the
-// header, instead of repeating a full snapshot after every step.
-// The listing shown is the best live one, or a clearly labelled example.
+// One compact block: the listing card beside the three steps. The card steps
+// through its states (listed, offered, settled) on its own, and follows the
+// step a reader hovers, focuses or taps. The listing shown is the best live
+// one, or a clearly labelled example.
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -98,64 +97,65 @@ function StatusLabel({ s, step, reduce }: { s: (typeof STATES)[number]; step: nu
 }
 
 export function SettlementStory({ listing }: { listing: Listing | null }) {
+  const reduce = useReducedMotion();
   const [active, setActive] = useState(0);
-  const refs = useRef<(HTMLLIElement | null)[]>([]);
-  // The site header is fixed and its height varies by width (the price
-  // ticker wraps), so the phone card pins to its measured bottom edge.
-  const [headerH, setHeaderH] = useState(96);
-  useEffect(() => {
-    const h = document.querySelector("header");
-    if (!h) return;
-    const set = () => setHeaderH(h.getBoundingClientRect().height);
-    set();
-    const ro = new ResizeObserver(set);
-    ro.observe(h);
-    return () => ro.disconnect();
-  }, []);
+  const [held, setHeld] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
 
+  // Only run the cycle while the section is on screen.
   useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.step));
-        });
-      },
-      // Desktop: the step crossing the middle of the screen. Phones: the step
-      // just below the pinned card, which is what the reader is looking at.
-      { rootMargin: window.matchMedia("(min-width: 1024px)").matches ? "-42% 0px -42% 0px" : "-32% 0px -58% 0px" }
-    );
-    refs.current.forEach((el) => el && io.observe(el));
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.35 });
+    io.observe(el);
     return () => io.disconnect();
   }, []);
 
+  // The listing steps through its states on its own; hovering, focusing or
+  // tapping a step holds it there. Reduced motion: no auto-advance.
+  useEffect(() => {
+    if (reduce || held || !visible) return;
+    const id = setInterval(() => setActive((a) => (a + 1) % STEPS.length), 3600);
+    return () => clearInterval(id);
+  }, [reduce, held, visible]);
+
   return (
-    <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-12 lg:gap-20">
-      <div className="hidden lg:block">
-        <div className="sticky top-[30vh]">
-          <StateCard step={active} listing={listing} />
-        </div>
-      </div>
-      <div className="lg:hidden sticky z-10 -mx-1 px-1 pt-2 pb-3" style={{ top: headerH, background: "var(--bg)" }}>
-        <StateCard step={active} listing={listing} compact />
-      </div>
-      <ol className="-mt-8 lg:mt-0">
-        {STEPS.map((s, k) => (
-          <li
-            key={s.title}
-            ref={(el) => { refs.current[k] = el; }}
-            data-step={k}
-            className="min-h-[38vh] lg:min-h-[40vh] flex flex-col justify-center py-8 lg:py-0"
-            style={{ borderTop: k ? "1px solid var(--hairline)" : undefined }}
-          >
-            <p className="text-[14px] font-semibold tabular-nums mb-3 transition-colors duration-300" style={{ color: active === k ? "var(--vezo-red)" : "var(--text-3)" }}>
-              Step {k + 1} of 3
-            </p>
-            <h3 className="font-bold mb-4 transition-opacity duration-300" style={{ fontSize: "clamp(1.5rem, 2.4vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.1, color: "var(--text-1)", opacity: active === k ? 1 : 0.55 }}>
-              {s.title}
-            </h3>
-            <p className="text-[16px] leading-[1.7]" style={{ color: "var(--text-2)", maxWidth: "46ch" }}>{s.body}</p>
-          </li>
-        ))}
+    <div
+      ref={rootRef}
+      className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-8 lg:gap-16 items-center"
+      onMouseLeave={() => setHeld(false)}
+    >
+      <StateCard step={active} listing={listing} />
+      <ol role="list">
+        {STEPS.map((s, k) => {
+          const on = active === k;
+          return (
+            <li key={s.title} style={{ borderTop: k ? "1px solid var(--hairline)" : undefined }}>
+              <button
+                type="button"
+                aria-current={on ? "step" : undefined}
+                onMouseEnter={() => { setActive(k); setHeld(true); }}
+                onFocus={() => { setActive(k); setHeld(true); }}
+                onBlur={() => setHeld(false)}
+                onClick={() => { setActive(k); setHeld(true); }}
+                className="w-full text-left grid grid-cols-[28px_1fr] gap-x-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF0040] rounded-lg"
+              >
+                <span className="text-[15px] font-bold tabular-nums pt-0.5 transition-colors duration-300" style={{ color: on ? "var(--vezo-red-text)" : "var(--text-3)" }}>
+                  {k + 1}
+                </span>
+                <span>
+                  <span className="block text-[18px] font-semibold transition-colors duration-300" style={{ color: on ? "var(--text-1)" : "var(--text-2)", letterSpacing: "-0.015em" }}>
+                    {s.title}
+                  </span>
+                  <span className="block text-[15px] leading-[1.6] mt-1.5" style={{ color: "var(--text-2)", maxWidth: "52ch", opacity: on ? 1 : 0.75 }}>
+                    {s.body}
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
       </ol>
     </div>
   );

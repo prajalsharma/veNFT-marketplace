@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sun, Moon, ArrowUpRight } from "lucide-react";
+import { Menu, X, Sun, Moon, ArrowUpRight, ArrowRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePriceTicker, formatUSD } from "@/hooks/usePriceTicker";
 import { WalletMenu } from "@/components/header/WalletMenu";
@@ -133,6 +133,7 @@ const NAV = [
   { href: "/marketplace", label: "Marketplace" },
   { href: "/my-listings", label: "Portfolio" },
   { href: "/activity", label: "Activity" },
+  { href: "/partners", label: "Partners" },
   { href: "https://docs.vezo.exchange", label: "Docs", external: true },
 ] as const;
 
@@ -220,7 +221,7 @@ export function Header() {
         <PriceStrip />
       </div>
 
-      {/* Mobile menu: settings only; routes live in the bottom tab bar */}
+      {/* Mobile menu: Partners plus settings; main routes live in the bottom tab bar */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -232,6 +233,10 @@ export function Header() {
             style={{ borderTop: "1px solid var(--hairline)", background: "var(--header-solid)" }}
           >
             <div className="px-5 py-5 grid gap-5">
+              <Link href="/partners" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3.5 py-3 rounded-xl text-[15px] font-semibold" style={{ background: "var(--bg-2)", color: "var(--text-1)" }}>
+                Partners
+                <ArrowRight style={{ width: 16, height: 16 }} />
+              </Link>
               <div>
                 <p className="text-[14px] font-semibold mb-2 px-1" style={{ color: "var(--text-3)" }}>Network</p>
                 <NetworkMenu variant="list" />
