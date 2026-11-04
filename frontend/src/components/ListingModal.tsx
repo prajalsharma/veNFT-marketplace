@@ -8,9 +8,10 @@
 // admin can change it. Success is tracked on the listing transaction itself,
 // not on the hook's shared hash (which the approval also sets).
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useReadContract, useWaitForTransactionReceipt } from "wagmi";
-import { formatEther, parseEther } from "viem";
+import { formatEther, parseEther, parseEventLogs } from "viem";
+import { VeNFTMarketplaceABI } from "@/lib/abis";
 import { X, Loader2, Award, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -21,6 +22,7 @@ import { PAYMENT_TOKENS } from "@/lib/contracts";
 import { CountdownCompact } from "./CountdownTimer";
 import { PositionGlyph } from "./market/PositionVisuals";
 import { StepRow, SuccessCheck, type StepState } from "./market/TxSteps";
+import { SharePrompt } from "./share/SharePrompt";
 
 const ROUTER_FEE_ABI = [
   { name: "calculateFee", type: "function", stateMutability: "view", inputs: [{ name: "amount", type: "uint256" }], outputs: [{ name: "fee", type: "uint256" }, { name: "sellerAmount", type: "uint256" }] },
@@ -66,7 +68,15 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
   const [approvalHandled, setApprovalHandled] = useState(false);
 
   const { isSuccess: approvalConfirmed, isLoading: approvalMining } = useWaitForTransactionReceipt({ hash: approvalHash });
-  const { isSuccess: listed, isLoading: listMining } = useWaitForTransactionReceipt({ hash: listHash });
+  const { isSuccess: listed, isLoading: listMining, data: listReceipt } = useWaitForTransactionReceipt({ hash: listHash });
+  // The new listing's id, from its Listed event, so a share links straight to it.
+  const listingId = useMemo(() => {
+    if (!listReceipt) return undefined;
+    try {
+      const [ev] = parseEventLogs({ abi: VeNFTMarketplaceABI, eventName: "Listed", logs: listReceipt.logs });
+      return ev ? String((ev.args as { listingId: bigint }).listingId) : undefined;
+    } catch { return undefined; }
+  }, [listReceipt]);
 
   const nftContract = veNFT ? (veNFT.collection === "veBTC" ? contracts.veBTC : contracts.veMEZO) : undefined;
 
@@ -246,6 +256,20 @@ export function ListingModal({ isOpen, onClose, veNFT }: ListingModalProps) {
                       View transaction
                     </a>
                   )}
+                  <div className="mt-5">
+                    <SharePrompt
+                      moment={{
+                        kind: "listed",
+                        collection: veNFT.collection,
+                        tokenId: veNFT.tokenId.toString(),
+                        price: fmt(priceNum),
+                        token: paymentToken,
+                        discount,
+                        estimated: crossToken,
+                        listingId,
+                      }}
+                    />
+                  </div>
                 </motion.div>
               ) : (
                 <>

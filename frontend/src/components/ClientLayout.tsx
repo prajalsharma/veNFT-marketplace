@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { NetworkSwitcher } from "@/components/NetworkSwitcher";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SupportNudge } from "@/components/SupportNudge";
+import { ShareHost } from "@/components/share/ShareHost";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* One-time invitation to the support page */}
       <SupportNudge />
+
+      {/* Share card after a sale (announceShare in lib/share.ts) */}
+      <ShareHost />
 
       {/* Makes the app installable from the browser */}
       <ServiceWorkerRegistrar />

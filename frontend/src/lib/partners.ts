@@ -1,7 +1,8 @@
 // Partners and integrations: one registry, rendered everywhere from data.
 //
 // The /partners page (tabs, counts, directory tiles, expansions, detail
-// views), the home page feature and the Portfolio hint all read ENTRIES. To
+// views), the home page feature, the after-purchase card and the wallet-card
+// links all read ENTRIES. To
 // add one: put its logo in public/partners/, append an Entry below, and it
 // appears in the right tab with its own #slug link. To add a new kind of
 // relationship, add it to KINDS; its tab follows.
@@ -20,7 +21,7 @@
 //   },
 //
 // Optional: quote (their tagline), live (a widget in components/partners/
-// live.tsx), placements.home / placements.portfolio, disclosure. Dev builds
+// live.tsx), placements (home, afterBuy, walletCard), accepts, disclosure. Dev builds
 // throw on a bad slug, a duplicate, a slug that matches a tab, or a logo
 // outside public/partners/.
 //
@@ -70,6 +71,8 @@ export type Block =
 /** Live widgets an entry can show; implemented in components/partners/live. */
 export type LiveWidget = "goldsky-index";
 
+export type VeCollection = "veBTC" | "veMEZO";
+
 export interface Entry {
   /** URL-safe id: /partners#slug opens the entry. */
   slug: string;
@@ -93,9 +96,13 @@ export interface Entry {
   placements?: {
     /** Featured on the home page (the first featured entry is used). */
     home?: { heading: string; accent: string };
-    /** One line on Portfolio for people holding veNFTs. */
-    portfolio?: string;
+    /** A card after a purchase, about the veNFT just bought. */
+    afterBuy?: { title: string; body: (collection: VeCollection) => string; cta: EntryLink };
+    /** A small link under each eligible veNFT in the wallet. */
+    walletCard?: { label: string };
   };
+  /** Which veNFTs the partner can take; placements skip the rest. */
+  accepts?: { grants: boolean };
   /** Shown under the detail view, e.g. a funding disclosure. */
   disclosure?: string;
 }
@@ -184,8 +191,16 @@ export const ENTRIES: Entry[] = [
     disclosure: "Aurove has backed Vezo through recurring support. Vezo doesn't run Aurove or its contracts, and nothing here is financial advice.",
     placements: {
       home: { heading: "Our ecosystem partner,", accent: "Aurove" },
-      portfolio: "Rather keep a lock earning than sell it? Our partner Aurove gives you a token for it while it stays in Mezo Earn.",
+      afterBuy: {
+        title: "Put it to work with Aurove",
+        body: (c) =>
+          `Deposit it on Aurove and get ${c === "veBTC" ? "avBTCm" : "avMEZOm"} for everything it holds, not what you paid, while it keeps earning in Mezo Earn. Aurove is a separate protocol, so read their docs first.`,
+        cta: { label: "Deposit on Aurove", href: "https://www.aurove.xyz/earn" },
+      },
+      walletCard: { label: "Or keep it earning on Aurove" },
     },
+    // Aurove rejects grant positions that are still vesting.
+    accepts: { grants: false },
   },
   {
     // Each point maps to code: subgraph/ (the indexer) and the routes
@@ -232,7 +247,11 @@ export const ENTRIES: Entry[] = [
 export const entriesOf = (kind: Kind) => ENTRIES.filter((e) => e.kind === kind);
 export const entryBySlug = (slug: string) => ENTRIES.find((e) => e.slug === slug);
 export const homeFeature = () => ENTRIES.find((e) => e.placements?.home);
-export const portfolioHint = () => ENTRIES.find((e) => e.placements?.portfolio);
+const takes = (e: Entry, nft: { isGrant?: boolean }) => !nft.isGrant || e.accepts?.grants !== false;
+/** The partner to suggest after buying this veNFT, if any can take it. */
+export const afterBuyPartner = (nft: { isGrant?: boolean }) => ENTRIES.find((e) => e.placements?.afterBuy && takes(e, nft));
+/** The partner to link under this wallet veNFT, if any can take it. */
+export const walletCardPartner = (nft: { isGrant?: boolean }) => ENTRIES.find((e) => e.placements?.walletCard && takes(e, nft));
 /** Kinds that have at least one entry, in KINDS order. */
 export const activeKinds = () => (Object.keys(KINDS) as Kind[]).filter((k) => entriesOf(k).length > 0);
 

@@ -19,6 +19,8 @@ import { X, Loader2, AlertCircle, Wallet, ArrowLeftRight, Award } from "lucide-r
 import { CountdownCompact } from "./CountdownTimer";
 import { PositionGlyph } from "./market/PositionVisuals";
 import { StepRow, SuccessCheck, type StepState } from "./market/TxSteps";
+import { SharePrompt } from "./share/SharePrompt";
+import { PartnerNudge } from "./partners/PartnerNudge";
 import { useMarketplace, Listing } from "@/hooks/useMarketplace";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useNetwork } from "@/hooks/useNetwork";
@@ -852,6 +854,20 @@ export function BuyModal({ isOpen, onClose, listing, onSuccess }: BuyModalProps)
                       View transaction
                     </a>
                   )}
+                  <div className="grid gap-3 mt-5">
+                    <SharePrompt
+                      moment={{
+                        kind: "bought",
+                        collection: listing.collection,
+                        tokenId: listing.tokenId.toString(),
+                        price: formattedPrice,
+                        token: paymentSymbol,
+                        discount: listing.discountBps !== null ? Number(listing.discountBps) / 10_000 : null,
+                        estimated: !!listing.discountEstimated,
+                      }}
+                    />
+                    <PartnerNudge nft={{ collection: listing.collection, isGrant: listing.isGrant }} />
+                  </div>
                 </motion.div>
               )}
 

@@ -19,7 +19,8 @@ import { formatEther, parseEther } from "viem";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
-import { portfolioHint } from "@/lib/partners";
+import { walletCardPartner } from "@/lib/partners";
+import { announceShare } from "@/lib/share";
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -36,6 +37,7 @@ import {
   Clock,
   Gavel,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { useMarketplace, useListing, useUserVeNFTs, useActiveListings, computeVotingPower } from "@/hooks/useMarketplace";
 import { useActiveTokenBids, useBidding } from "@/hooks/useBidding";
@@ -50,8 +52,6 @@ import { usePriceTicker } from "@/hooks/usePriceTicker";
 import { listingDiscount } from "@/lib/listingDiscount";
 import type { Listing } from "@/hooks/useMarketplace";
 
-// Registry entry that asked for a line on Portfolio (lib/partners.ts).
-const hint = portfolioHint();
 
 /** Readable token amount: 40,000 / 1,234.56 / 0.000581, never "40000.0000". */
 function fmtNum(wei: bigint): string {
@@ -350,6 +350,7 @@ function IncomingBidsForListing({
   const { address } = useAccount();
   const { data: bids, isLoading, refetch } = useActiveTokenBids(collection, tokenId);
   const { acceptBidWithApproval } = useBidding();
+  const { contracts } = useNetwork();
 
   const [busyBidId,   setBusyBidId]   = useState<bigint | null>(null);
   const [busyLabel,   setBusyLabel]   = useState("");
@@ -367,6 +368,16 @@ function IncomingBidsForListing({
         owner: address,
         onStage: (s) => setBusyLabel(s === "approving" ? "Approving…" : "Accepting…"),
       });
+      const bid = (bids as { id: bigint; amount: bigint; paymentToken: string }[] | undefined)?.find((b) => b.id === bidId);
+      if (bid) {
+        announceShare({
+          kind: "sold",
+          collection: collection.toLowerCase() === contracts.veBTC.toLowerCase() ? "veBTC" : "veMEZO",
+          tokenId: tokenId.toString(),
+          price: Number(formatEther(bid.amount)).toLocaleString("en-US", { maximumFractionDigits: 6 }),
+          token: getPaymentTokenSymbol(bid.paymentToken),
+        });
+      }
       refetch();
     } catch (e) {
       setActionError(parseBiddingError(e));
@@ -374,7 +385,7 @@ function IncomingBidsForListing({
       setBusyBidId(null);
       setBusyLabel("");
     }
-  }, [acceptBidWithApproval, address, collection, tokenId, refetch]);
+  }, [acceptBidWithApproval, address, collection, tokenId, refetch, bids, contracts.veBTC]);
 
   if (isLoading) return null;
   if (!bids || bids.length === 0) return null;
@@ -621,6 +632,19 @@ function WalletNFTCard({
           List for sale
         </motion.button>
         )}
+        {!listedFor && (() => {
+          // A registry partner that can take this veNFT (lib/partners.ts).
+          const partner = walletCardPartner(nft);
+          return partner?.placements?.walletCard ? (
+            <Link
+              href={`/partners#${partner.slug}`}
+              className="mt-2.5 flex items-center justify-center gap-1 text-[14px] font-semibold underline-offset-4 hover:underline"
+              style={{ color: "var(--text-2)" }}
+            >
+              {partner.placements.walletCard.label} <ArrowRight style={{ width: 13, height: 13 }} />
+            </Link>
+          ) : null;
+        })()}
       </div>
     </motion.div>
   );
@@ -806,12 +830,6 @@ export default function MyListingsClient() {
                   </span>
                 )}
               </div>
-              {walletVeNFTs.length > 0 && hint?.placements?.portfolio && (
-                <p className="text-[14px] leading-[1.6] -mt-3 mb-5" style={{ color: "var(--text-2)" }}>
-                  {hint.placements.portfolio}{" "}
-                  <Link href={`/partners#${hint.slug}`} className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>See how</Link>
-                </p>
-              )}
 
               {veNFTsLoading ? (
                 <div className="grid sm:grid-cols-2 gap-4">

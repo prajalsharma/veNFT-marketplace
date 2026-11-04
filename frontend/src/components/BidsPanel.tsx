@@ -12,7 +12,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
-import { formatUnits, parseUnits, erc20Abi, maxUint256 } from "viem";
+import { formatEther, formatUnits, parseUnits, erc20Abi, maxUint256 } from "viem";
 import { useBidding, useActiveTokenBids } from "../hooks/useBidding";
 import { useNetwork } from "../hooks/useNetwork";
 import { getContracts } from "../lib/contracts";
@@ -21,6 +21,7 @@ import { Gavel, CheckCircle2, X, Clock, Loader2, ExternalLink } from "lucide-rea
 import { motion, AnimatePresence } from "framer-motion";
 import { parseBiddingError } from "../lib/biddingErrors";
 import { getPaymentTokenSymbol as symbolOf } from "../lib/tokens";
+import { announceShare } from "../lib/share";
 import { usePriceTicker } from "../hooks/usePriceTicker";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -433,6 +434,7 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
     address.toLowerCase() === currentOwner.toLowerCase();
 
   const { data: activeBids, isLoading, refetch } = useActiveTokenBids(collection, tokenId);
+  const { contracts } = useNetwork();
 
   // Accepting needs the bidding contract approved as an NFT operator — listing
   // only approves the marketplace, so this is a separate one-time grant. Errors
@@ -449,6 +451,16 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
         owner: address,
         onStage: (s) => setBusyLabel(s === "approving" ? "Approving…" : "Accepting…"),
       });
+      const bid = (activeBids as { id: bigint; amount: bigint; paymentToken: string }[] | undefined)?.find((b) => b.id === bidId);
+      if (bid) {
+        announceShare({
+          kind: "sold",
+          collection: collection.toLowerCase() === contracts.veBTC.toLowerCase() ? "veBTC" : "veMEZO",
+          tokenId: tokenId.toString(),
+          price: Number(formatEther(bid.amount)).toLocaleString("en-US", { maximumFractionDigits: 6 }),
+          token: symbolOf(bid.paymentToken),
+        });
+      }
       refetch();
     } catch (e) {
       setActionError(parseBiddingError(e));
@@ -456,7 +468,7 @@ export default function BidsPanel({ collection, tokenId, currentOwner }: BidsPan
       setBusyBidId(null);
       setBusyLabel("");
     }
-  }, [acceptBidWithApproval, refetch, address, collection, tokenId]);
+  }, [acceptBidWithApproval, refetch, address, collection, tokenId, activeBids, contracts.veBTC]);
 
   const handleCancel = useCallback(async (bidId: bigint) => {
     setActionError(null);
