@@ -28,6 +28,7 @@ const COLUMNS: { title: string; items: Item[] }[] = [
       { label: "Marketplace", href: "/marketplace" },
       { label: "Sell a veNFT", href: "/my-listings" },
       { label: "Activity", href: "/activity" },
+      { label: "Partners", href: "/partners" },
       { label: "Analytics", href: "https://dune.com/vezo/vezo", external: true },
     ],
   },

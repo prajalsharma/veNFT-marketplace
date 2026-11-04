@@ -31,6 +31,7 @@ import { DiscountDial } from "@/components/market/DiscountDial";
 import { useProtocolFee } from "@/hooks/useProtocolFee";
 import { SettlementStory } from "@/components/landing/SettlementStory";
 import { SupportedBy } from "@/components/landing/SupportedBy";
+import { EcosystemPartner } from "@/components/landing/EcosystemPartner";
 import { Faq } from "@/components/landing/Faq";
 import { fmtAmount, DiscountText, GrantTag } from "@/components/VeNFTCard";
 
@@ -429,12 +430,17 @@ export default function HomeClient() {
         </dl>
       </section>
 
-      {/* 6. Supported by: trust after the product has been explained */}
+      {/* 6. Ecosystem partner: what Vezo users can do next with their lock */}
+      <section id="partners" className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
+        <EcosystemPartner />
+      </section>
+
+      {/* 7. Supported by: trust after the product has been explained */}
       <section className="max-w-[1320px] mx-auto py-14 md:py-24" style={{ borderTop: "1px solid var(--hairline)" }}>
         <SupportedBy />
       </section>
 
-      {/* 7. Questions */}
+      {/* 8. Questions */}
       <section className="max-w-[1320px] mx-auto py-14 md:py-28 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
         <H2>Questions</H2>
         <Faq />

@@ -1161,6 +1161,16 @@ a:hover > .cta-arrow, button:hover > .cta-arrow { transform: translateX(3px); }
 .backer-arrow { color: var(--text-3); transition: transform 200ms var(--ease-out), color 200ms var(--ease-out); }
 .backer-cell:hover .backer-arrow { transform: translate(2px, -2px); color: var(--vezo-red); }
 
+/* Partner panel: stays dark in both themes, because partner marks are drawn for dark */
+.partner-panel {
+  background:
+    radial-gradient(420px 220px at 30% 40%, rgba(232,176,72,0.16), transparent 70%),
+    #0E1014;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: border-color 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.partner-panel:hover { border-color: rgba(232,176,72,0.4); }
+
 /* FAQ */
 .faq-icon { transition: transform 240ms var(--ease-out); }
 .faq[open] .faq-icon { transform: rotate(45deg); }

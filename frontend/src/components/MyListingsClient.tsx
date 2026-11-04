@@ -801,6 +801,12 @@ export default function MyListingsClient() {
                   </span>
                 )}
               </div>
+              {walletVeNFTs.length > 0 && (
+                <p className="text-[14px] leading-[1.6] -mt-3 mb-5" style={{ color: "var(--text-2)" }}>
+                  Rather keep a lock earning than sell it? Our partner Aurove gives you a token for it while it stays in Mezo Earn.{" "}
+                  <Link href="/partners#aurove" className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>See how</Link>
+                </p>
+              )}
 
               {veNFTsLoading ? (
                 <div className="grid sm:grid-cols-2 gap-4">
