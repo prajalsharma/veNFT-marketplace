@@ -3,17 +3,21 @@
 // /partners: projects on Mezo that work alongside Vezo, and the
 // infrastructure the marketplace runs on.
 //
-// Partners are written for Vezo's users: what each one lets them do with a
-// veNFT, how that compares with selling on Vezo, the steps, and what to know
-// first. Integrations say what the service does inside Vezo, with the index's
-// live state shown from /api/market-stats. Claims live in lib/partners.ts.
+// Three views, kept in the URL hash: All (a logo directory; a tile expands
+// in place to its highlights), Partners (written for Vezo's users: what each
+// one lets them do with a veNFT, how that compares with selling, the steps,
+// what to know first) and Integrations (what the service does inside Vezo,
+// with the index's live state from /api/market-stats). Claims live in
+// lib/partners.ts.
 
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, ArrowUpRight, ChevronDown } from "lucide-react";
 import { AUROVE, GOLDSKY } from "@/lib/partners";
 import { CONTRACTS } from "@/lib/contracts";
 import { useMarketHistory } from "@/hooks/useMarketData";
-import { AurovePanel } from "@/components/landing/EcosystemPartner";
+import { AuroveMark, AurovePanel } from "@/components/landing/EcosystemPartner";
 import { SupportedBy } from "@/components/landing/SupportedBy";
 
 const H3 = ({ children, id }: { children: React.ReactNode; id?: string }) => (
@@ -26,16 +30,6 @@ const H3 = ({ children, id }: { children: React.ReactNode; id?: string }) => (
   </h3>
 );
 
-/** The top of each part of the page: Partners, Integrations. */
-function PartHead({ id, title, line }: { id: string; title: string; line: string }) {
-  return (
-    <div id={id} className="flex flex-col md:flex-row md:items-end justify-between gap-2 md:gap-8 pb-6 mb-10 md:mb-14" style={{ borderBottom: "2px solid var(--text-1)", scrollMarginTop: "calc(var(--header-h) + 16px)" }}>
-      <h2 className="font-bold" style={{ fontSize: "clamp(1.75rem, 2.6vw, 2.25rem)", lineHeight: 1.05, letterSpacing: "-0.035em", color: "var(--text-1)" }}>{title}</h2>
-      <p className="text-[15px]" style={{ color: "var(--text-2)" }}>{line}</p>
-    </div>
-  );
-}
-
 // Two ways out of a lock: the comparison a Vezo seller actually faces.
 const CHOICES: { label: string; vezo: string; aurove: string }[] = [
   { label: "What you get", vezo: "BTC, MEZO or MUSD from the buyer", aurove: "avBTCm or avMEZOm for the full locked amount" },
@@ -44,26 +38,209 @@ const CHOICES: { label: string; vezo: string; aurove: string }[] = [
   { label: "Getting it back", vezo: "Sold is sold", aurove: "Redeem on Aurove for a veNFT, on Mezo's epoch timing" },
 ];
 
+type View = "all" | "partners" | "integrations";
+const VIEWS: { id: View; label: string; count: number }[] = [
+  { id: "all", label: "All", count: 2 },
+  { id: "partners", label: "Partners", count: 1 },
+  { id: "integrations", label: "Integrations", count: 1 },
+];
+// Old and deep links land on the right view.
+const HASH_VIEW: Record<string, View> = { partners: "partners", aurove: "partners", integrations: "integrations", goldsky: "integrations" };
+
 export default function PartnersClient() {
+  const [view, setView] = useState<View>("all");
+
+  useEffect(() => {
+    const read = () => setView(HASH_VIEW[window.location.hash.slice(1)] ?? "all");
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+
+  const go = useCallback((v: View) => {
+    setView(v);
+    history.replaceState(null, "", v === "all" ? window.location.pathname : `#${v}`);
+    document.getElementById("views")?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, []);
+
   return (
     <div className="min-h-[100dvh] pt-32 md:pt-40 pb-20 px-5 md:px-10 lg:px-16">
       <div className="max-w-[1320px] mx-auto">
-        <header className="mb-12 md:mb-16 max-w-[60ch]">
+        <header className="mb-10 max-w-[60ch]">
           <h1 className="text-[34px] md:text-[44px] font-bold mb-3" style={{ color: "var(--text-1)", letterSpacing: "-0.04em", lineHeight: 1.02 }}>
             Partners and integrations
           </h1>
           <p className="text-[17px] leading-[1.6]" style={{ color: "var(--text-2)", textWrap: "pretty" }}>
             Projects on Mezo that give your veBTC and veMEZO more options, and the infrastructure the marketplace runs on.
           </p>
-          <nav aria-label="On this page" className="flex gap-2 mt-6">
-            {[["#partners-list", "Partners"], ["#integrations", "Integrations"]].map(([h, l]) => (
-              <a key={h} href={h} className="btn-quiet h-10 px-4 rounded-lg text-[14px] font-semibold inline-flex items-center">{l}</a>
-            ))}
-          </nav>
         </header>
 
-        <PartHead id="partners-list" title="Partners" line="Use these alongside Vezo." />
+        <div id="views" role="tablist" aria-label="Show" className="flex gap-1 mb-10 md:mb-12" style={{ borderBottom: "1px solid var(--hairline)", scrollMarginTop: "calc(var(--header-h) + 16px)" }}>
+          {VIEWS.map((v) => {
+            const on = view === v.id;
+            return (
+              <button
+                key={v.id}
+                role="tab"
+                id={`tab-${v.id}`}
+                aria-selected={on}
+                aria-controls={`panel-${v.id}`}
+                onClick={() => go(v.id)}
+                className="relative -mb-px px-4 h-11 text-[15px] font-semibold inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF0040] rounded-t-lg"
+                style={{ color: on ? "var(--text-1)" : "var(--text-3)", borderBottom: `2px solid ${on ? "var(--vezo-red)" : "transparent"}` }}
+              >
+                {v.label}
+                <span className="text-[13px] tabular-nums" style={{ color: "var(--text-3)" }}>{v.count}</span>
+              </button>
+            );
+          })}
+        </div>
 
+        <div role="tabpanel" id={`panel-${view}`} aria-labelledby={`tab-${view}`}>
+          {view === "all" && <Directory onOpen={go} />}
+          {view === "partners" && <AuroveDetail />}
+          {view === "integrations" && <GoldskyDetail />}
+        </div>
+
+        <section className="py-12 md:py-20 mt-12 md:mt-16" style={{ borderTop: "1px solid var(--hairline)" }}>
+          <SupportedBy />
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// ─── All: logo directory ─────────────────────────────────────────────────────
+
+type Entry = "aurove" | "goldsky";
+
+function Directory({ onOpen }: { onOpen: (v: View) => void }) {
+  const [open, setOpen] = useState<Entry | null>(null);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const tile = (id: Entry, kind: string, line: string, logo: React.ReactNode, dark: boolean) => {
+    const on = open === id;
+    return (
+      <button
+        type="button"
+        aria-expanded={on}
+        aria-controls="entry-detail"
+        onClick={() => setOpen(on ? null : id)}
+        className={`group text-left rounded-2xl overflow-hidden flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0040] transition-shadow ${on ? "shadow-lg" : ""}`}
+        style={{ border: `1px solid ${on ? "var(--text-1)" : "var(--hairline)"}`, background: "var(--surface)" }}
+      >
+        <span className={`flex items-center justify-center h-[150px] md:h-[170px] w-full ${dark ? "partner-panel !rounded-none !border-0" : ""}`} style={dark ? undefined : { background: "var(--bg-2)" }}>
+          {logo}
+        </span>
+        <span className="flex items-start justify-between gap-4 p-5">
+          <span className="min-w-0">
+            <span className="flex items-baseline gap-3">
+              <span className="text-[17px] font-bold" style={{ color: "var(--text-1)" }}>{id === "aurove" ? "Aurove" : "Goldsky"}</span>
+              <span className="text-[13px] font-semibold" style={{ color: "var(--text-3)" }}>{kind}</span>
+            </span>
+            <span className="block text-[14px] leading-[1.55] mt-1" style={{ color: "var(--text-2)" }}>{line}</span>
+          </span>
+          <ChevronDown className="shrink-0 mt-1 transition-transform duration-300" style={{ width: 18, height: 18, color: "var(--text-3)", transform: on ? "rotate(180deg)" : undefined }} />
+        </span>
+      </button>
+    );
+  };
+
+  return (
+    <div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {tile("aurove", "Partner", "Keep a veNFT earning while holding a token you can move.", <AuroveMark height={44} />, true)}
+        {tile(
+          "goldsky",
+          "Integration",
+          "Indexes every listing, sale and bid on Vezo.",
+          <span className="inline-flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={GOLDSKY.symbol} alt="" width={44} height={44} />
+            <span className="text-[26px] font-bold" style={{ color: "var(--text-1)", letterSpacing: "-0.03em" }}>Goldsky</span>
+          </span>,
+          false
+        )}
+      </div>
+
+      <AnimatePresence initial={false} mode="wait">
+        {open && (
+          <motion.div
+            key={open}
+            id="entry-detail"
+            initial={reduce ? false : { height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={reduce ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 rounded-2xl p-6 md:p-8 grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-8 lg:gap-14" style={{ background: "var(--surface)", border: "1px solid var(--hairline)" }}>
+              {open === "aurove" ? (
+                <>
+                  <div>
+                    <p className="text-[13px] font-semibold mb-2" style={{ color: "var(--text-3)" }}>Partner</p>
+                    <h3 className="text-[24px] font-bold mb-3" style={{ color: "var(--text-1)", letterSpacing: "-0.03em" }}>Aurove</h3>
+                    <p className="text-[15px] leading-[1.65] mb-6" style={{ color: "var(--text-2)", maxWidth: "46ch" }}>{AUROVE.summary}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <button onClick={() => onOpen("partners")} className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+                        Full details <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
+                      </button>
+                      <a href={AUROVE.href} target="_blank" rel="noopener noreferrer" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+                        Open Aurove <ArrowUpRight style={{ width: 16, height: 16 }} />
+                      </a>
+                    </div>
+                  </div>
+                  <ul>
+                    {AUROVE.uses.map((u) => (
+                      <li key={u.title} className="py-4" style={{ borderTop: "1px solid var(--hairline)" }}>
+                        <p className="text-[15px] font-semibold" style={{ color: "var(--text-1)" }}>{u.title}</p>
+                        <p className="text-[14px] leading-[1.6] mt-1" style={{ color: "var(--text-2)" }}>{u.body}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-[13px] font-semibold mb-2" style={{ color: "var(--text-3)" }}>Integration</p>
+                    <h3 className="text-[24px] font-bold mb-3" style={{ color: "var(--text-1)", letterSpacing: "-0.03em" }}>Goldsky</h3>
+                    <p className="text-[15px] leading-[1.65] mb-6" style={{ color: "var(--text-2)", maxWidth: "46ch" }}>{GOLDSKY.summary}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <button onClick={() => onOpen("integrations")} className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+                        Full details <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
+                      </button>
+                      <a href={GOLDSKY.docs} target="_blank" rel="noopener noreferrer" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+                        Query the subgraph <ArrowUpRight style={{ width: 16, height: 16 }} />
+                      </a>
+                    </div>
+                  </div>
+                  <div className="grid gap-5">
+                    <IndexStatus />
+                    <p className="text-[14px] leading-[1.6]" style={{ color: "var(--text-2)" }}>
+                      <span className="font-semibold" style={{ color: "var(--text-1)" }}>Powers: </span>
+                      {GOLDSKY.powers.map((x) => x.title.toLowerCase()).join(", ")}.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Partners: Aurove ────────────────────────────────────────────────────────
+
+function AuroveDetail() {
+  return (
+    <>
         {/* Aurove */}
         <section id="aurove" aria-labelledby="aurove-h" className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-10 lg:gap-16 items-center pb-12 md:pb-20" style={{ scrollMarginTop: "var(--header-h)" }}>
           <AurovePanel height={72} className="min-h-[260px] md:min-h-[300px]" />
@@ -159,13 +336,7 @@ export default function PartnersClient() {
           </div>
         </section>
 
-        <Integrations />
-
-        <section className="py-12 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
-          <SupportedBy />
-        </section>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -225,10 +396,9 @@ function IndexStatus() {
   );
 }
 
-function Integrations() {
+function GoldskyDetail() {
   return (
-    <div className="pt-12 md:pt-20" style={{ borderTop: "1px solid var(--hairline)" }}>
-      <PartHead id="integrations" title="Integrations" line="The infrastructure Vezo runs on." />
+    <div>
 
       <section id="goldsky" aria-labelledby="goldsky-h" className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-10 lg:gap-16 items-center pb-12 md:pb-20" style={{ scrollMarginTop: "var(--header-h)" }}>
         <IndexStatus />

@@ -57,7 +57,7 @@ export function EcosystemPartner() {
           <a href={AUROVE.href} target="_blank" rel="noopener noreferrer" className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
             Open Aurove <ArrowUpRight style={{ width: 16, height: 16 }} />
           </a>
-          <Link href="/partners" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+          <Link href="/partners#partners" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
             How it works with Vezo <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
           </Link>
         </div>
