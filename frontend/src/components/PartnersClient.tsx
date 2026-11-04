@@ -16,7 +16,7 @@ const H2 = ({ children, id }: { children: React.ReactNode; id?: string }) => (
   <h2
     id={id}
     className="font-bold mb-6"
-    style={{ fontSize: "clamp(1.6rem, 2.8vw, 2.25rem)", lineHeight: 1.1, letterSpacing: "-0.03em", color: "var(--text-1)", textWrap: "balance" }}
+    style={{ fontSize: "clamp(1.5rem, 2.2vw, 1.875rem)", lineHeight: 1.1, letterSpacing: "-0.03em", color: "var(--text-1)", textWrap: "balance" }}
   >
     {children}
   </h2>
@@ -34,8 +34,8 @@ export default function PartnersClient() {
   return (
     <div className="min-h-[100dvh] pt-32 md:pt-40 pb-20 px-5 md:px-10 lg:px-16">
       <div className="max-w-[1320px] mx-auto">
-        <header className="mb-14 md:mb-20 max-w-[60ch]">
-          <h1 className="text-[36px] md:text-[52px] font-bold mb-4" style={{ color: "var(--text-1)", letterSpacing: "-0.04em", lineHeight: 1.02 }}>
+        <header className="mb-12 md:mb-16 max-w-[60ch]">
+          <h1 className="text-[34px] md:text-[44px] font-bold mb-3" style={{ color: "var(--text-1)", letterSpacing: "-0.04em", lineHeight: 1.02 }}>
             Partners
           </h1>
           <p className="text-[18px] leading-[1.6]" style={{ color: "var(--text-2)", textWrap: "pretty" }}>
@@ -44,20 +44,20 @@ export default function PartnersClient() {
         </header>
 
         {/* Aurove */}
-        <section id="aurove" aria-labelledby="aurove-h" className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-10 lg:gap-16 items-center pb-16 md:pb-24" style={{ scrollMarginTop: "var(--header-h)" }}>
-          <AurovePanel height={72} className="min-h-[300px] md:min-h-[360px]" />
+        <section id="aurove" aria-labelledby="aurove-h" className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-10 lg:gap-16 items-center pb-12 md:pb-20" style={{ scrollMarginTop: "var(--header-h)" }}>
+          <AurovePanel height={72} className="min-h-[260px] md:min-h-[300px]" />
           <div>
-            <h2 id="aurove-h" className="font-bold mb-5" style={{ fontSize: "clamp(2rem, 3.6vw, 3rem)", lineHeight: 1.04, letterSpacing: "-0.04em", color: "var(--text-1)" }}>
+            <h2 id="aurove-h" className="font-bold mb-5" style={{ fontSize: "clamp(1.75rem, 2.6vw, 2.25rem)", lineHeight: 1.04, letterSpacing: "-0.04em", color: "var(--text-1)" }}>
               Ecosystem partner: <span style={{ color: "var(--vezo-red-text)" }}>Aurove</span>
             </h2>
             <p className="text-[17px] leading-[1.65] mb-8" style={{ color: "var(--text-2)", maxWidth: "48ch", textWrap: "pretty" }}>
               {AUROVE.summary}
             </p>
             <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-              <a href={AUROVE.earn} target="_blank" rel="noopener noreferrer" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+              <a href={AUROVE.earn} target="_blank" rel="noopener noreferrer" className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
                 Deposit on Aurove <ArrowUpRight style={{ width: 16, height: 16 }} />
               </a>
-              <a href={AUROVE.docs} target="_blank" rel="noopener noreferrer" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+              <a href={AUROVE.docs} target="_blank" rel="noopener noreferrer" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
                 Read Aurove&apos;s docs <ArrowUpRight style={{ width: 16, height: 16 }} />
               </a>
             </div>
@@ -65,7 +65,7 @@ export default function PartnersClient() {
         </section>
 
         {/* What you can do */}
-        <section className="py-14 md:py-20 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <section className="py-12 md:py-20 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-16" style={{ borderTop: "1px solid var(--hairline)" }}>
           <H2>What you can do with Aurove</H2>
           <dl>
             {AUROVE.uses.map((u) => (
@@ -78,7 +78,7 @@ export default function PartnersClient() {
         </section>
 
         {/* Sell or go liquid */}
-        <section className="py-14 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <section className="py-12 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
           <H2>Sell on Vezo, or keep it earning on Aurove</H2>
           <div className="overflow-x-auto -mx-5 px-5 md:mx-0 md:px-0">
             <table className="w-full min-w-[560px] text-left text-[15px]" style={{ borderCollapse: "collapse" }}>
@@ -101,17 +101,17 @@ export default function PartnersClient() {
             </table>
           </div>
           <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3 mt-8">
-            <Link href="/my-listings" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+            <Link href="/my-listings" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
               Sell a position <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
             </Link>
-            <Link href="/marketplace" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+            <Link href="/marketplace" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
               Buy a lock below its value <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
             </Link>
           </div>
         </section>
 
         {/* Steps */}
-        <section className="py-14 md:py-20 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <section className="py-12 md:py-20 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-16" style={{ borderTop: "1px solid var(--hairline)" }}>
           <H2>How to use Aurove with a Vezo position</H2>
           <ol>
             {AUROVE.steps.map((s, i) => (
@@ -124,7 +124,7 @@ export default function PartnersClient() {
         </section>
 
         {/* Good to know */}
-        <section className="py-14 md:py-20 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <section className="py-12 md:py-20 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-16" style={{ borderTop: "1px solid var(--hairline)" }}>
           <H2>Good to know before you deposit</H2>
           <div>
             <ul>
@@ -138,7 +138,7 @@ export default function PartnersClient() {
           </div>
         </section>
 
-        <section className="py-14 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+        <section className="py-12 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
           <SupportedBy />
         </section>
       </div>

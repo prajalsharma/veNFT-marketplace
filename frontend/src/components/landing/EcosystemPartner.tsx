@@ -45,19 +45,19 @@ export function EcosystemPartner() {
       <div>
         <h2
           className="font-bold mb-5"
-          style={{ fontSize: "clamp(1.9rem, 3.4vw, 2.75rem)", lineHeight: 1.06, letterSpacing: "-0.035em", color: "var(--text-1)", textWrap: "balance" }}
+          style={{ fontSize: "clamp(1.75rem, 2.6vw, 2.25rem)", lineHeight: 1.06, letterSpacing: "-0.035em", color: "var(--text-1)", textWrap: "balance" }}
         >
           Our ecosystem partner, <span style={{ color: "var(--vezo-red-text)" }}>Aurove</span>
         </h2>
-        <p className="text-[17px] leading-[1.6] mb-8" style={{ color: "var(--text-2)", maxWidth: "46ch", textWrap: "pretty" }}>
+        <p className="text-[16px] leading-[1.6] mb-7" style={{ color: "var(--text-2)", maxWidth: "46ch", textWrap: "pretty" }}>
           {AUROVE.summary}
         </p>
         <AurovePanel />
         <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3 mt-6">
-          <a href={AUROVE.href} target="_blank" rel="noopener noreferrer" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+          <a href={AUROVE.href} target="_blank" rel="noopener noreferrer" className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
             Open Aurove <ArrowUpRight style={{ width: 16, height: 16 }} />
           </a>
-          <Link href="/partners" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+          <Link href="/partners" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
             How it works with Vezo <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
           </Link>
         </div>

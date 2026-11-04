@@ -46,7 +46,7 @@ const reveal = {
 const H2 = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <h2
     className={`font-bold ${className}`}
-    style={{ fontSize: "clamp(1.9rem, 3.4vw, 2.75rem)", lineHeight: 1.06, letterSpacing: "-0.035em", color: "var(--text-1)", textWrap: "balance" }}
+    style={{ fontSize: "clamp(1.75rem, 2.6vw, 2.25rem)", lineHeight: 1.06, letterSpacing: "-0.035em", color: "var(--text-1)", textWrap: "balance" }}
   >
     {children}
   </h2>
@@ -61,7 +61,7 @@ function HeroBand({ network }: { network: string }) {
   return (
     <section className="band-dark relative overflow-hidden">
       {/* One restrained light source behind the dial; the only atmosphere on the page */}
-      <div className="relative max-w-[1320px] mx-auto px-5 md:px-10 lg:px-16 pt-32 md:pt-40 pb-20 md:pb-28">
+      <div className="relative max-w-[1320px] mx-auto px-5 md:px-10 lg:px-16 pt-32 md:pt-36 pb-16 md:pb-20">
         <div className="grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-14 lg:gap-10 items-center">
           <div>
             <motion.p {...enter(0)} className="text-[15px] font-semibold mb-6 flex items-center gap-2" style={{ color: "var(--text-2)" }}>
@@ -70,7 +70,7 @@ function HeroBand({ network }: { network: string }) {
             </motion.p>
             <h1
               className="font-bold mb-7"
-              style={{ fontSize: "clamp(2.75rem, 6vw, 5.25rem)", lineHeight: 0.98, letterSpacing: "-0.05em", textWrap: "balance" }}
+              style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", lineHeight: 0.98, letterSpacing: "-0.05em", textWrap: "balance" }}
               aria-label="Buy locked Bitcoin for less than it holds."
             >
               {["Buy", "locked", "Bitcoin", "for", "less", "than", "it", "holds."].map((w, k) => (
@@ -79,16 +79,16 @@ function HeroBand({ network }: { network: string }) {
                 </span>
               ))}
             </h1>
-            <motion.p {...enter(0.12)} className="text-[18px] leading-[1.6] mb-10" style={{ color: "var(--text-2)", maxWidth: "48ch", textWrap: "pretty" }}>
+            <motion.p {...enter(0.12)} className="text-[17px] leading-[1.6] mb-9" style={{ color: "var(--text-2)", maxWidth: "48ch", textWrap: "pretty" }}>
               Vezo is the secondary market for veBTC and veMEZO. Holders who need
               liquidity sell their lock; buyers take the position, its voting power
               and its rewards at a discount. One transaction settles both sides.
             </motion.p>
             <motion.div {...enter(0.18)} className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-              <Link href="/marketplace" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
+              <Link href="/marketplace" className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center gap-2">
                 Browse the market <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
               </Link>
-              <Link href="/my-listings" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center">
+              <Link href="/my-listings" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center justify-center">
                 Sell a position
               </Link>
             </motion.div>
@@ -115,8 +115,8 @@ function SellerSection() {
   const live = useLiveMarket();
   const empty = live.status === "empty";
   return (
-    <section className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
-      <div className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-12 lg:gap-20 items-start">
+    <section className="max-w-[1320px] mx-auto py-12 md:py-24" style={{ borderTop: "1px solid var(--hairline)" }}>
+      <div className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-12 lg:gap-16 items-start">
         <div className="reveal-up lg:sticky lg:top-32">
           <H2 className="mb-5">
             {empty ? "Your veNFT could lead the market." : "Hold a veNFT? Sell the lock, not your patience."}
@@ -127,10 +127,10 @@ function SellerSection() {
               : "If you need the capital locked in a veBTC or veMEZO position, list it here. Buyers see your price, your discount and your lock, and the trade settles in one transaction."}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/my-listings" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+            <Link href="/my-listings" className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
               List a position <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
             </Link>
-            <a href="https://docs.vezo.exchange/guides/selling/" target="_blank" rel="noopener noreferrer" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center">
+            <a href="https://docs.vezo.exchange/guides/selling/" target="_blank" rel="noopener noreferrer" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center">
               How selling works
             </a>
           </div>
@@ -180,8 +180,8 @@ function TradeTimeline() {
   const gy0 = 12, gy1 = gy0 + Math.max(0.12, Math.min(0.7, d * 2.2)) * 100;
 
   return (
-    <section className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
-      <div className="grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-12 lg:gap-20 items-center">
+    <section className="max-w-[1320px] mx-auto py-12 md:py-24" style={{ borderTop: "1px solid var(--hairline)" }}>
+      <div className="grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-12 lg:gap-16 items-center">
         <motion.div {...reveal}>
           <H2 className="mb-5">You pay less now. The position pays out in full at unlock.</H2>
           <p className="text-[16px] leading-[1.7] mb-4" style={{ color: "var(--text-2)", maxWidth: "52ch" }}>
@@ -269,7 +269,7 @@ function ListedNow() {
   const remaining = total - start - rows.length;
 
   return (
-    <section className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)" }}>
+    <section className="max-w-[1320px] mx-auto py-12 md:py-24" style={{ borderTop: "1px solid var(--hairline)" }}>
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <motion.div {...reveal}>
           <H2>Positions you can buy today</H2>
@@ -398,7 +398,7 @@ export default function HomeClient() {
 
       {/* 4. How a trade settles, as one listing moving through its states.
           This is the "How it works" explainer (the footer links here). */}
-      <section id="how-it-works" className="max-w-[1320px] mx-auto py-14 md:py-20" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
+      <section id="how-it-works" className="max-w-[1320px] mx-auto py-12 md:py-20" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
         <motion.div {...reveal} className="mb-8 md:mb-10">
           <H2>How a trade settles</H2>
         </motion.div>
@@ -406,7 +406,7 @@ export default function HomeClient() {
       </section>
 
       {/* 5. Rules */}
-      <section className="max-w-[1320px] mx-auto py-14 md:py-28 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-12 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+      <section className="max-w-[1320px] mx-auto py-12 md:py-24 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-12 lg:gap-16" style={{ borderTop: "1px solid var(--hairline)" }}>
         <motion.div {...reveal}>
           <H2 className="mb-4">Short enough to read before your first trade</H2>
           <p className="text-[16px] leading-[1.65]" style={{ color: "var(--text-2)", maxWidth: "40ch" }}>
@@ -431,29 +431,29 @@ export default function HomeClient() {
       </section>
 
       {/* 6. Ecosystem partner: what Vezo users can do next with their lock */}
-      <section id="partners" className="max-w-[1320px] mx-auto py-14 md:py-28" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
+      <section id="partners" className="max-w-[1320px] mx-auto py-12 md:py-24" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
         <EcosystemPartner />
       </section>
 
       {/* 7. Supported by: trust after the product has been explained */}
-      <section className="max-w-[1320px] mx-auto py-14 md:py-24" style={{ borderTop: "1px solid var(--hairline)" }}>
+      <section className="max-w-[1320px] mx-auto py-12 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
         <SupportedBy />
       </section>
 
       {/* 8. Questions */}
-      <section className="max-w-[1320px] mx-auto py-14 md:py-28 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20" style={{ borderTop: "1px solid var(--hairline)" }}>
+      <section className="max-w-[1320px] mx-auto py-12 md:py-24 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-16" style={{ borderTop: "1px solid var(--hairline)" }}>
         <H2>Questions</H2>
         <Faq />
       </section>
 
       {/* Close */}
-      <section className="max-w-[1320px] mx-auto py-14 md:py-24 flex flex-col md:flex-row md:items-end justify-between gap-8" style={{ borderTop: "1px solid var(--hairline)" }}>
+      <section className="max-w-[1320px] mx-auto py-12 md:py-20 flex flex-col md:flex-row md:items-end justify-between gap-8" style={{ borderTop: "1px solid var(--hairline)" }}>
         <H2>See what is listed right now.</H2>
         <div className="flex flex-wrap gap-3">
-          <Link href="/marketplace" className="btn-brand h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
+          <Link href="/marketplace" className="btn-brand h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center gap-2">
             Browse the market <ArrowRight className="cta-arrow" style={{ width: 16, height: 16 }} />
           </Link>
-          <a href="https://dune.com/vezo/vezo" target="_blank" rel="noopener noreferrer" className="btn-quiet h-12 px-6 rounded-lg text-[15px] font-semibold inline-flex items-center">
+          <a href="https://dune.com/vezo/vezo" target="_blank" rel="noopener noreferrer" className="btn-quiet h-11 px-5 rounded-lg text-[15px] font-semibold inline-flex items-center">
             Market data on Dune
           </a>
         </div>
