@@ -45,3 +45,29 @@ export const AUROVE = {
     "Aurove takes a fee from rewards. Their docs explain how.",
   ],
 } as const;
+
+// Integrations: infrastructure Vezo runs on, described by what it does in the
+// product. Each point maps to code: subgraph/ (the indexer), and the routes
+// /api/listings, /api/market-stats, /api/activity and /api/market-value.
+export const GOLDSKY = {
+  name: "Goldsky",
+  href: "https://goldsky.com",
+  symbol: "/partners/goldsky-symbol.svg",
+  docs: "https://docs.vezo.exchange/developers/subgraph/",
+  source: "https://github.com/prajalsharma/veNFT-marketplace/tree/main/subgraph",
+  summary:
+    "Goldsky hosts Vezo's subgraph: an index of every listing, price change, sale, cancellation and bid on the marketplace, kept in step with Mezo and queryable in one request.",
+  why: "Answering \"what has happened on Vezo\" from the chain means walking every block since launch, and Mezo's public RPC only returns events 10,000 blocks at a time. The subgraph does that walk once, keeps up as new blocks land, and serves the result as GraphQL.",
+  powers: [
+    { title: "Marketplace listings", body: "Active listings come from the index instead of scanning every listing slot on-chain. Each one is still checked against its owner on-chain before it shows." },
+    { title: "Market stats", body: "Sales, volume, average price, buyers and sellers since launch, worked out from indexed events every minute and matched against the Dune dashboard." },
+    { title: "Activity feed", body: "Every listing, sale, cancellation and bid, newest first, with the discount as it stood at that moment." },
+    { title: "Market value", body: "Sales and listings over time, priced in dollars at the hour each one happened." },
+  ],
+  indexes: [
+    { contract: "VeNFTMarketplace", from: 7808472, events: "Listings, price changes, sales, cancellations" },
+    { contract: "VeNFTBidding", from: 10062384, events: "Bids, accepted bids, cancellations" },
+  ],
+  fallback:
+    "If the index is unreachable, listings fall back to reading the chain directly, so buying and selling never depend on it.",
+} as const;

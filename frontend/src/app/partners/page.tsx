@@ -4,10 +4,10 @@ import { BreadcrumbJsonLd } from "@/components/JsonLd";
 import PartnersClient from "@/components/PartnersClient";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Partners",
+  title: "Partners and integrations",
   path: "/partners",
   description:
-    "Vezo's ecosystem partners on Mezo. Use Aurove to keep a veBTC or veMEZO position earning in Mezo Earn while holding a liquid token, or sell the lock on Vezo.",
+    "Vezo's partners and integrations on Mezo. Use Aurove to keep a veBTC or veMEZO position earning while holding a liquid token, and see how Goldsky indexes every Vezo listing, sale and bid.",
 });
 
 export default function PartnersPage() {
