@@ -19,6 +19,8 @@ import { formatEther, parseEther } from "viem";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
+import { portfolioHint } from "@/lib/partners";
+
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -47,6 +49,9 @@ import { useNetwork } from "@/hooks/useNetwork";
 import { usePriceTicker } from "@/hooks/usePriceTicker";
 import { listingDiscount } from "@/lib/listingDiscount";
 import type { Listing } from "@/hooks/useMarketplace";
+
+// Registry entry that asked for a line on Portfolio (lib/partners.ts).
+const hint = portfolioHint();
 
 /** Readable token amount: 40,000 / 1,234.56 / 0.000581, never "40000.0000". */
 function fmtNum(wei: bigint): string {
@@ -801,10 +806,10 @@ export default function MyListingsClient() {
                   </span>
                 )}
               </div>
-              {walletVeNFTs.length > 0 && (
+              {walletVeNFTs.length > 0 && hint?.placements?.portfolio && (
                 <p className="text-[14px] leading-[1.6] -mt-3 mb-5" style={{ color: "var(--text-2)" }}>
-                  Rather keep a lock earning than sell it? Our partner Aurove gives you a token for it while it stays in Mezo Earn.{" "}
-                  <Link href="/partners#aurove" className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>See how</Link>
+                  {hint.placements.portfolio}{" "}
+                  <Link href={`/partners#${hint.slug}`} className="font-semibold underline underline-offset-4" style={{ color: "var(--text-1)" }}>See how</Link>
                 </p>
               )}
 

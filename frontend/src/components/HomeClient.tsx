@@ -31,7 +31,7 @@ import { DiscountDial } from "@/components/market/DiscountDial";
 import { useProtocolFee } from "@/hooks/useProtocolFee";
 import { SettlementStory } from "@/components/landing/SettlementStory";
 import { SupportedBy } from "@/components/landing/SupportedBy";
-import { EcosystemPartner } from "@/components/landing/EcosystemPartner";
+import { EcosystemPartner, hasEcosystemPartner } from "@/components/landing/EcosystemPartner";
 import { Faq } from "@/components/landing/Faq";
 import { fmtAmount, DiscountText, GrantTag } from "@/components/VeNFTCard";
 
@@ -431,9 +431,11 @@ export default function HomeClient() {
       </section>
 
       {/* 6. Ecosystem partner: what Vezo users can do next with their lock */}
+      {hasEcosystemPartner() && (
       <section id="partners" className="max-w-[1320px] mx-auto py-12 md:py-24" style={{ borderTop: "1px solid var(--hairline)", scrollMarginTop: "var(--header-h)" }}>
         <EcosystemPartner />
       </section>
+      )}
 
       {/* 7. Supported by: trust after the product has been explained */}
       <section className="max-w-[1320px] mx-auto py-12 md:py-20" style={{ borderTop: "1px solid var(--hairline)" }}>
