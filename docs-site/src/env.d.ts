@@ -2,6 +2,6 @@
 
 declare namespace App {
   interface Locals {
-    vezo: { section: string | null; group: string | null };
+    vezo: { group: string | null };
   }
 }

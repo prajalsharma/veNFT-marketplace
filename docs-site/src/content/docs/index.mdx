@@ -1,14 +1,36 @@
 ---
-title: Vezo Documentation
-description: Documentation for Vezo, the escrowless marketplace for veBTC and veMEZO vote-escrowed NFTs on Mezo.
-template: splash
-tableOfContents: false
+title: Overview
+description: What Vezo is, who it is for, and where to start.
 pagefind: true
-hero:
-  title: How the veNFT market on Mezo works, and how to build on it.
-  tagline: Vezo is an escrowless market for veBTC and veMEZO positions. Listings stay in the seller's wallet, and one transaction settles both sides.
 ---
 
-import DocsHome from "../../components/DocsHome.astro";
+Vezo is a market for veBTC and veMEZO positions on Mezo. A seller lists a locked position and keeps it in their own wallet until it sells. One transaction then moves the NFT to the buyer and the payment to the seller.
 
-<DocsHome />
+Locked positions earn votes and rewards, but the money inside stays stuck until the lock ends, often months away. Vezo lets a holder sell early, and lets a buyer get a position without waiting to lock.
+
+:::note
+Vezo runs on Mezo mainnet (chain 31612). The contract addresses are on [Links & addresses](/resources/links/).
+:::
+
+## Who it is for
+
+- **veBTC and veMEZO holders** who want their money back before the lock ends. List at your price, keep voting and earning until it sells, and cancel at any time.
+- **Buyers** who want locked BTC or MEZO, sometimes below what the position holds, along with its voting power.
+- **Builders** who want to read listings or trade from their own code.
+
+## How it works
+
+1. A seller lists a position at a price in BTC, MEZO or MUSD. The NFT stays in their wallet. Listing only lets the market move it when someone pays.
+2. Every listing shows what the position holds, its voting power, when the lock ends, and how far the price sits above or below what it holds. All of it is read live from the chain.
+3. A buyer pays, and one transaction moves the NFT and the payment. If any step fails, the whole transaction reverts and nobody loses anything.
+4. Anyone can make an offer on any position. The money stays in the bidder's wallet until the owner accepts.
+
+Vezo takes a 1% fee from the seller at the moment of sale, and nothing else. See [Fees](/concepts/fees/).
+
+## Where to start
+
+- [Open the app](https://www.vezo.exchange): browse listings, buy, sell or bid.
+- [Getting started](/guides/getting-started/): wallet, network and funds in a few steps.
+- [Marketplace mechanics](/concepts/marketplace-mechanics/): how listings, offers and settlement work.
+- [Security](/architecture/security/): what the contracts guarantee, and the audit.
+- [Contract integration](/developers/integrate/): read the market and trade from your own code.

@@ -7,15 +7,18 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 @import "@fontsource-variable/outfit";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 
 /* ── Tokens: dark (default) ── */
 :root {
   --sl-font: "Outfit Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --sl-font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  --sl-font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
 
   --sl-nav-height: 4rem;
   --sl-sidebar-width: 17rem;
-  --sl-content-width: 46rem;
+  --sl-sidebar-pad-x: 1rem;
+  --sl-content-width: 50rem;
   --sl-content-pad-x: 2.5rem;
   --sl-text-base: 1rem;
   --sl-line-height: 1.75;
@@ -33,9 +36,9 @@
   --sl-color-gray-6: #161615;
   --sl-color-black: #0a0a0a;
 
-  --sl-color-bg: #0a0a0a;
-  --sl-color-bg-nav: rgba(10, 10, 10, 0.86);
-  --sl-color-bg-sidebar: #0a0a0a;
+  --sl-color-bg: #0c0b0a;
+  --sl-color-bg-nav: rgba(12, 11, 10, 0.9);
+  --sl-color-bg-sidebar: #131211;
   --sl-color-hairline-light: rgba(255, 255, 255, 0.07);
   --sl-color-hairline-shade: rgba(255, 255, 255, 0.07);
   --sl-color-hairline: rgba(255, 255, 255, 0.07);
@@ -48,6 +51,8 @@
   --vz-hairline-strong: rgba(255, 255, 255, 0.15);
   --vz-code-bg: #111110;
   --vz-inline-code: rgba(255, 255, 255, 0.07);
+  --vz-card: #151413;
+  --vz-active: rgba(255, 255, 255, 0.07);
 }
 
 /* ── Tokens: light (the app's warm off-white) ── */
@@ -68,7 +73,7 @@
 
   --sl-color-bg: #f2efe9;
   --sl-color-bg-nav: rgba(242, 239, 233, 0.88);
-  --sl-color-bg-sidebar: #f2efe9;
+  --sl-color-bg-sidebar: #ebe7df;
   --sl-color-hairline-light: rgba(0, 0, 0, 0.08);
   --sl-color-hairline-shade: rgba(0, 0, 0, 0.08);
   --sl-color-hairline: rgba(0, 0, 0, 0.08);
@@ -81,6 +86,8 @@
   --vz-hairline-strong: rgba(0, 0, 0, 0.16);
   --vz-code-bg: #fbfaf7;
   --vz-inline-code: rgba(0, 0, 0, 0.055);
+  --vz-card: #f8f6f1;
+  --vz-active: rgba(0, 0, 0, 0.06);
 }
 
 ::selection { background: color-mix(in srgb, var(--vz-red) 22%, transparent); }
@@ -94,65 +101,113 @@ header.header {
   border-bottom: 1px solid var(--vz-hairline);
   padding-block: 0;
 }
-/* Search trigger: a quiet field, not a pill */
+/* Search: a field at the top of the sidebar */
 site-search button[data-open-modal] {
+  width: 100%;
   border-radius: 8px;
   border: 1px solid var(--vz-hairline-strong);
-  background: var(--vz-subtle);
+  background: var(--sl-color-bg);
   color: var(--sl-color-gray-3);
-  height: 2.25rem;
+  height: 2.4rem;
+  padding-inline: 0.75rem;
   font-size: 0.9rem;
+  gap: 0.5rem;
 }
-@media (min-width: 50rem) { site-search button[data-open-modal] { min-width: 15rem; } }
+.vz-sb-search site-search button[data-open-modal] > span { display: block; }
+.vz-sb-search site-search button[data-open-modal] > kbd { display: flex !important; margin-inline-start: auto; }
+@media (max-width: 49.99rem) { .vz-sb-search site-search button[data-open-modal] > kbd { display: none !important; } }
 site-search button[data-open-modal]:hover { border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
-site-search button[data-open-modal] kbd { border-radius: 5px; background: transparent; border: 1px solid var(--vz-hairline-strong); font-family: var(--sl-font); }
+site-search button[data-open-modal] kbd kbd {
+  border-radius: 4px; background: transparent; border: 1px solid var(--vz-hairline-strong);
+  font-family: var(--sl-font-mono); font-size: 0.68rem; padding: 0 0.3rem; min-width: 1.1rem;
+}
 /* Search dialog */
 site-search dialog { border-radius: 14px; border: 1px solid var(--vz-hairline-strong); background: var(--sl-color-black); }
 site-search dialog::backdrop { background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px); }
 
 /* ── Frame: sidebar ── */
 nav.sidebar .sidebar-pane { border-inline-end: 1px solid var(--vz-hairline); }
-.sidebar-content { padding-top: 1.75rem; }
+.sidebar-content { padding-top: 1.5rem; }
+.sidebar-content ul.top-level > li { margin: 0; }
 .sidebar-content .group-label .large {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
   color: var(--sl-color-white);
 }
-.sidebar-content summary { padding-block: 0.3rem; }
-.sidebar-content ul ul li { border-inline-start-color: var(--vz-hairline); }
+.sidebar-content summary { padding: 0.45rem 0.5rem; border-radius: 8px; }
+.sidebar-content summary:hover { background: var(--vz-hover); }
+.sidebar-content summary .caret { color: var(--sl-color-gray-3); }
+/* Pages inside a group hang off a thin guide line */
+.sidebar-content ul ul { margin-inline-start: 0.85rem; padding-inline-start: 0; border-inline-start: 1px solid var(--vz-hairline-strong); }
+.sidebar-content ul ul li { border: 0; padding: 0; margin: 0; }
 .sidebar-content ul.top-level a {
-  font-size: 0.9rem;
-  color: var(--sl-color-gray-2);
-  border-radius: 0;
-  padding-block: 0.32rem;
-  padding-inline-start: 0.95rem;
-  margin-inline-start: -1px;
-  border-inline-start: 2px solid transparent;
-  transition: color 120ms ease, border-color 120ms ease;
+  position: relative;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 450;
+  color: var(--sl-color-gray-3);
+  border-radius: 8px;
+  padding: 0.42rem 0.6rem;
+  transition: color 120ms ease, background-color 120ms ease;
 }
-.sidebar-content ul.top-level a:hover { color: var(--sl-color-white); }
+.sidebar-content ul ul a { margin-inline-start: 0.5rem; }
+.sidebar-content ul.top-level a:hover { color: var(--sl-color-white); background: var(--vz-hover); }
 .sidebar-content ul.top-level a[aria-current="page"],
 .sidebar-content ul.top-level a[aria-current="page"]:hover,
 .sidebar-content ul.top-level a[aria-current="page"]:focus {
-  background: transparent;
+  background: var(--vz-active);
   color: var(--sl-color-white);
   font-weight: 600;
-  border-inline-start-color: var(--vz-red);
 }
-.sidebar-content ul + ul, .sidebar-content details { margin-top: 0.4rem; }
-.sidebar-content li > details { margin-bottom: 1.1rem; }
+/* The current page: a short red bar on its left edge */
+.sidebar-content ul.top-level a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.5rem;
+  inset-inline-start: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--vz-red);
+}
+.sidebar-content ul ul a[aria-current="page"]::before { inset-inline-start: calc(-0.5rem - 1px); }
+.sidebar-content li > details { margin-bottom: 0.35rem; }
+.sidebar-content details > ul { margin-top: 0.15rem; margin-bottom: 0.4rem; }
 
 /* ── Frame: right rail (on this page) ── */
-.right-sidebar { border-inline-start: 1px solid var(--vz-hairline); }
-.right-sidebar-panel { padding-top: 2.25rem; }
-.right-sidebar-panel h2 { font-size: 0.8rem; font-weight: 600; color: var(--sl-color-white); margin-bottom: 0.6rem; }
-starlight-toc a { font-size: 0.85rem; color: var(--sl-color-gray-3); padding-block: 0.28rem; }
+.right-sidebar { border-inline-start: 0; }
+.right-sidebar-panel { padding-top: 2.75rem; }
+.right-sidebar-panel h2 {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--sl-font-mono); font-size: 0.72rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--sl-color-gray-2);
+  margin-bottom: 0.85rem;
+}
+.right-sidebar-panel h2::before {
+  content: ""; width: 0.8rem; height: 0.6rem; flex: none;
+  background: linear-gradient(currentColor 0 0) top / 100% 1.5px no-repeat,
+              linear-gradient(currentColor 0 0) center / 70% 1.5px no-repeat,
+              linear-gradient(currentColor 0 0) bottom / 85% 1.5px no-repeat;
+  background-position: left top, left center, left bottom;
+}
+/* The list sits on a thin track; the section in view lights it red */
+starlight-toc nav > ul { border-inline-start: 1px solid var(--vz-hairline-strong); margin-inline-start: 0.35rem; }
+starlight-toc ul ul { border: 0; }
+starlight-toc a {
+  position: relative;
+  font-size: 0.85rem; color: var(--sl-color-gray-3);
+  padding-block: 0.32rem;
+  padding-inline-start: calc(0.85rem + var(--depth) * 0.75rem) !important;
+  transition: color 120ms ease;
+}
 starlight-toc a:hover { color: var(--sl-color-white); }
-starlight-toc a[aria-current="true"] { color: var(--sl-color-white); font-weight: 600; }
+starlight-toc a[aria-current="true"] { color: var(--vz-red); }
+starlight-toc a[aria-current="true"]::before {
+  content: ""; position: absolute; inset-inline-start: -1px; inset-block: 0.3rem; width: 1.5px; background: var(--vz-red);
+}
 /* Mobile "On this page" bar */
-mobile-starlight-toc nav { border-bottom: 1px solid var(--vz-hairline); }
+mobile-starlight-toc nav { border-bottom: 1px solid var(--vz-hairline); background: var(--sl-color-bg-nav); }
 mobile-starlight-toc .toggle { border-radius: 8px; border-color: var(--vz-hairline-strong); }
 
 /* ── Content: title area ── */
@@ -163,9 +218,9 @@ main > .content-panel:first-of-type { padding-top: 2.75rem; }
 /* ── Content: typography ── */
 .sl-markdown-content { font-size: 1rem; line-height: 1.75; color: var(--sl-color-gray-1); }
 .sl-markdown-content :is(h2, h3, h4) { color: var(--sl-color-white); scroll-margin-top: calc(var(--sl-nav-height) + 1.5rem); }
-.sl-markdown-content h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.25; }
+.sl-markdown-content h2 { font-size: 1.65rem; font-weight: 650; letter-spacing: -0.025em; line-height: 1.25; }
 /* Each H2 opens a new part of the page: a full-width rule above it */
-.sl-markdown-content .sl-heading-wrapper.level-h2 { margin-top: 3.25rem; padding-top: 2rem; border-top: 1px solid var(--vz-hairline); }
+.sl-markdown-content .sl-heading-wrapper.level-h2 { margin-top: 3rem; padding-top: 2.25rem; border-top: 1px solid var(--vz-hairline); }
 .sl-markdown-content > .sl-heading-wrapper.level-h2:first-child { margin-top: 0.5rem; padding-top: 0; border-top: 0; }
 .sl-markdown-content h3 { font-size: 1.15rem; font-weight: 650; letter-spacing: -0.015em; margin-top: 2.25rem; }
 .sl-markdown-content h4 { font-size: 1rem; font-weight: 650; margin-top: 1.75rem; }
@@ -179,17 +234,18 @@ main > .content-panel:first-of-type { padding-top: 2.75rem; }
 .sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link,
 .sl-markdown-content .sl-anchor-link:focus-visible { opacity: 1; }
 
-/* Links: full-contrast text with a quiet underline; red only on hover */
+/* Links: Vezo red, underline on hover */
 .sl-markdown-content a:not(:where(.not-content *, .sl-anchor-link)) {
-  color: var(--sl-color-white);
+  color: var(--vz-red);
   font-weight: 500;
   text-decoration: underline;
-  text-decoration-color: var(--vz-hairline-strong);
+  text-decoration-color: transparent;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
   transition: text-decoration-color 120ms ease;
 }
-.sl-markdown-content a:not(:where(.not-content *, .sl-anchor-link)):hover { text-decoration-color: var(--vz-red); }
+.sl-markdown-content a:not(:where(.not-content *, .sl-anchor-link)):hover { text-decoration-color: currentColor; }
+.sl-markdown-content a:not(:where(.not-content *, .sl-anchor-link)) code { color: inherit; }
 
 /* Inline code: neutral chip, not red */
 .sl-markdown-content code:not(:where(pre *, .not-content *)) {
@@ -207,44 +263,45 @@ main > .content-panel:first-of-type { padding-top: 2.75rem; }
   display: block;
   overflow-x: auto;
   width: 100%;
-  border: 1px solid var(--vz-hairline);
-  border-radius: 12px;
+  border: 1px solid var(--vz-hairline-strong);
+  border-radius: 10px;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+  background: var(--vz-card);
 }
 .sl-markdown-content :is(th, td) { border: 0; border-bottom: 1px solid var(--vz-hairline); padding: 0.7rem 1rem; text-align: start; vertical-align: top; }
-.sl-markdown-content th { font-size: 0.8rem; font-weight: 600; color: var(--sl-color-gray-3); background: var(--vz-subtle); white-space: nowrap; }
+@media (min-width: 50rem) { .sl-markdown-content table { display: table; } }
+.sl-markdown-content th {
+  font-family: var(--sl-font-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--sl-color-gray-3); background: transparent; white-space: nowrap; padding-block: 0.75rem;
+}
 .sl-markdown-content tr:last-child td { border-bottom: 0; }
 .sl-markdown-content tr:nth-child(2n) { background: transparent; }
 .sl-markdown-content thead tr:not(:has(th:not(:empty))) { display: none; }
 .sl-markdown-content td code { white-space: nowrap; }
 .sl-markdown-content td:first-child { min-width: 8.5rem; }
 
-/* Asides: a neutral panel; the kind is carried by the title, not a colour wall */
+/* Asides: a card with a coloured edge; the colour carries the kind */
 .starlight-aside {
-  border: 1px solid var(--vz-hairline);
-  border-inline-start: 1px solid var(--vz-hairline);
-  border-radius: 12px;
-  background: var(--vz-subtle);
-  padding: 1rem 1.15rem;
+  border: 1px solid var(--vz-hairline-strong);
+  border-inline-start: 3px solid var(--vz-aside, var(--sl-color-gray-4));
+  border-radius: 10px;
+  background: var(--vz-card);
+  padding: 0.9rem 1.1rem;
 }
+.starlight-aside--note { --vz-aside: #6b8fb3; }
+.starlight-aside--tip { --vz-aside: #16a34a; }
+.starlight-aside--caution { --vz-aside: #d97706; }
+.starlight-aside--danger { --vz-aside: var(--vz-red); }
 .starlight-aside__title { font-size: 0.9rem; font-weight: 650; color: var(--sl-color-white); }
-.starlight-aside__icon { width: 1rem; height: 1rem; }
-.starlight-aside--note .starlight-aside__icon { color: var(--sl-color-gray-2); }
-.starlight-aside--tip .starlight-aside__icon { color: #16a34a; }
-.starlight-aside--caution .starlight-aside__icon { color: #d97706; }
-.starlight-aside--danger .starlight-aside__icon { color: var(--vz-red); }
+.starlight-aside__icon { width: 1rem; height: 1rem; color: var(--vz-aside); }
 .starlight-aside__content { font-size: 0.95rem; }
 
 /* Cards / link cards, where used in content */
 .card, .sl-link-card { border-radius: 12px; border: 1px solid var(--vz-hairline); background: transparent; box-shadow: none; }
 .sl-link-card:hover { border-color: var(--vz-hairline-strong); background: var(--vz-subtle); }
 
-/* ── Splash home: wider, and no page-title chrome ── */
-[data-has-hero] .content-panel { border-top: 0; }
-[data-has-hero] main > .content-panel { padding-top: 0; }
-[data-has-hero] .sl-container { max-width: 72rem; }
 
 /* ── Motion: cross-document transitions, content only ──
    Header and sidebar keep their identity between pages, so only the reading
@@ -264,3 +321,48 @@ site-search mark { background: color-mix(in srgb, var(--vz-red) 18%, transparent
 site-search .pagefind-ui__search-input:focus { outline: 1px solid var(--sl-color-gray-3); outline-offset: 0; }
 /* The floating assistant would cover the menu's own controls */
 [data-mobile-menu-expanded] .vz-ask-fab { display: none; }
+
+/* ── Collapsible sidebar (desktop) ── */
+.vz-edge, .vz-expand { display: none; }
+@media (min-width: 50rem) {
+  .sidebar-pane { transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s; }
+  .main-frame { transition: padding-inline-start 240ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+  :root[data-vz-sidebar="collapsed"],
+  :root[data-vz-sidebar="collapsed"] [data-has-sidebar] { --sl-content-inline-start: 0rem; }
+
+  /* Collapsed: the sidebar floats as a card, parked off-screen */
+  :root[data-vz-sidebar="collapsed"] nav.sidebar .sidebar-pane {
+    inset-block: calc(var(--sl-nav-height) + 0.5rem) 0.5rem;
+    inset-inline-start: 0.5rem;
+    border: 1px solid var(--vz-hairline-strong);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.35);
+    transform: translateX(calc(-100% - 1rem));
+    visibility: hidden;
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 240ms;
+  }
+  :root[data-vz-sidebar="collapsed"][data-vz-peek] nav.sidebar .sidebar-pane {
+    transform: none;
+    visibility: visible;
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s;
+  }
+
+  /* The strip on the left edge that brings it back */
+  :root[data-vz-sidebar="collapsed"] .vz-edge {
+    display: block; position: fixed; z-index: 9; inset-block: var(--sl-nav-height) 0; inset-inline-start: 0; width: 14px;
+  }
+  /* And a button for people who would rather click */
+  :root[data-vz-sidebar="collapsed"] .vz-expand {
+    display: inline-flex; align-items: center; justify-content: center;
+    position: fixed; z-index: 8; top: calc(var(--sl-nav-height) + 1rem); inset-inline-start: 1rem;
+    width: 2.25rem; height: 2.25rem; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--vz-hairline-strong); background: var(--vz-card); color: var(--sl-color-gray-2);
+    transition: color 120ms ease, border-color 120ms ease;
+  }
+  .vz-expand:hover { color: var(--sl-color-white); border-color: var(--sl-color-gray-4); }
+  .vz-expand:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-pane, .main-frame { transition: none !important; }
+}

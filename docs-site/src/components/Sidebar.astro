@@ -1,20 +1,28 @@
 ---
-// The current section's pages, preceded on narrower screens (where the
-// header has no room for section tabs) by a compact section switcher.
+// Sidebar: docs identity, the way back to the app, search, then every page.
 import MobileMenuFooter from "virtual:starlight/components/MobileMenuFooter";
+import Search from "virtual:starlight/components/Search";
 import SidebarPersister from "@astrojs/starlight/components/SidebarPersister.astro";
 import SidebarSublist from "@astrojs/starlight/components/SidebarSublist.astro";
-import { SECTIONS } from "../sections";
+import logo from "../assets/vezo-logo.svg";
+import { LINKS } from "../sections";
 
 const { sidebar } = Astro.locals.starlightRoute;
-const current = Astro.locals.vezo?.section;
 ---
 
-<nav class="vz-sections" aria-label="Documentation sections">
-  {SECTIONS.map((s) => (
-    <a href={s.href} aria-current={current === s.id ? "true" : undefined}>{s.label}</a>
-  ))}
-</nav>
+<div class="vz-sb-top">
+  <div class="vz-sb-row">
+    <a class="vz-sb-brand" href="/">
+      <img src={logo.src} width="22" height="16" alt="" />
+      <span>Vezo docs</span>
+    </a>
+    <button class="vz-sb-toggle" type="button" data-vz-sidebar-toggle aria-label="Hide sidebar" title="Hide sidebar">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg>
+    </button>
+  </div>
+  <a class="vz-sb-back" href={LINKS.app} target="_blank" rel="noopener noreferrer">Back to the app</a>
+  <div class="vz-sb-search"><Search /></div>
+</div>
 
 <SidebarPersister>
   <SidebarSublist sublist={sidebar} />
@@ -25,16 +33,22 @@ const current = Astro.locals.vezo?.section;
 </div>
 
 <style>
-  .vz-sections {
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem;
-    padding: 0.25rem; margin-bottom: 1.5rem; border-radius: 10px; background: var(--vz-subtle);
+  .vz-sb-top { display: grid; gap: 0.35rem; margin-bottom: 1.4rem; }
+  .vz-sb-row { display: flex; align-items: center; justify-content: space-between; }
+  .vz-sb-toggle {
+    display: none; align-items: center; justify-content: center; width: 2rem; height: 2rem;
+    border: 0; border-radius: 7px; background: transparent; color: var(--sl-color-gray-3); cursor: pointer;
   }
-  .vz-sections a {
-    display: block; padding: 0.5rem 0.65rem; border-radius: 7px; text-decoration: none;
-    font-size: 0.875rem; font-weight: 500; color: var(--sl-color-gray-2);
+  .vz-sb-toggle:hover { background: var(--vz-hover); color: var(--sl-color-white); }
+  .vz-sb-toggle:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 1px; }
+  @media (min-width: 50rem) { .vz-sb-toggle { display: inline-flex; } }
+  .vz-sb-brand {
+    display: inline-flex; align-items: center; gap: 0.55rem; width: fit-content;
+    font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; color: var(--sl-color-white);
   }
-  .vz-sections a:last-child:nth-child(odd) { grid-column: span 2; }
-  .vz-sections a[aria-current="true"] { background: var(--vz-surface); color: var(--sl-color-white); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
-  .vz-sections a:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 1px; }
-  @media (min-width: 72rem) { .vz-sections { display: none; } }
+  .vz-sb-brand img { height: 16px; width: auto; }
+  .vz-sb-back { width: fit-content; font-size: 0.85rem; font-weight: 500; text-decoration: none; color: var(--sl-color-gray-3); }
+  .vz-sb-back:hover { color: var(--sl-color-white); }
+  .vz-sb-search { margin-top: 0.6rem; }
+  .vz-sb-brand:focus-visible, .vz-sb-back:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 3px; border-radius: 4px; }
 </style>

@@ -69,15 +69,14 @@ export default defineConfig({
         Sidebar: "./src/components/Sidebar.astro",
         MobileMenuFooter: "./src/components/MobileMenuFooter.astro",
         PageTitle: "./src/components/PageTitle.astro",
-        Hero: "./src/components/Hero.astro",
         Footer: "./src/components/Footer.astro",
       },
       expressiveCode: {
         themes: ["github-dark-default", "github-light"],
         styleOverrides: {
-          borderRadius: "12px",
-          borderColor: "var(--vz-hairline)",
-          codeBackground: "var(--vz-code-bg)",
+          borderRadius: "10px",
+          borderColor: "var(--vz-hairline-strong)",
+          codeBackground: "var(--vz-card)",
           codeFontFamily: "var(--sl-font-mono)",
           codeFontSize: "0.86rem",
           codeLineHeight: "1.7",
@@ -98,6 +97,7 @@ export default defineConfig({
         },
       },
       sidebar: [
+        { label: "Overview", link: "/" },
         {
           label: "Introduction",
           items: [

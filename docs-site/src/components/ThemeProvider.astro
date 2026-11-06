@@ -10,6 +10,9 @@
 		const stored = typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
 		const theme = stored === 'dark' ? 'dark' : 'light';
 		document.documentElement.dataset.theme = theme;
+		try {
+			if (localStorage.getItem('vz-sidebar') === 'collapsed') document.documentElement.dataset.vzSidebar = 'collapsed';
+		} catch {}
 		return { updatePickers() {} };
 	})();
 </script>

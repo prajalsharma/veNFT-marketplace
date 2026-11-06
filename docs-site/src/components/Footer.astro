@@ -3,12 +3,23 @@
 // Ask Vezo is mounted here so it exists on every page, the home included.
 import AskVezo from "./AskVezo.astro";
 import Brand from "./Brand.astro";
+import { getCollection } from "astro:content";
 import { LINKS } from "../sections";
 
 const { pagination, editUrl, entry } = Astro.locals.starlightRoute;
 const { prev, next } = pagination;
 const isHome = entry.id === "index" || entry.id === "";
 const year = new Date().getFullYear();
+
+// Each card carries the target page's own description, so the reader knows
+// what is behind the link before following it.
+const docs = await getCollection("docs");
+const descOf = (href: string) => {
+  const id = href.replace(/^\/|\/$/g, "");
+  return docs.find((d) => d.id === id)?.data.description;
+};
+const prevDesc = prev ? descOf(prev.href) : undefined;
+const nextDesc = next ? descOf(next.href) : undefined;
 ---
 
 <footer class="vz-pf print:hidden">
@@ -23,14 +34,14 @@ const year = new Date().getFullYear();
         <nav class="vz-pn" aria-label="Previous and next pages">
           {prev ? (
             <a href={prev.href} rel="prev" class="vz-pn-link">
-              <span class="vz-pn-k">← Previous</span>
-              <span class="vz-pn-t">{prev.label}</span>
+              <span class="vz-pn-t"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>{prev.label}</span>
+              {prevDesc && <span class="vz-pn-d">{prevDesc}</span>}
             </a>
           ) : <span />}
           {next && (
             <a href={next.href} rel="next" class="vz-pn-link vz-pn-next">
-              <span class="vz-pn-k">Next →</span>
-              <span class="vz-pn-t">{next.label}</span>
+              <span class="vz-pn-t">{next.label}<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              {nextDesc && <span class="vz-pn-d">{nextDesc}</span>}
             </a>
           )}
         </nav>
@@ -55,20 +66,63 @@ const year = new Date().getFullYear();
 </footer>
 <AskVezo />
 
+<div class="vz-edge" aria-hidden="true"></div>
+<button class="vz-expand" type="button" data-vz-sidebar-toggle aria-label="Show sidebar" title="Show sidebar">
+  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg>
+</button>
+
+<script>
+  // Collapsible sidebar (desktop). Collapsed, the page uses the full width;
+  // moving the pointer to the left edge slides the sidebar back in over the
+  // page, and it slides away again when the pointer leaves it.
+  const root = document.documentElement;
+  const pane = document.getElementById("starlight__sidebar");
+  const edge = document.querySelector<HTMLElement>(".vz-edge");
+  let hideTimer: number | undefined;
+
+  const peek = (on: boolean) => {
+    window.clearTimeout(hideTimer);
+    if (on) root.dataset.vzPeek = "";
+    else hideTimer = window.setTimeout(() => delete root.dataset.vzPeek, 220);
+  };
+
+  document.querySelectorAll<HTMLButtonElement>("[data-vz-sidebar-toggle]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const collapse = root.dataset.vzSidebar !== "collapsed";
+      if (collapse) root.dataset.vzSidebar = "collapsed";
+      else delete root.dataset.vzSidebar;
+      window.clearTimeout(hideTimer);
+      delete root.dataset.vzPeek;
+      try { localStorage.setItem("vz-sidebar", collapse ? "collapsed" : "open"); } catch {}
+    }),
+  );
+
+  edge?.addEventListener("mouseenter", () => peek(true));
+  edge?.addEventListener("mouseleave", () => peek(false));
+  pane?.addEventListener("mouseenter", () => { if (root.dataset.vzSidebar === "collapsed") peek(true); });
+  pane?.addEventListener("mouseleave", () => { if (root.dataset.vzSidebar === "collapsed") peek(false); });
+  // Keyboard: tabbing into the hidden sidebar shows it
+  pane?.addEventListener("focusin", () => { if (root.dataset.vzSidebar === "collapsed") peek(true); });
+  pane?.addEventListener("focusout", (e) => {
+    if (root.dataset.vzSidebar === "collapsed" && !pane.contains(e.relatedTarget as Node)) peek(false);
+  });
+</script>
+
 <style>
   .vz-pf { margin-top: 4rem; display: grid; gap: 2rem; }
   .vz-edit { display: inline-flex; align-items: center; gap: 0.5rem; width: fit-content; font-size: 0.875rem; color: var(--sl-color-gray-3); text-decoration: none; }
   .vz-edit:hover { color: var(--sl-color-white); }
   .vz-pn { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .vz-pn-link {
-    display: grid; gap: 0.3rem; padding: 1rem 1.15rem; border-radius: 10px; text-decoration: none;
-    border: 1px solid var(--vz-hairline); transition: border-color 150ms ease, background-color 150ms ease;
+    display: flex; flex-direction: column; gap: 0.4rem; padding: 1rem 1.15rem; border-radius: 10px; text-decoration: none;
+    border: 1px solid var(--vz-hairline); background: var(--vz-card);
+    transition: border-color 150ms ease, background-color 150ms ease;
   }
-  .vz-pn-link:hover { border-color: var(--vz-hairline-strong); background: var(--vz-subtle); }
+  .vz-pn-link:hover { border-color: var(--vz-hairline-strong); background: var(--vz-hover); }
   .vz-pn-link:focus-visible { outline: 2px solid var(--vz-red); outline-offset: 2px; }
-  .vz-pn-next { text-align: end; grid-column: 2; }
-  .vz-pn-k { font-size: 0.8rem; font-weight: 500; color: var(--sl-color-gray-3); }
-  .vz-pn-t { font-size: 1rem; font-weight: 600; color: var(--sl-color-white); letter-spacing: -0.01em; }
+  .vz-pn-next { text-align: end; align-items: flex-end; grid-column: 2; }
+  .vz-pn-t { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; color: var(--sl-color-white); }
+  .vz-pn-d { font-size: 0.82rem; line-height: 1.5; color: var(--sl-color-gray-3); }
   .vz-df {
     margin-top: 2rem; padding-top: 1.75rem; border-top: 1px solid var(--vz-hairline);
     display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem 2rem;
